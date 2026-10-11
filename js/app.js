@@ -2627,7 +2627,7 @@ ${a}
     }
     _registerServiceWorker() {
       if ("serviceWorker" in navigator && location.protocol !== "file:") {
-        navigator.serviceWorker.register("./sw.js").then((registration) => {
+        navigator.serviceWorker.register("./sw.js", { scope: "./" }).then((registration) => {
           registration.addEventListener("updatefound", () => {
             const newWorker = registration.installing;
             if (!newWorker) return;
