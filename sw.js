@@ -4,13 +4,14 @@
  * navigation fallback, clean activation, and skipWaiting handling.
  */
 
-const CACHE_NAME = 'mq-static-v4';
+const CACHE_NAME = 'mq-static-v5';
 
 const PRECACHE_ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
   './css/app.css',
+  './css/app.css?v=2',
   './vendor/github.min.css',
   './vendor/marked.min.js',
   './vendor/purify.min.js',
@@ -36,6 +37,7 @@ const PRECACHE_ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(PRECACHE_ASSETS);
