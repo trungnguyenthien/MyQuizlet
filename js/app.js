@@ -404,6 +404,8 @@
       empty_deck_hint: "B\u1ED9 th\u1EBB n\xE0y hi\u1EC7n ch\u01B0a c\xF3 th\u1EBB n\xE0o. H\xE3y xu\u1EA5t file ho\u1EB7c d\xE1n Markdown \u0111\u1EC3 th\xEAm th\u1EBB.",
       empty_search_questions: 'Kh\xF4ng t\xECm th\u1EA5y c\xE2u h\u1ECFi n\xE0o ph\xF9 h\u1EE3p v\u1EDBi "{query}".',
       question_no_answer: "(Kh\xF4ng c\xF3 \u0111\xE1p \xE1n)",
+      empty_answer_title: "Ch\u01B0a c\xF3 \u0111\xE1p \xE1n s\u1EB5n",
+      empty_answer_desc: "Th\u1EBB n\xE0y ch\u1EC9 g\u1ED3m c\xE2u h\u1ECFi \u0111\u1EC3 b\u1EA1n t\u1EF1 ki\u1EC3m tra ho\u1EB7c g\u1EE3i nh\u1EDB ki\u1EBFn th\u1EE9c.",
       answer_hidden_in_detail: "(\u0110\xE1p \xE1n \u0111ang b\u1ECB \u1EA9n cho b\u1ED9 th\u1EBB n\xE0y)",
       // Study Screen
       study_seen_chip: "\u0110\xE3 xem {seen} / {total}",
@@ -457,8 +459,9 @@ let message = "Xin ch\xE0o"
       help_rule_1: 'D\xF2ng "# ..." \u0111\u1EA7u ti\xEAn l\xE0 t\xEAn c\u1EE7a b\u1ED9 th\u1EBB.',
       help_rule_2: 'M\u1ED7i th\u1EBB b\u1EAFt \u0111\u1EA7u b\u1EB1ng "## " cho c\xE2u h\u1ECFi, theo sau l\xE0 ph\u1EA7n \u0111\xE1p \xE1n.',
       help_rule_3: 'M\u1ED7i ti\xEAu \u0111\u1EC1 "## " t\u1EF1 \u0111\u1ED9ng t\u1EA1o m\u1ED9t c\xE2u h\u1ECFi m\u1EDBi, kh\xF4ng c\u1EA7n d\xF9ng "---" \u0111\u1EC3 ph\xE2n c\xE1ch.',
-      help_rule_4: '\u0110\u01B0\u1EDDng k\u1EBB ngang "---" ho\u1EB7c "***" b\xEAn trong n\u1ED9i dung \u0111\xE1p \xE1n hi\u1EC3n th\u1ECB b\xECnh th\u01B0\u1EDDng.',
-      help_rule_5: 'Code block c\xF3 ch\u1EE9a "##" ho\u1EB7c "---" s\u1EBD kh\xF4ng b\u1ECB chia c\u1EAFt th\u1EBB.',
+      help_rule_4: 'Cho ph\xE9p th\u1EBB kh\xF4ng c\xF3 \u0111\xE1p \xE1n s\u1EB5n (ch\u1EC9 g\u1ED3m "## C\xE2u h\u1ECFi") \u0111\u1EC3 t\u1EF1 \xF4n t\u1EADp / v\u1EA5n \u0111\xE1p.',
+      help_rule_5: '\u0110\u01B0\u1EDDng k\u1EBB ngang "---" ho\u1EB7c "***" b\xEAn trong n\u1ED9i dung \u0111\xE1p \xE1n hi\u1EC3n th\u1ECB b\xECnh th\u01B0\u1EDDng.',
+      help_rule_6: 'Code block c\xF3 ch\u1EE9a "##" ho\u1EB7c "---" s\u1EBD kh\xF4ng b\u1ECB chia c\u1EAFt th\u1EBB.',
       // Storage Dialog
       storage_dialog_title: "Dung l\u01B0\u1EE3ng l\u01B0u tr\u1EEF",
       storage_persist_label: "Tr\u1EA1ng th\xE1i l\u01B0u tr\u1EEF b\u1EC1n v\u1EEFng:",
@@ -560,6 +563,8 @@ let message = "Xin ch\xE0o"
       empty_deck_hint: "This deck currently has no cards. Export or paste Markdown to add cards.",
       empty_search_questions: 'No questions match "{query}".',
       question_no_answer: "(No answer)",
+      empty_answer_title: "No pre-existing answer",
+      empty_answer_desc: "This is a prompt-only card for self-testing and active recall.",
       answer_hidden_in_detail: "(Answers are hidden for this deck)",
       // Study Screen
       study_seen_chip: "Seen {seen} / {total}",
@@ -613,8 +618,9 @@ let greeting = "Hello"
       help_rule_1: 'The first "# ..." line is the deck title.',
       help_rule_2: 'Each card starts with a "## " question line, followed by the answer.',
       help_rule_3: 'Each "## " header automatically starts a new card; "---" is not required.',
-      help_rule_4: 'Horizontal rules "---" or "***" inside an answer render normally.',
-      help_rule_5: 'Code blocks containing "##" or "---" will not be split into cards.',
+      help_rule_4: 'Prompt-only cards with no answers (only "## Question") are fully supported.',
+      help_rule_5: 'Horizontal rules "---" or "***" inside an answer render normally.',
+      help_rule_6: 'Code blocks containing "##" or "---" will not be split into cards.',
       // Storage Dialog
       storage_dialog_title: "Storage Usage",
       storage_persist_label: "Persistent storage:",
@@ -961,7 +967,10 @@ ${a}
       "del",
       "kbd",
       "sub",
-      "sup"
+      "sup",
+      "div",
+      "svg",
+      "path"
     ],
     ALLOWED_ATTR: [
       "href",
@@ -975,7 +984,11 @@ ${a}
       "height",
       "align",
       "loading",
-      "id"
+      "id",
+      "d",
+      "viewBox",
+      "fill",
+      "aria-hidden"
     ],
     FORBID_TAGS: ["script", "style", "iframe", "frame", "object", "embed", "form", "input"],
     FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "javascript:"]
@@ -1001,7 +1014,17 @@ ${a}
     } else {
       const rawAnswer = (card.a || "").trim();
       if (!rawAnswer) {
-        html = `<div class="empty-answer-placeholder">${t("question_no_answer")}</div>`;
+        html = `
+        <div class="empty-answer-placeholder">
+          <div class="empty-answer-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/>
+            </svg>
+          </div>
+          <div class="empty-answer-title">${t("empty_answer_title")}</div>
+          <div class="empty-answer-sub">${t("empty_answer_desc")}</div>
+        </div>
+      `;
       } else if (window.marked && typeof window.marked.parse === "function") {
         html = window.marked.parse(rawAnswer);
       } else {
@@ -1880,6 +1903,7 @@ ${a}
             <li>\u{1F4CC} ${t("help_rule_3")}</li>
             <li>\u{1F4CC} ${t("help_rule_4")}</li>
             <li>\u{1F4CC} ${t("help_rule_5")}</li>
+            <li>\u{1F4CC} ${t("help_rule_6")}</li>
           </ul>
         </div>
 

@@ -97,6 +97,8 @@ const translations = {
     empty_deck_hint: 'Bộ thẻ này hiện chưa có thẻ nào. Hãy xuất file hoặc dán Markdown để thêm thẻ.',
     empty_search_questions: 'Không tìm thấy câu hỏi nào phù hợp với "{query}".',
     question_no_answer: '(Không có đáp án)',
+    empty_answer_title: 'Chưa có đáp án sẵn',
+    empty_answer_desc: 'Thẻ này chỉ gồm câu hỏi để bạn tự kiểm tra hoặc gợi nhớ kiến thức.',
     answer_hidden_in_detail: '(Đáp án đang bị ẩn cho bộ thẻ này)',
 
     // Study Screen
@@ -154,8 +156,9 @@ let message = "Xin chào"
     help_rule_1: 'Dòng "# ..." đầu tiên là tên của bộ thẻ.',
     help_rule_2: 'Mỗi thẻ bắt đầu bằng "## " cho câu hỏi, theo sau là phần đáp án.',
     help_rule_3: 'Mỗi tiêu đề "## " tự động tạo một câu hỏi mới, không cần dùng "---" để phân cách.',
-    help_rule_4: 'Đường kẻ ngang "---" hoặc "***" bên trong nội dung đáp án hiển thị bình thường.',
-    help_rule_5: 'Code block có chứa "##" hoặc "---" sẽ không bị chia cắt thẻ.',
+    help_rule_4: 'Cho phép thẻ không có đáp án sẵn (chỉ gồm "## Câu hỏi") để tự ôn tập / vấn đáp.',
+    help_rule_5: 'Đường kẻ ngang "---" hoặc "***" bên trong nội dung đáp án hiển thị bình thường.',
+    help_rule_6: 'Code block có chứa "##" hoặc "---" sẽ không bị chia cắt thẻ.',
 
     // Storage Dialog
     storage_dialog_title: 'Dung lượng lưu trữ',
@@ -266,6 +269,8 @@ let message = "Xin chào"
     empty_deck_hint: 'This deck currently has no cards. Export or paste Markdown to add cards.',
     empty_search_questions: 'No questions match "{query}".',
     question_no_answer: '(No answer)',
+    empty_answer_title: 'No pre-existing answer',
+    empty_answer_desc: 'This is a prompt-only card for self-testing and active recall.',
     answer_hidden_in_detail: '(Answers are hidden for this deck)',
 
     // Study Screen
@@ -323,8 +328,9 @@ let greeting = "Hello"
     help_rule_1: 'The first "# ..." line is the deck title.',
     help_rule_2: 'Each card starts with a "## " question line, followed by the answer.',
     help_rule_3: 'Each "## " header automatically starts a new card; "---" is not required.',
-    help_rule_4: 'Horizontal rules "---" or "***" inside an answer render normally.',
-    help_rule_5: 'Code blocks containing "##" or "---" will not be split into cards.',
+    help_rule_4: 'Prompt-only cards with no answers (only "## Question") are fully supported.',
+    help_rule_5: 'Horizontal rules "---" or "***" inside an answer render normally.',
+    help_rule_6: 'Code blocks containing "##" or "---" will not be split into cards.',
 
     // Storage Dialog
     storage_dialog_title: 'Storage Usage',

@@ -30,11 +30,11 @@ const SANITIZE_CONFIG = {
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'a', 'b', 'strong', 'i', 'em', 'u',
     'code', 'pre', 'span', 'blockquote', 'ul', 'ol', 'li', 'table', 'thead',
     'tbody', 'tr', 'th', 'td', 'hr', 'br', 'img', 'details', 'summary', 'mark',
-    'del', 'kbd', 'sub', 'sup'
+    'del', 'kbd', 'sub', 'sup', 'div', 'svg', 'path'
   ],
   ALLOWED_ATTR: [
     'href', 'title', 'target', 'rel', 'class', 'src', 'alt', 'width', 'height',
-    'align', 'loading', 'id'
+    'align', 'loading', 'id', 'd', 'viewBox', 'fill', 'aria-hidden'
   ],
   FORBID_TAGS: ['script', 'style', 'iframe', 'frame', 'object', 'embed', 'form', 'input'],
   FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'javascript:']
@@ -78,7 +78,17 @@ export function renderCardFaceHTML(card, face) {
     // Answer face: multi-line Markdown
     const rawAnswer = (card.a || '').trim();
     if (!rawAnswer) {
-      html = `<div class="empty-answer-placeholder">${t('question_no_answer')}</div>`;
+      html = `
+        <div class="empty-answer-placeholder">
+          <div class="empty-answer-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="36" height="36" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/>
+            </svg>
+          </div>
+          <div class="empty-answer-title">${t('empty_answer_title')}</div>
+          <div class="empty-answer-sub">${t('empty_answer_desc')}</div>
+        </div>
+      `;
     } else if (window.marked && typeof window.marked.parse === 'function') {
       html = window.marked.parse(rawAnswer);
     } else {

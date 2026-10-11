@@ -948,6 +948,7 @@ class UIManager {
             <li>📌 ${t('help_rule_3')}</li>
             <li>📌 ${t('help_rule_4')}</li>
             <li>📌 ${t('help_rule_5')}</li>
+            <li>📌 ${t('help_rule_6')}</li>
           </ul>
         </div>
 

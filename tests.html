@@ -307,6 +307,55 @@ Present, appearing, or found everywhere.`;
         console.assert(exported.includes('## Ephemeral'), 'Exported markdown must contain questions');
       });
 
+      // Test 12: Header2-only questions without pre-existing answers
+      await runTest('Question-only Deck: Consecutive "## " headers without answers parse, render, and round-trip faithfully', () => {
+        const questionOnlyMd = `# Technical Interview Checklist
+
+## What is the event loop in JavaScript?
+## How does prototypal inheritance differ from classical inheritance?
+## Explain Closures and provide a memory leak scenario
+## What are Microtasks vs Macrotasks?
+## What is the Virtual DOM and how does reconciliation work?`;
+
+        const { set, warnings } = parseMarkdownSet(questionOnlyMd, 'Tech-Interview.md');
+        console.assert(set.title === 'Technical Interview Checklist', `Expected title 'Technical Interview Checklist', got '${set.title}'`);
+        console.assert(set.cards.length === 5, `Expected 5 cards, got ${set.cards.length}`);
+        
+        // All cards should have q populated and a === ''
+        for (let i = 0; i < set.cards.length; i++) {
+          console.assert(Boolean(set.cards[i].q), `Card ${i} should have a question`);
+          console.assert(set.cards[i].a === '', `Card ${i} should have an empty answer string`);
+        }
+        console.assert(warnings.length === 5, `Expected 5 informational empty-answer warnings, got ${warnings.length}`);
+
+        // Verify face rendering
+        const frontHtml = renderCardFaceHTML(set.cards[0], 'q');
+        console.assert(frontHtml.includes('event loop'), 'Front face must contain question content');
+
+        const backHtml = renderCardFaceHTML(set.cards[0], 'a');
+        console.assert(backHtml.includes('empty-answer-placeholder'), 'Back face must render placeholder container');
+        console.assert(backHtml.includes('empty-answer-title'), 'Back face must render placeholder title');
+
+        // Verify serialization round-trip
+        const exported = serializeSet(set);
+        console.assert(exported.includes('# Technical Interview Checklist'), 'Exported markdown must contain deck title');
+        console.assert(exported.includes('## What is the event loop in JavaScript?'), 'Exported markdown must contain card 1');
+        console.assert(exported.includes('## What are Microtasks vs Macrotasks?'), 'Exported markdown must contain card 4');
+
+        const reimported = parseMarkdownSet(exported, 'Tech-Interview.md');
+        console.assert(reimported.set.cards.length === 5, `Round-trip card count should be 5, got ${reimported.set.cards.length}`);
+        for (let i = 0; i < 5; i++) {
+          console.assert(reimported.set.cards[i].q === set.cards[i].q, `Question ${i} mismatch after round-trip`);
+          console.assert(reimported.set.cards[i].a === '', `Answer ${i} should remain empty after round-trip`);
+        }
+
+        // Verify storage
+        store.saveSet(set);
+        const stored = store.getSet(set.id);
+        console.assert(stored && stored.cards.length === 5, 'Stored set must contain all 5 question-only cards');
+        store.deleteSet(set.id);
+      });
+
       // Update Summary
       summaryEl.textContent = `Completed ${passed + failed} tests: ${passed} Passed, ${failed} Failed.`;
       summaryEl.className = failed === 0 ? 'summary pass' : 'summary fail';

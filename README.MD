@@ -55,9 +55,10 @@ Quy tắc:
 
 - Dòng `# ...` đầu tiên là **tên set**. Nếu thiếu, tên file sẽ được dùng làm tên set.
 - Mỗi thẻ bắt đầu bằng một dòng `## câu hỏi` và phần đáp án bên dưới. **Không cần dùng `---` để ngăn cách các câu hỏi nữa**, cứ xuất hiện `## ` là hệ thống tự nhận diện chuyển sang câu hỏi mới.
+- **Hỗ trợ thẻ không có đáp án sẵn**: Bạn có thể viết liên tiếp các `## Câu hỏi 1\n## Câu hỏi 2\n## Câu hỏi 3` mà không cần dòng đáp án. Khi học, mặt câu hỏi hiển thị đầy đủ và mặt sau có thông báo tự ôn tập/vấn đáp.
 - Dòng `## ` nằm **bên trong code block** (` ``` `) sẽ không bị tách thẻ.
 - Đường kẻ ngang `---` hoặc `***` bên trong nội dung đáp án hiển thị bình thường.
-- Đáp án có thể để trống (thẻ chỉ có câu hỏi). Dung lượng file tối đa 5 MB.
+- Dung lượng file tối đa 5 MB.
 
 ### 2. Import
 
