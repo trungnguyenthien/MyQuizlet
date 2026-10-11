@@ -4,7 +4,7 @@
  * navigation fallback, clean activation, and skipWaiting handling.
  */
 
-const CACHE_NAME = 'mq-static-v3';
+const CACHE_NAME = 'mq-static-v4';
 
 const PRECACHE_ASSETS = [
   './',
@@ -12,7 +12,6 @@ const PRECACHE_ASSETS = [
   './manifest.webmanifest',
   './css/app.css',
   './vendor/github.min.css',
-  './vendor/github-dark.min.css',
   './vendor/marked.min.js',
   './vendor/purify.min.js',
   './vendor/highlight.min.js',

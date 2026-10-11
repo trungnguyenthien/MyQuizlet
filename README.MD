@@ -12,7 +12,7 @@ Mở bằng trình duyệt trên điện thoại hoặc máy tính, sau đó cà
 
 - Tạo mới hoặc import bộ thẻ từ file Markdown (`.md`), export ngược lại cùng định dạng.
 - Duyệt danh sách các set, đổi tên set, xóa set.
-- Câu hỏi và đáp án hiển thị Markdown đầy đủ (danh sách, bảng, trích dẫn...), code block tô màu theo phong cách GitHub (tự đổi theo sáng/tối).
+- Câu hỏi và đáp án hiển thị Markdown đầy đủ (danh sách, bảng, trích dẫn...), code block tô màu theo phong cách GitHub Light giao diện sáng đồng nhất.
 - Nội dung luôn căn giữa card.
 - Học ngẫu nhiên: **vuốt lên** để sang thẻ mới (luôn hiện mặt câu hỏi trước), **vuốt ngang** để lật sang mặt đáp án.
 - Bật/tắt khả năng xem đáp án cho từng set.

@@ -1,13 +1,16 @@
 {
+  "id": "./",
   "name": "MyQuizlet",
   "short_name": "MyQuizlet",
   "description": "Offline flashcard study app powered by plain Markdown notes",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#FAFAFA",
   "theme_color": "#3F51B5",
+  "prefer_related_applications": false,
   "categories": ["education", "productivity", "utilities"],
   "icons": [
     {

@@ -9,7 +9,9 @@
    1. CSS Custom Properties / Color Palette & Tokens
    ========================================================================== */
 :root {
-  /* Light Theme (Default) */
+  color-scheme: light;
+
+  /* Light Theme (Enforced across all devices & system settings) */
   --md-sys-color-primary: #3F51B5;
   --md-sys-color-on-primary: #FFFFFF;
   --md-sys-color-primary-container: #E8EAF6;
@@ -80,51 +82,6 @@
   --sar: env(safe-area-inset-right, 0px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --md-sys-color-primary: #9FA8DA;
-    --md-sys-color-on-primary: #1A237E;
-    --md-sys-color-primary-container: #283593;
-    --md-sys-color-on-primary-container: #E8EAF6;
-
-    --md-sys-color-accent: #FFB74D;
-    --md-sys-color-on-accent: #3E2723;
-    --md-sys-color-accent-container: #E65100;
-
-    --md-sys-color-background: #121212;
-    --md-sys-color-on-background: #E0E0E0;
-
-    --md-sys-color-surface: #1E1E1E;
-    --md-sys-color-on-surface: #E0E0E0;
-    --md-sys-color-surface-variant: #2A2A2A;
-    --md-sys-color-on-surface-variant: #9FA8DA;
-
-    --md-sys-color-outline: #383838;
-    --md-sys-color-outline-variant: #2C2C2C;
-
-    --md-sys-color-success: #81C784;
-    --md-sys-color-error: #EF5350;
-    --md-sys-color-on-error: #2A0808;
-    --md-sys-color-error-container: #5C1D1D;
-    --md-sys-color-warning: #FFB74D;
-
-    /* Flashcard Side Theming (Dark Mode) */
-    --card-question-border: #FB8C00;
-    --card-question-border-subtle: rgba(251, 140, 0, 0.22);
-    --card-question-tag: #FFA726;
-    --card-question-bg-tint: rgba(251, 140, 0, 0.035);
-
-    --card-answer-border: #42A5F5;
-    --card-answer-border-subtle: rgba(66, 165, 245, 0.22);
-    --card-answer-tag: #90CAF9;
-    --card-answer-bg-tint: rgba(66, 165, 245, 0.035);
-
-    --elevation-1: 0 1px 4px rgba(0, 0, 0, 0.4);
-    --elevation-2: 0 4px 10px rgba(0, 0, 0, 0.5);
-    --elevation-3: 0 10px 25px rgba(0, 0, 0, 0.65);
-  }
-}
-
 /* ==========================================================================
    2. Reset & Global Base
    ========================================================================== */
@@ -136,6 +93,7 @@
 }
 
 html, body {
+  color-scheme: light;
   height: 100%;
   width: 100%;
   font-family: var(--font-family-ui);
