@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>MyQuizlet — Bộ Thẻ Ghi Nhớ Markdown</title>
+  <meta name="description" content="Ứng dụng flashcard Markdown thuần, hoạt động offline 100%, tô màu code phong cách GitHub." />
+  
+  <!-- PWA Theme & Manifest -->
+  <meta name="theme-color" content="#3F51B5" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
+
+  <!-- iOS Safari Specific -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="MyQuizlet" />
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+
+  <!-- Code Syntax Highlighting Themes (GitHub Light & Dark) -->
+  <link rel="stylesheet" href="vendor/github.min.css" media="(prefers-color-scheme: light)" />
+  <link rel="stylesheet" href="vendor/github-dark.min.css" media="(prefers-color-scheme: dark)" />
+
+  <!-- App Stylesheet -->
+  <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <!-- Global App Bar -->
+  <header id="app-bar" class="app-bar" role="banner">
+    <div class="app-bar-left">
+      <button type="button" class="icon-btn hidden" id="app-back-btn" aria-label="Quay lại">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+      </button>
+      <span class="app-bar-title" id="app-title">MyQuizlet</span>
+    </div>
+
+    <div class="app-bar-right">
+      <div class="menu-anchor">
+        <button type="button" class="icon-btn menu-trigger" id="app-menu-btn" aria-label="Menu tác vụ">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+        </button>
+        <div class="dropdown-menu" id="app-menu-dropdown"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main View Container -->
+  <main id="main-content" class="main-content" role="main"></main>
+
+  <!-- Snackbar Notification Container -->
+  <div id="snackbar-container" class="snackbar-container" aria-live="polite"></div>
+
+  <!-- Local Vendored Libraries (Precached for 100% Offline Mode) -->
+  <script src="vendor/marked.min.js"></script>
+  <script src="vendor/purify.min.js"></script>
+  <script src="vendor/highlight.min.js"></script>
+  <script src="vendor/highlight-swift.min.js"></script>
+  <script src="vendor/highlight-kotlin.min.js"></script>
+  <script src="vendor/highlight-dart.min.js"></script>
+
+  <!-- Main Application ES Module -->
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

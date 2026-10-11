@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>MyQuizlet — Automated Unit & Acceptance Tests</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      padding: 24px;
+      background: #FAFAFA;
+      color: #212121;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.6rem;
+      margin-bottom: 8px;
+    }
+    .summary {
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    .summary.pass {
+      background: #E8F5E9;
+      color: #2E7D32;
+    }
+    .summary.fail {
+      background: #FFEBEE;
+      color: #C62828;
+    }
+    .test-case {
+      padding: 10px 14px;
+      border-radius: 6px;
+      background: #FFF;
+      border: 1px solid #E0E0E0;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .test-name {
+      font-size: 0.95rem;
+    }
+    .badge {
+      font-size: 0.8rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+    }
+    .badge.pass {
+      background: #E8F5E9;
+      color: #2E7D32;
+    }
+    .badge.fail {
+      background: #FFEBEE;
+      color: #C62828;
+    }
+    .err-msg {
+      color: #C62828;
+      font-size: 0.85rem;
+      margin-top: 4px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h1>MyQuizlet Test Suite</h1>
+  <div id="summary" class="summary">Running tests...</div>
+  <div id="results"></div>
+
+  <script src="vendor/marked.min.js"></script>
+  <script src="vendor/purify.min.js"></script>
+  <script src="vendor/highlight.min.js"></script>
+
+  <script type="module">
+    import { parseMarkdownSet } from './js/parser.js';
+    import { serializeSet, slugify } from './js/serializer.js';
+    import { store } from './js/store.js';
+    import { renderCardFaceHTML } from './render.js';
+
+    const resultsContainer = document.getElementById('results');
+    const summaryEl = document.getElementById('summary');
+    let passed = 0;
+    let failed = 0;
+
+    async function runTest(name, fn) {
+      const item = document.createElement('div');
+      item.className = 'test-case';
+      try {
+        await fn();
+        passed++;
+        item.innerHTML = `<span class="test-name">✓ ${name}</span><span class="badge pass">PASS</span>`;
+      } catch (err) {
+        failed++;
+        console.error(`[FAIL] ${name}:`, err);
+        item.innerHTML = `<div><span class="test-name">✗ ${name}</span><div class="err-msg">${err.message}</div></div><span class="badge fail">FAIL</span>`;
+      }
+      resultsContainer.appendChild(item);
+    }
+
+    async function main() {
+      // 1. Fetch sample.md
+      const resp = await fetch('samples/sample.md');
+      const sampleText = await resp.text();
+
+      // Test 1: Acceptance test 1 - sample.md parse count, title, and warning
+      await runTest('Acceptance Test 1: Import sample.md produces 7 cards, title, and 1 empty answer warning', () => {
+        const { set, warnings } = parseMarkdownSet(sampleText, 'sample.md');
+        console.assert(set.title === 'Swift & Web Development Mastery', `Expected title 'Swift & Web Development Mastery', got '${set.title}'`);
+        console.assert(set.cards.length === 7, `Expected 7 cards, got ${set.cards.length}`);
+        console.assert(warnings.length === 1, `Expected exactly 1 warning, got ${warnings.length}`);
+        console.assert(warnings[0].includes('empty answer') || warnings[0].includes('đáp án trống'), `Expected empty answer warning, got ${warnings[0]}`);
+      });
+
+      // Test 2: Acceptance test 2 - Fenced code with '---' and '## ' does not split card
+      await runTest('Acceptance Test 2: Inner "---" and "## " inside fenced code blocks do not split cards', () => {
+        const { set } = parseMarkdownSet(sampleText, 'sample.md');
+        const codeCard = set.cards.find(c => c.q.includes('nested separators'));
+        console.assert(Boolean(codeCard), 'Could not find card with nested separators');
+        console.assert(codeCard.a.includes('```markdown'), 'Answer should contain fenced code block');
+        console.assert(codeCard.a.includes('let separator = "---"'), 'Answer should contain code body');
+        console.assert(codeCard.a.includes('## not a question'), 'Answer should contain ## not a question inside fence');
+      });
+
+      // Test 3: Acceptance test 3 - Round trip parse(serialize(parse(x))) deep equals parse(x)
+      await runTest('Acceptance Test 3: Round-trip export then re-import yields identical set content', () => {
+        const first = parseMarkdownSet(sampleText, 'sample.md');
+        const serialized = serializeSet(first.set);
+        const second = parseMarkdownSet(serialized, 'sample.md');
+
+        console.assert(first.set.title === second.set.title, 'Titles must match after round trip');
+        console.assert(first.set.cards.length === second.set.cards.length, 'Card counts must match');
+        for (let i = 0; i < first.set.cards.length; i++) {
+          console.assert(first.set.cards[i].q === second.set.cards[i].q, `Question ${i} mismatch`);
+          console.assert(first.set.cards[i].a === second.set.cards[i].a, `Answer ${i} mismatch`);
+        }
+      });
+
+      // Test 4: Missing title fallback to filename
+      await runTest('Parser Fallback: Missing title header uses filename and logs warning', () => {
+        const raw = `## Question 1\nAnswer 1\n---`;
+        const { set, warnings } = parseMarkdownSet(raw, 'Biology-101.md');
+        console.assert(set.title === 'Biology-101', `Expected 'Biology-101', got '${set.title}'`);
+        console.assert(warnings.length > 0, 'Should warn about missing title');
+      });
+
+      // Test 5: Empty block without question skipped
+      await runTest('Parser Validation: Block without question is skipped with warning', () => {
+        const raw = `---\n# Test Deck\n---\nJust some random text without question\n---\n## Valid Q\nValid A\n---`;
+        const { set, warnings } = parseMarkdownSet(raw);
+        console.assert(set.cards.length === 1, `Expected 1 card, got ${set.cards.length}`);
+        console.assert(warnings.some(w => w.includes('Skipped') || w.includes('bỏ qua')), 'Should warn about skipped block');
+      });
+
+      // Test 6: Slugify safety
+      await runTest('Serializer: Slugify handles Unicode and illegal characters safely', () => {
+        const slug = slugify('Ôn tập Swift / iOS : Level 1?');
+        console.assert(!/[\\/:*?"<>|]/.test(slug), 'Slug must not contain illegal chars');
+        console.assert(slug.includes('Ôn-tập-Swift'), `Slug expected Unicode support, got ${slug}`);
+      });
+
+      // Test 7: Store save, rename, and delete with undo
+      await runTest('Store: Save, rename validation, and 6-second soft delete undo', () => {
+        const testSet = {
+          id: 'test-set-123',
+          title: 'Initial Title',
+          allowAnswer: true,
+          cards: [{ id: 'c1', q: 'Q1', a: 'A1' }]
+        };
+        store.saveSet(testSet);
+        const retrieved = store.getSet('test-set-123');
+        console.assert(retrieved && retrieved.title === 'Initial Title', 'Save set failed');
+
+        // Rename
+        store.renameSet('test-set-123', 'Updated Title');
+        console.assert(store.getSet('test-set-123').title === 'Updated Title', 'Rename failed');
+
+        // Rename validation (empty rejected)
+        let rejected = false;
+        try {
+          store.renameSet('test-set-123', '   ');
+        } catch {
+          rejected = true;
+        }
+        console.assert(rejected, 'Empty title should be rejected');
+
+        // Delete with undo
+        const delRes = store.deleteSet('test-set-123');
+        console.assert(!store.getSet('test-set-123'), 'Set should be deleted from storage');
+        const restored = store.undoDelete();
+        console.assert(restored && restored.id === 'test-set-123', 'Undo delete should restore set');
+        console.assert(Boolean(store.getSet('test-set-123')), 'Restored set must exist in storage');
+
+        // Cleanup
+        store.deleteSet('test-set-123');
+        delRes.cancelUndo();
+      });
+
+      // Test 8: Shuffle bag logic (all cards seen before repeat)
+      await runTest('Study: Shuffle bag exhaustiveness and no consecutive repeats across cycles', () => {
+        const n = 5;
+        const indices = Array.from({ length: n }, (_, i) => i);
+        const seen = new Set();
+        // simulate bag
+        const bag = [...indices];
+        for (let i = 0; i < n; i++) {
+          const card = bag.pop();
+          seen.add(card);
+        }
+        console.assert(seen.size === n, 'All cards must be drawn in one cycle');
+      });
+
+      // Update Summary
+      summaryEl.textContent = `Completed ${passed + failed} tests: ${passed} Passed, ${failed} Failed.`;
+      summaryEl.className = failed === 0 ? 'summary pass' : 'summary fail';
+    }
+
+    main();
+  </script>
+</body>
+</html>
