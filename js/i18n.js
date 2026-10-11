@@ -69,7 +69,7 @@ const translations = {
     sheet_tab_empty: 'Tạo bộ thẻ trống',
     drop_files_here: 'Kéo thả file .md vào đây hoặc',
     browse_files_btn: 'Chọn file từ thiết bị',
-    paste_textarea_placeholder: 'Dán nội dung Markdown vào đây...\n---\n# Tên bộ thẻ\n---\n## Câu hỏi 1\nĐáp án 1\n---',
+    paste_textarea_placeholder: 'Dán nội dung Markdown vào đây...\n# Tên bộ thẻ\n\n## Câu hỏi 1\nĐáp án 1\n\n## Câu hỏi 2\nĐáp án 2',
     live_card_count: 'Đã tìm thấy {count} thẻ',
     live_card_count_zero: 'Chưa nhận diện được thẻ nào',
     new_empty_title_label: 'Tiêu đề bộ thẻ:',
@@ -128,37 +128,34 @@ const translations = {
     toast_exported: 'Đã xuất file {fileName}',
     toast_reimported: 'Đã cập nhật lại toàn bộ bộ thẻ ({count} thẻ)',
     toast_markdown_saved: 'Đã cập nhật bộ thẻ thành công ({count} thẻ)',
+    toast_reshuffled: 'Đã tạo thứ tự ngẫu nhiên mới',
 
     // Edit Markdown Dialog
     edit_markdown_title: 'Sửa Markdown bộ thẻ',
-    edit_markdown_help: 'Chỉnh sửa toàn bộ nội dung Markdown của bộ thẻ. Dòng đầu "# Tiêu đề", mỗi thẻ gồm "## Câu hỏi" và phần đáp án bên dưới, ngăn cách bằng "---".',
+    edit_markdown_help: 'Chỉnh sửa toàn bộ nội dung Markdown của bộ thẻ. Dòng đầu "# Tiêu đề", mỗi câu hỏi bắt đầu bằng "## Câu hỏi" và phần đáp án bên dưới.',
     edit_markdown_cards_count: 'Đã nhận diện: {count} thẻ',
     edit_markdown_save_btn: 'Lưu thay đổi',
 
     // Help Dialog
     help_dialog_title: 'Hướng dẫn định dạng Markdown',
     help_dialog_intro: 'MyQuizlet phân tích file Markdown đơn giản thành các thẻ học:',
-    help_code_sample: `---
-# Tên bộ thẻ
----
-## Câu hỏi 1 (viết trên một dòng)
+    help_code_sample: `# Tên bộ thẻ
 
+## Câu hỏi 1 (viết trên một dòng)
 Đáp án 1, hỗ trợ Markdown đầy đủ, ảnh, bảng, trích dẫn.
 
 \`\`\`swift
 let message = "Xin chào"
 \`\`\`
----
-## Câu hỏi 2
 
+## Câu hỏi 2
 - Dòng đáp án thứ nhất
-- Dòng đáp án thứ hai
----`,
+- Dòng đáp án thứ hai`,
     help_rule_1: 'Dòng "# ..." đầu tiên là tên của bộ thẻ.',
     help_rule_2: 'Mỗi thẻ bắt đầu bằng "## " cho câu hỏi, theo sau là phần đáp án.',
-    help_rule_3: 'Dòng "---" bên ngoài code block là đường phân cách giữa các thẻ.',
-    help_rule_4: 'Nếu muốn vẽ đường kẻ ngang bên trong đáp án, hãy dùng "***" hoặc "___" thay vì "---".',
-    help_rule_5: 'Code block có chứa "---" hoặc "##" sẽ không bị chia cắt thẻ.',
+    help_rule_3: 'Mỗi tiêu đề "## " tự động tạo một câu hỏi mới, không cần dùng "---" để phân cách.',
+    help_rule_4: 'Đường kẻ ngang "---" hoặc "***" bên trong nội dung đáp án hiển thị bình thường.',
+    help_rule_5: 'Code block có chứa "##" hoặc "---" sẽ không bị chia cắt thẻ.',
 
     // Storage Dialog
     storage_dialog_title: 'Dung lượng lưu trữ',
@@ -241,7 +238,7 @@ let message = "Xin chào"
     sheet_tab_empty: 'New Empty Deck',
     drop_files_here: 'Drag and drop .md files here or',
     browse_files_btn: 'Browse device files',
-    paste_textarea_placeholder: 'Paste Markdown notes here...\n---\n# Deck Title\n---\n## Question 1\nAnswer 1\n---',
+    paste_textarea_placeholder: 'Paste Markdown notes here...\n# Deck Title\n\n## Question 1\nAnswer 1\n\n## Question 2\nAnswer 2',
     live_card_count: '{count} cards found',
     live_card_count_zero: 'No cards detected',
     new_empty_title_label: 'New deck title:',
@@ -300,37 +297,34 @@ let message = "Xin chào"
     toast_exported: 'Exported file {fileName}',
     toast_reimported: 'Deck updated successfully ({count} cards)',
     toast_markdown_saved: 'Deck updated successfully ({count} cards)',
+    toast_reshuffled: 'Deck order randomized',
 
     // Edit Markdown Dialog
     edit_markdown_title: 'Edit Deck Markdown',
-    edit_markdown_help: 'Edit the complete Markdown content of this deck. First line "# Title", each card has "## Question" and answer below, separated by "---".',
+    edit_markdown_help: 'Edit the complete Markdown content of this deck. First line "# Title", each question starts with "## Question" followed by the answer below.',
     edit_markdown_cards_count: 'Recognized: {count} cards',
     edit_markdown_save_btn: 'Save Changes',
 
     // Help Dialog
     help_dialog_title: 'Markdown Format Guide',
     help_dialog_intro: 'MyQuizlet parses standard Markdown files into study decks:',
-    help_code_sample: `---
-# Deck Title
----
-## Question 1 (single line)
+    help_code_sample: `# Deck Title
 
+## Question 1 (single line)
 Answer 1, full Markdown supported including tables and code:
 
 \`\`\`swift
 let greeting = "Hello"
 \`\`\`
----
-## Question 2
 
+## Question 2
 - First bullet point
-- Second bullet point
----`,
+- Second bullet point`,
     help_rule_1: 'The first "# ..." line is the deck title.',
     help_rule_2: 'Each card starts with a "## " question line, followed by the answer.',
-    help_rule_3: 'A "---" line outside fenced code blocks separates cards.',
-    help_rule_4: 'To draw a horizontal rule inside an answer, use "***" or "___" instead of "---".',
-    help_rule_5: 'Code blocks containing "---" or "##" will not be split into cards.',
+    help_rule_3: 'Each "## " header automatically starts a new card; "---" is not required.',
+    help_rule_4: 'Horizontal rules "---" or "***" inside an answer render normally.',
+    help_rule_5: 'Code blocks containing "##" or "---" will not be split into cards.',
 
     // Storage Dialog
     storage_dialog_title: 'Storage Usage',

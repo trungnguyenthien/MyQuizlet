@@ -270,6 +270,43 @@
         console.assert(warnings.some(w => w.includes('Skipped') || w.includes('bỏ qua')), 'Warning for skipped block expected');
       });
 
+      // Test 11: Header2-only format without '---' card separators
+      await runTest('Format Update: Header2-only format without "---" parses questions and answers cleanly', () => {
+        const noDashesMd = `# Vocabulary Deck
+
+## Ephemeral
+Lasting for a very short time.
+
+## Serendipity
+The occurrence of events by chance in a happy or beneficial way.
+
+## Code Example
+Here is how to write Markdown:
+\`\`\`markdown
+## Not a question
+Just code
+\`\`\`
+
+## Ubiquitous
+Present, appearing, or found everywhere.`;
+
+        const { set, warnings } = parseMarkdownSet(noDashesMd);
+        console.assert(set.title === 'Vocabulary Deck', `Expected 'Vocabulary Deck', got '${set.title}'`);
+        console.assert(set.cards.length === 4, `Expected 4 cards, got ${set.cards.length}`);
+        console.assert(set.cards[0].q === 'Ephemeral', `Expected 'Ephemeral', got '${set.cards[0].q}'`);
+        console.assert(set.cards[0].a === 'Lasting for a very short time.', `Unexpected answer 0: '${set.cards[0].a}'`);
+        console.assert(set.cards[2].q === 'Code Example', `Expected 'Code Example', got '${set.cards[2].q}'`);
+        console.assert(set.cards[2].a.includes('## Not a question'), 'Code block should preserve inner ##');
+        console.assert(set.cards[3].q === 'Ubiquitous', `Expected 'Ubiquitous', got '${set.cards[3].q}'`);
+        console.assert(warnings.length === 0, `Expected 0 warnings, got ${warnings.length}`);
+
+        // Also test serializeSet on this deck
+        const exported = serializeSet(set);
+        console.assert(!exported.includes('---'), 'Exported markdown must not contain "---" separators');
+        console.assert(exported.includes('# Vocabulary Deck'), 'Exported markdown must contain title');
+        console.assert(exported.includes('## Ephemeral'), 'Exported markdown must contain questions');
+      });
+
       // Update Summary
       summaryEl.textContent = `Completed ${passed + failed} tests: ${passed} Passed, ${failed} Failed.`;
       summaryEl.className = failed === 0 ? 'summary pass' : 'summary fail';

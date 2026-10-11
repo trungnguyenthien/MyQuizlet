@@ -378,7 +378,7 @@
       sheet_tab_empty: "T\u1EA1o b\u1ED9 th\u1EBB tr\u1ED1ng",
       drop_files_here: "K\xE9o th\u1EA3 file .md v\xE0o \u0111\xE2y ho\u1EB7c",
       browse_files_btn: "Ch\u1ECDn file t\u1EEB thi\u1EBFt b\u1ECB",
-      paste_textarea_placeholder: "D\xE1n n\u1ED9i dung Markdown v\xE0o \u0111\xE2y...\n---\n# T\xEAn b\u1ED9 th\u1EBB\n---\n## C\xE2u h\u1ECFi 1\n\u0110\xE1p \xE1n 1\n---",
+      paste_textarea_placeholder: "D\xE1n n\u1ED9i dung Markdown v\xE0o \u0111\xE2y...\n# T\xEAn b\u1ED9 th\u1EBB\n\n## C\xE2u h\u1ECFi 1\n\u0110\xE1p \xE1n 1\n\n## C\xE2u h\u1ECFi 2\n\u0110\xE1p \xE1n 2",
       live_card_count: "\u0110\xE3 t\xECm th\u1EA5y {count} th\u1EBB",
       live_card_count_zero: "Ch\u01B0a nh\u1EADn di\u1EC7n \u0111\u01B0\u1EE3c th\u1EBB n\xE0o",
       new_empty_title_label: "Ti\xEAu \u0111\u1EC1 b\u1ED9 th\u1EBB:",
@@ -433,35 +433,32 @@
       toast_exported: "\u0110\xE3 xu\u1EA5t file {fileName}",
       toast_reimported: "\u0110\xE3 c\u1EADp nh\u1EADt l\u1EA1i to\xE0n b\u1ED9 b\u1ED9 th\u1EBB ({count} th\u1EBB)",
       toast_markdown_saved: "\u0110\xE3 c\u1EADp nh\u1EADt b\u1ED9 th\u1EBB th\xE0nh c\xF4ng ({count} th\u1EBB)",
+      toast_reshuffled: "\u0110\xE3 t\u1EA1o th\u1EE9 t\u1EF1 ng\u1EABu nhi\xEAn m\u1EDBi",
       // Edit Markdown Dialog
       edit_markdown_title: "S\u1EEDa Markdown b\u1ED9 th\u1EBB",
-      edit_markdown_help: 'Ch\u1EC9nh s\u1EEDa to\xE0n b\u1ED9 n\u1ED9i dung Markdown c\u1EE7a b\u1ED9 th\u1EBB. D\xF2ng \u0111\u1EA7u "# Ti\xEAu \u0111\u1EC1", m\u1ED7i th\u1EBB g\u1ED3m "## C\xE2u h\u1ECFi" v\xE0 ph\u1EA7n \u0111\xE1p \xE1n b\xEAn d\u01B0\u1EDBi, ng\u0103n c\xE1ch b\u1EB1ng "---".',
+      edit_markdown_help: 'Ch\u1EC9nh s\u1EEDa to\xE0n b\u1ED9 n\u1ED9i dung Markdown c\u1EE7a b\u1ED9 th\u1EBB. D\xF2ng \u0111\u1EA7u "# Ti\xEAu \u0111\u1EC1", m\u1ED7i c\xE2u h\u1ECFi b\u1EAFt \u0111\u1EA7u b\u1EB1ng "## C\xE2u h\u1ECFi" v\xE0 ph\u1EA7n \u0111\xE1p \xE1n b\xEAn d\u01B0\u1EDBi.',
       edit_markdown_cards_count: "\u0110\xE3 nh\u1EADn di\u1EC7n: {count} th\u1EBB",
       edit_markdown_save_btn: "L\u01B0u thay \u0111\u1ED5i",
       // Help Dialog
       help_dialog_title: "H\u01B0\u1EDBng d\u1EABn \u0111\u1ECBnh d\u1EA1ng Markdown",
       help_dialog_intro: "MyQuizlet ph\xE2n t\xEDch file Markdown \u0111\u01A1n gi\u1EA3n th\xE0nh c\xE1c th\u1EBB h\u1ECDc:",
-      help_code_sample: `---
-# T\xEAn b\u1ED9 th\u1EBB
----
-## C\xE2u h\u1ECFi 1 (vi\u1EBFt tr\xEAn m\u1ED9t d\xF2ng)
+      help_code_sample: `# T\xEAn b\u1ED9 th\u1EBB
 
+## C\xE2u h\u1ECFi 1 (vi\u1EBFt tr\xEAn m\u1ED9t d\xF2ng)
 \u0110\xE1p \xE1n 1, h\u1ED7 tr\u1EE3 Markdown \u0111\u1EA7y \u0111\u1EE7, \u1EA3nh, b\u1EA3ng, tr\xEDch d\u1EABn.
 
 \`\`\`swift
 let message = "Xin ch\xE0o"
 \`\`\`
----
-## C\xE2u h\u1ECFi 2
 
+## C\xE2u h\u1ECFi 2
 - D\xF2ng \u0111\xE1p \xE1n th\u1EE9 nh\u1EA5t
-- D\xF2ng \u0111\xE1p \xE1n th\u1EE9 hai
----`,
+- D\xF2ng \u0111\xE1p \xE1n th\u1EE9 hai`,
       help_rule_1: 'D\xF2ng "# ..." \u0111\u1EA7u ti\xEAn l\xE0 t\xEAn c\u1EE7a b\u1ED9 th\u1EBB.',
       help_rule_2: 'M\u1ED7i th\u1EBB b\u1EAFt \u0111\u1EA7u b\u1EB1ng "## " cho c\xE2u h\u1ECFi, theo sau l\xE0 ph\u1EA7n \u0111\xE1p \xE1n.',
-      help_rule_3: 'D\xF2ng "---" b\xEAn ngo\xE0i code block l\xE0 \u0111\u01B0\u1EDDng ph\xE2n c\xE1ch gi\u1EEFa c\xE1c th\u1EBB.',
-      help_rule_4: 'N\u1EBFu mu\u1ED1n v\u1EBD \u0111\u01B0\u1EDDng k\u1EBB ngang b\xEAn trong \u0111\xE1p \xE1n, h\xE3y d\xF9ng "***" ho\u1EB7c "___" thay v\xEC "---".',
-      help_rule_5: 'Code block c\xF3 ch\u1EE9a "---" ho\u1EB7c "##" s\u1EBD kh\xF4ng b\u1ECB chia c\u1EAFt th\u1EBB.',
+      help_rule_3: 'M\u1ED7i ti\xEAu \u0111\u1EC1 "## " t\u1EF1 \u0111\u1ED9ng t\u1EA1o m\u1ED9t c\xE2u h\u1ECFi m\u1EDBi, kh\xF4ng c\u1EA7n d\xF9ng "---" \u0111\u1EC3 ph\xE2n c\xE1ch.',
+      help_rule_4: '\u0110\u01B0\u1EDDng k\u1EBB ngang "---" ho\u1EB7c "***" b\xEAn trong n\u1ED9i dung \u0111\xE1p \xE1n hi\u1EC3n th\u1ECB b\xECnh th\u01B0\u1EDDng.',
+      help_rule_5: 'Code block c\xF3 ch\u1EE9a "##" ho\u1EB7c "---" s\u1EBD kh\xF4ng b\u1ECB chia c\u1EAFt th\u1EBB.',
       // Storage Dialog
       storage_dialog_title: "Dung l\u01B0\u1EE3ng l\u01B0u tr\u1EEF",
       storage_persist_label: "Tr\u1EA1ng th\xE1i l\u01B0u tr\u1EEF b\u1EC1n v\u1EEFng:",
@@ -537,7 +534,7 @@ let message = "Xin ch\xE0o"
       sheet_tab_empty: "New Empty Deck",
       drop_files_here: "Drag and drop .md files here or",
       browse_files_btn: "Browse device files",
-      paste_textarea_placeholder: "Paste Markdown notes here...\n---\n# Deck Title\n---\n## Question 1\nAnswer 1\n---",
+      paste_textarea_placeholder: "Paste Markdown notes here...\n# Deck Title\n\n## Question 1\nAnswer 1\n\n## Question 2\nAnswer 2",
       live_card_count: "{count} cards found",
       live_card_count_zero: "No cards detected",
       new_empty_title_label: "New deck title:",
@@ -592,35 +589,32 @@ let message = "Xin ch\xE0o"
       toast_exported: "Exported file {fileName}",
       toast_reimported: "Deck updated successfully ({count} cards)",
       toast_markdown_saved: "Deck updated successfully ({count} cards)",
+      toast_reshuffled: "Deck order randomized",
       // Edit Markdown Dialog
       edit_markdown_title: "Edit Deck Markdown",
-      edit_markdown_help: 'Edit the complete Markdown content of this deck. First line "# Title", each card has "## Question" and answer below, separated by "---".',
+      edit_markdown_help: 'Edit the complete Markdown content of this deck. First line "# Title", each question starts with "## Question" followed by the answer below.',
       edit_markdown_cards_count: "Recognized: {count} cards",
       edit_markdown_save_btn: "Save Changes",
       // Help Dialog
       help_dialog_title: "Markdown Format Guide",
       help_dialog_intro: "MyQuizlet parses standard Markdown files into study decks:",
-      help_code_sample: `---
-# Deck Title
----
-## Question 1 (single line)
+      help_code_sample: `# Deck Title
 
+## Question 1 (single line)
 Answer 1, full Markdown supported including tables and code:
 
 \`\`\`swift
 let greeting = "Hello"
 \`\`\`
----
-## Question 2
 
+## Question 2
 - First bullet point
-- Second bullet point
----`,
+- Second bullet point`,
       help_rule_1: 'The first "# ..." line is the deck title.',
       help_rule_2: 'Each card starts with a "## " question line, followed by the answer.',
-      help_rule_3: 'A "---" line outside fenced code blocks separates cards.',
-      help_rule_4: 'To draw a horizontal rule inside an answer, use "***" or "___" instead of "---".',
-      help_rule_5: 'Code blocks containing "---" or "##" will not be split into cards.',
+      help_rule_3: 'Each "## " header automatically starts a new card; "---" is not required.',
+      help_rule_4: 'Horizontal rules "---" or "***" inside an answer render normally.',
+      help_rule_5: 'Code blocks containing "##" or "---" will not be split into cards.',
       // Storage Dialog
       storage_dialog_title: "Storage Usage",
       storage_persist_label: "Persistent storage:",
@@ -748,11 +742,12 @@ let greeting = "Hello"
     let text = rawText.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n");
     const warnings = [];
     const lines = text.split("\n");
-    const blocks = [];
-    let currentBlockLines = [];
     let inFence = false;
     let fenceChar = "";
     let fenceLen = 0;
+    const rawCards = [];
+    let headerLines = [];
+    let currentCard = null;
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       if (!inFence) {
@@ -761,10 +756,18 @@ let greeting = "Hello"
           inFence = true;
           fenceChar = fenceMatch[1][0];
           fenceLen = fenceMatch[1].length;
-        } else if (/^---\s*$/.test(line)) {
-          blocks.push(currentBlockLines.join("\n"));
-          currentBlockLines = [];
-          continue;
+        } else {
+          const h2Match = line.match(/^##\s+(.+)$/);
+          if (h2Match) {
+            if (currentCard) {
+              rawCards.push(currentCard);
+            }
+            currentCard = {
+              question: h2Match[1].trim(),
+              lines: []
+            };
+            continue;
+          }
         }
       } else {
         const closeMatch = line.match(new RegExp(`^(\\${fenceChar}{${fenceLen},})\\s*$`));
@@ -774,23 +777,32 @@ let greeting = "Hello"
           fenceLen = 0;
         }
       }
-      currentBlockLines.push(line);
+      if (currentCard) {
+        currentCard.lines.push(line);
+      } else {
+        headerLines.push(line);
+      }
     }
-    blocks.push(currentBlockLines.join("\n"));
+    if (currentCard) {
+      rawCards.push(currentCard);
+    }
     let title = "";
-    let cardBlockStartIndex = 0;
-    for (let i = 0; i < Math.min(blocks.length, 3); i++) {
-      const block = blocks[i];
-      const titleMatch = block.match(/^#\s+(.+)$/m);
-      if (titleMatch) {
+    let headerNonTitleLines = [];
+    for (let i = 0; i < headerLines.length; i++) {
+      const hLine = headerLines[i];
+      const titleMatch = hLine.match(/^#\s+(.+)$/);
+      if (!title && titleMatch) {
         title = titleMatch[1].trim();
-        cardBlockStartIndex = i + 1;
-        break;
+      } else {
+        const trimmed = hLine.trim();
+        if (trimmed && trimmed !== "---" && !trimmed.startsWith("#")) {
+          headerNonTitleLines.push(trimmed);
+        }
       }
-      if (block.trim().length > 0 && /^##\s+/m.test(block)) {
-        cardBlockStartIndex = i;
-        break;
-      }
+    }
+    if (headerNonTitleLines.length > 0) {
+      const snippet = headerNonTitleLines.join(" ").slice(0, 35);
+      warnings.push(`\u0110\xE3 b\u1ECF qua kh\u1ED1i kh\xF4ng c\xF3 c\xE2u h\u1ECFi (##): "${snippet}..." / Skipped block without question (##): "${snippet}..."`);
     }
     if (!title) {
       const baseName = fileName ? fileName.replace(/\.[^/.]+$/, "").trim() : "";
@@ -798,44 +810,21 @@ let greeting = "Hello"
       warnings.push(`Thi\u1EBFu ti\xEAu \u0111\u1EC1 '# T\xEAn b\u1ED9 th\u1EBB' \u1EDF ph\u1EA7n \u0111\u1EA7u; \u0111\xE3 s\u1EED d\u1EE5ng '${title}' l\xE0m ti\xEAu \u0111\u1EC1 / Missing '# Title' header; used '${title}' instead.`);
     }
     const cards = [];
-    for (let i = cardBlockStartIndex; i < blocks.length; i++) {
-      const block = blocks[i];
-      if (!block.trim()) continue;
-      const blockLines = block.split("\n");
-      let inBFence = false;
-      let bFenceChar = "";
-      let bFenceLen = 0;
-      let qLineIndex = -1;
-      let question = "";
-      for (let j = 0; j < blockLines.length; j++) {
-        const line = blockLines[j];
-        if (!inBFence) {
-          const fm = line.match(/^(`{3,}|~{3,})/);
-          if (fm) {
-            inBFence = true;
-            bFenceChar = fm[1][0];
-            bFenceLen = fm[1].length;
-          } else if (/^##\s+(.+)$/.test(line)) {
-            qLineIndex = j;
-            question = line.replace(/^##\s+/, "").trim();
-            break;
-          }
-        } else {
-          const cm = line.match(new RegExp(`^(\\${bFenceChar}{${bFenceLen},})\\s*$`));
-          if (cm) {
-            inBFence = false;
-            bFenceChar = "";
-            bFenceLen = 0;
-          }
-        }
+    for (let i = 0; i < rawCards.length; i++) {
+      const { question, lines: cLines } = rawCards[i];
+      while (cLines.length > 0 && cLines[0].trim() === "") {
+        cLines.shift();
       }
-      if (qLineIndex === -1) {
-        const snippet = block.trim().slice(0, 35).replace(/\n/g, " ");
-        warnings.push(`\u0110\xE3 b\u1ECF qua kh\u1ED1i kh\xF4ng c\xF3 c\xE2u h\u1ECFi (##): "${snippet}..." / Skipped block without question (##): "${snippet}..."`);
-        continue;
+      if (cLines.length > 0 && /^---\s*$/.test(cLines[0])) {
+        cLines.shift();
       }
-      const answerLines = blockLines.slice(qLineIndex + 1);
-      let rawAnswer = trimBlankLines(answerLines.join("\n"));
+      while (cLines.length > 0 && cLines[cLines.length - 1].trim() === "") {
+        cLines.pop();
+      }
+      if (cLines.length > 0 && /^---\s*$/.test(cLines[cLines.length - 1])) {
+        cLines.pop();
+      }
+      let rawAnswer = trimBlankLines(cLines.join("\n"));
       if (!rawAnswer) {
         warnings.push(`Th\u1EBB "${question}" c\xF3 \u0111\xE1p \xE1n tr\u1ED1ng / Card "${question}" has an empty answer.`);
       }
@@ -866,9 +855,8 @@ let greeting = "Hello"
   }
   function serializeSet(set) {
     const title = (set && set.title ? set.title.trim() : "") || "Untitled";
-    let markdown = `---
-# ${title}
----
+    let markdown = `# ${title}
+
 `;
     if (!set || !Array.isArray(set.cards) || set.cards.length === 0) {
       return markdown;
@@ -876,21 +864,19 @@ let greeting = "Hello"
     for (let i = 0; i < set.cards.length; i++) {
       const card = set.cards[i];
       const q = (card && card.q ? card.q.trim() : "") || "Untitled Question";
-      const a = card && card.a ? card.a : "";
+      const a = card && card.a ? card.a.trim() : "";
+      markdown += `## ${q}
+`;
       if (a) {
-        markdown += `## ${q}
-
+        markdown += `
 ${a}
----
+
 `;
       } else {
-        markdown += `## ${q}
-
----
-`;
+        markdown += "\n";
       }
     }
-    return markdown;
+    return markdown.trim() + "\n";
   }
   async function downloadSetAsMarkdown(set) {
     const content = serializeSet(set);
@@ -2218,10 +2204,8 @@ ${a}
       this.onBack = onBack;
       this.onShowSnackbar = onShowSnackbar;
       this.currentSet = null;
-      this.bag = [];
-      this.seenCount = 0;
-      this.history = [];
-      this.currentCardIndex = -1;
+      this.cardOrder = [];
+      this.currentIndex = 0;
       this.face = "q";
       this.swipeCleanup = null;
       this.isAnimating = false;
@@ -2245,12 +2229,11 @@ ${a}
       }
       this.currentSet = set;
       store.touchLastStudied(setId);
-      this.history = [];
-      this.seenCount = 0;
+      this._initRandomOrder(-1);
+      this.currentIndex = 0;
       this.face = "q";
-      this._initBag();
       this._renderStudyLayout();
-      this._drawNext(false);
+      this._updateCardDisplay("none");
       window.addEventListener("keydown", this.boundKeyHandler);
       this._checkFirstRunHint();
     }
@@ -2263,10 +2246,10 @@ ${a}
       this.container.innerHTML = "";
     }
     /**
-     * Initialize and shuffle the index bag using Fisher-Yates algorithm
-     * @param {number} [lastIndex=-1] Ensure first item of new bag is not lastIndex (if deck > 1)
+     * Initialize a fresh randomized order of all card indices using Fisher-Yates
+     * @param {number} [lastIndex=-1] Ensure the first card of a new cycle is not identical to lastIndex
      */
-    _initBag(lastIndex = -1) {
+    _initRandomOrder(lastIndex = -1) {
       const n = this.currentSet.cards.length;
       const indices = Array.from({ length: n }, (_, i) => i);
       for (let i = n - 1; i > 0; i--) {
@@ -2277,65 +2260,53 @@ ${a}
         const swapWith = 1 + Math.floor(Math.random() * (n - 1));
         [indices[0], indices[swapWith]] = [indices[swapWith], indices[0]];
       }
-      this.bag = indices;
+      this.cardOrder = indices;
     }
     /**
-     * Draw the next card index from bag
+     * Advance to the next card along the randomized list
      * @param {boolean} [animate=true]
      */
     _drawNext(animate = true) {
       if (this.isAnimating) return;
-      if (this.currentSet.cards.length === 1) {
-        if (this.history.length > 0 && this.onShowSnackbar) {
-          this.onShowSnackbar(t("single_card_hint"));
-        }
-        this.currentCardIndex = 0;
-        this.face = "q";
-        this.seenCount = 1;
-        this._updateCardDisplay(animate ? "next" : "none");
+      const total = this.cardOrder.length;
+      if (total <= 1) {
+        if (this.onShowSnackbar) this.onShowSnackbar(t("single_card_hint"));
         return;
       }
-      if (this.bag.length === 0) {
-        const last = this.currentCardIndex;
-        this._initBag(last);
-        this.seenCount = 0;
+      if (this.currentIndex < total - 1) {
+        this.currentIndex++;
+        this._updateCardDisplay(animate ? "next" : "none");
+      } else {
+        const lastShown = this.cardOrder[this.currentIndex];
+        this._initRandomOrder(lastShown);
+        this.currentIndex = 0;
         if (this.onShowSnackbar) {
           this.onShowSnackbar(t("cycle_complete_msg"));
         }
+        this._updateCardDisplay(animate ? "next" : "none");
       }
-      const nextIndex = this.bag.shift();
-      this.currentCardIndex = nextIndex;
-      this.seenCount++;
-      this.history.push(nextIndex);
-      if (this.history.length > 50) this.history.shift();
-      this.face = "q";
-      this._updateCardDisplay(animate ? "next" : "none");
     }
     /**
-     * Go back to the previously shown card in history
+     * Go back to the previous card along the randomized list
      */
     goBack() {
       if (this.isAnimating) return;
-      if (this.history.length <= 1) return;
-      this.history.pop();
-      const prevIndex = this.history[this.history.length - 1];
-      if (this.currentCardIndex >= 0) {
-        this.bag.unshift(this.currentCardIndex);
-        if (this.seenCount > 1) this.seenCount--;
-      }
-      this.currentCardIndex = prevIndex;
-      this.face = "q";
+      if (this.currentIndex <= 0) return;
+      this.currentIndex--;
       this._updateCardDisplay("back");
     }
     /**
-     * Reset shuffle bag and start fresh
+     * Reset and generate a new random list of questions
      */
     resetShuffle() {
       if (this.isAnimating) return;
-      this.history = [];
-      this.seenCount = 0;
-      this._initBag(-1);
-      this._drawNext(true);
+      const last = this.cardOrder.length > 0 ? this.cardOrder[this.currentIndex] : -1;
+      this._initRandomOrder(last);
+      this.currentIndex = 0;
+      if (this.onShowSnackbar) {
+        this.onShowSnackbar(t("toast_reshuffled"));
+      }
+      this._updateCardDisplay("next");
     }
     /**
      * Flip current card (with direction hint: 1 for right, -1 for left)
@@ -2522,8 +2493,11 @@ ${a}
       });
     }
     _updateCardDisplay(animationType = "none") {
-      if (this.currentCardIndex < 0 || !this.currentSet.cards[this.currentCardIndex]) return;
-      const card = this.currentSet.cards[this.currentCardIndex];
+      if (!this.currentSet || !this.currentSet.cards || this.currentSet.cards.length === 0) return;
+      if (this.currentIndex < 0 || this.currentIndex >= this.cardOrder.length) return;
+      const actualCardIndex = this.cardOrder[this.currentIndex];
+      const card = this.currentSet.cards[actualCardIndex];
+      if (!card) return;
       const frontContent = this.container.querySelector("#card-front-content");
       const backContent = this.container.querySelector("#card-back-content");
       const counterChip = this.container.querySelector("#study-counter-chip");
@@ -2533,12 +2507,12 @@ ${a}
       const flipLabel = this.container.querySelector("#btn-study-flip-label");
       if (counterChip) {
         counterChip.textContent = t("study_seen_chip", {
-          seen: this.seenCount,
-          total: this.currentSet.cards.length
+          seen: this.currentIndex + 1,
+          total: this.cardOrder.length
         });
       }
       if (backBtn) {
-        backBtn.disabled = this.history.length <= 1;
+        backBtn.disabled = this.currentIndex <= 0;
       }
       if (frontContent) frontContent.innerHTML = renderCardFaceHTML(card, "q");
       if (backContent) backContent.innerHTML = renderCardFaceHTML(card, "a");

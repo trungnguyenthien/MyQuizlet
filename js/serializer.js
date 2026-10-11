@@ -27,7 +27,7 @@ export function slugify(title) {
  */
 export function serializeSet(set) {
   const title = (set && set.title ? set.title.trim() : '') || 'Untitled';
-  let markdown = `---\n# ${title}\n---\n`;
+  let markdown = `# ${title}\n\n`;
 
   if (!set || !Array.isArray(set.cards) || set.cards.length === 0) {
     return markdown;
@@ -36,16 +36,17 @@ export function serializeSet(set) {
   for (let i = 0; i < set.cards.length; i++) {
     const card = set.cards[i];
     const q = (card && card.q ? card.q.trim() : '') || 'Untitled Question';
-    const a = card && card.a ? card.a : '';
+    const a = card && card.a ? card.a.trim() : '';
 
+    markdown += `## ${q}\n`;
     if (a) {
-      markdown += `## ${q}\n\n${a}\n---\n`;
+      markdown += `\n${a}\n\n`;
     } else {
-      markdown += `## ${q}\n\n---\n`;
+      markdown += '\n';
     }
   }
 
-  return markdown;
+  return markdown.trim() + '\n';
 }
 
 /**

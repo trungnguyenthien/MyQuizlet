@@ -35,9 +35,7 @@ Sau lần mở đầu tiên (cần mạng), ứng dụng chạy được cả kh
 Soạn file `.md` theo định dạng sau:
 
 ````markdown
----
 # Tên bộ thẻ
----
 
 ## Câu hỏi 1 (viết trên đúng một dòng)
 
@@ -47,22 +45,18 @@ Soạn file `.md` theo định dạng sau:
 let greeting = "Hello"
 ```
 
----
-
 ## Câu hỏi 2
 
 - Đáp án dạng danh sách
 - Dòng thứ hai
-
----
 ````
 
 Quy tắc:
 
 - Dòng `# ...` đầu tiên là **tên set**. Nếu thiếu, tên file sẽ được dùng làm tên set.
-- Mỗi thẻ gồm một dòng `## câu hỏi` và phần đáp án bên dưới. Các thẻ ngăn cách nhau bằng một dòng chỉ có `---`.
-- Dòng `---` hoặc `## ` nằm **bên trong code block** (` ``` `) sẽ không bị tách thẻ.
-- Muốn kẻ đường ngang trong đáp án, dùng `***` hoặc `___` thay vì `---`.
+- Mỗi thẻ bắt đầu bằng một dòng `## câu hỏi` và phần đáp án bên dưới. **Không cần dùng `---` để ngăn cách các câu hỏi nữa**, cứ xuất hiện `## ` là hệ thống tự nhận diện chuyển sang câu hỏi mới.
+- Dòng `## ` nằm **bên trong code block** (` ``` `) sẽ không bị tách thẻ.
+- Đường kẻ ngang `---` hoặc `***` bên trong nội dung đáp án hiển thị bình thường.
 - Đáp án có thể để trống (thẻ chỉ có câu hỏi). Dung lượng file tối đa 5 MB.
 
 ### 2. Import
@@ -76,16 +70,16 @@ Nếu đã có set trùng tên, bạn có thể chọn giữ cả hai hoặc tha
 ### 3. Học
 
 1. Chọn một set rồi nhấn **Học**.
-2. Thẻ hiện ra với **mặt câu hỏi**.
+2. Thẻ hiện ra với **mặt câu hỏi**. Mỗi lượt học, hệ thống tạo sẵn danh sách thứ tự ngẫu nhiên cho toàn bộ câu hỏi.
 3. Thao tác:
 
 | Thao tác                          | Cử chỉ                                 | Bàn phím                | Nút  |
 | --------------------------------- | -------------------------------------- | ----------------------- | ---- |
-| Thẻ ngẫu nhiên tiếp theo          | Vuốt lên                               | `↑` hoặc `N`            | Next |
-| Lật xem đáp án / quay lại câu hỏi | Vuốt trái hoặc phải, hoặc chạm vào thẻ | `←` `→` `Space` `Enter` | Flip |
-| Quay lại thẻ trước                | Vuốt xuống                             | `↓`                     | Back |
+| Thẻ ngẫu nhiên tiếp theo          | Vuốt sang trái                         | `→` hoặc `N`            | Next |
+| Lật xem đáp án / quay lại câu hỏi | Chạm vào thẻ hoặc nút "Xem đáp án"     | `Space` `Enter` `↑` `↓` | Flip |
+| Quay lại thẻ trước                | Vuốt sang phải                         | `←` hoặc `B`            | Back |
 
-Các thẻ xuất hiện ngẫu nhiên và không lặp lại cho đến khi bạn đã xem hết cả bộ. Với thẻ dài, hãy cuộn nội dung bên trong thẻ; vuốt lên khi đã cuộn đến cuối (hoặc bấm nút Next) để sang thẻ mới. Code block có thể cuộn ngang mà không làm lật thẻ.
+Nội dung đáp án dài có thể **cuộn dọc tự nhiên** mà không bị vướng cử chỉ đổi thẻ. Code block dài có thể cuộn ngang độc lập.
 
 ### 4. Cấu hình set
 

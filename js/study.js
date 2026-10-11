@@ -1,6 +1,7 @@
 /**
  * MyQuizlet - Study Controller
- * Implements Fisher-Yates shuffle bag, non-repeating cycles, history traversal,
+ * Generates an upfront randomized question list for every study session,
+ * supports seamless next/prev navigation along this pre-shuffled list,
  * 3D flip animations, horizontal swipe navigation, unhindered vertical scrolling,
  * and dedicated card flipping buttons.
  */
@@ -17,10 +18,8 @@ export class StudyController {
     this.onShowSnackbar = onShowSnackbar;
 
     this.currentSet = null;
-    this.bag = [];
-    this.seenCount = 0;
-    this.history = []; // Array of card indices
-    this.currentCardIndex = -1;
+    this.cardOrder = []; // Pre-randomized array of card indices: e.g. [3, 0, 4, 1, 2]
+    this.currentIndex = 0; // Current position in the randomized list (0 .. cardOrder.length - 1)
     this.face = 'q'; // 'q' or 'a'
     this.swipeCleanup = null;
     this.isAnimating = false;
@@ -48,20 +47,21 @@ export class StudyController {
     this.currentSet = set;
     store.touchLastStudied(setId);
 
-    this.history = [];
-    this.seenCount = 0;
+    // 1. Generate randomized question order list upfront
+    this._initRandomOrder(-1);
+    this.currentIndex = 0;
     this.face = 'q';
 
-    this._initBag();
+    // 2. Render layout
     this._renderStudyLayout();
 
-    // Draw first card
-    this._drawNext(false);
+    // 3. Display first random card
+    this._updateCardDisplay('none');
 
-    // Attach keyboard listener
+    // 4. Attach keyboard listener
     window.addEventListener('keydown', this.boundKeyHandler);
 
-    // Check first run hint
+    // 5. Check first run hint
     this._checkFirstRunHint();
   }
 
@@ -75,10 +75,10 @@ export class StudyController {
   }
 
   /**
-   * Initialize and shuffle the index bag using Fisher-Yates algorithm
-   * @param {number} [lastIndex=-1] Ensure first item of new bag is not lastIndex (if deck > 1)
+   * Initialize a fresh randomized order of all card indices using Fisher-Yates
+   * @param {number} [lastIndex=-1] Ensure the first card of a new cycle is not identical to lastIndex
    */
-  _initBag(lastIndex = -1) {
+  _initRandomOrder(lastIndex = -1) {
     const n = this.currentSet.cards.length;
     const indices = Array.from({ length: n }, (_, i) => i);
 
@@ -88,85 +88,68 @@ export class StudyController {
       [indices[i], indices[j]] = [indices[j], indices[i]];
     }
 
-    // Ensure first card of new cycle is not the same as the last card shown
+    // Ensure first card of new cycle is not the same as the last card shown (when deck > 1)
     if (n > 1 && lastIndex >= 0 && indices[0] === lastIndex) {
       const swapWith = 1 + Math.floor(Math.random() * (n - 1));
       [indices[0], indices[swapWith]] = [indices[swapWith], indices[0]];
     }
 
-    this.bag = indices;
+    this.cardOrder = indices;
   }
 
   /**
-   * Draw the next card index from bag
+   * Advance to the next card along the randomized list
    * @param {boolean} [animate=true]
    */
   _drawNext(animate = true) {
     if (this.isAnimating) return;
 
-    if (this.currentSet.cards.length === 1) {
-      // Single card edge case
-      if (this.history.length > 0 && this.onShowSnackbar) {
-        this.onShowSnackbar(t('single_card_hint'));
-      }
-      this.currentCardIndex = 0;
-      this.face = 'q';
-      this.seenCount = 1;
-      this._updateCardDisplay(animate ? 'next' : 'none');
+    const total = this.cardOrder.length;
+    if (total <= 1) {
+      if (this.onShowSnackbar) this.onShowSnackbar(t('single_card_hint'));
       return;
     }
 
-    // Check if bag is empty
-    if (this.bag.length === 0) {
-      const last = this.currentCardIndex;
-      this._initBag(last);
-      this.seenCount = 0;
+    if (this.currentIndex < total - 1) {
+      // Advance to next card in randomized list
+      this.currentIndex++;
+      this._updateCardDisplay(animate ? 'next' : 'none');
+    } else {
+      // Completed full cycle across all cards!
+      const lastShown = this.cardOrder[this.currentIndex];
+      this._initRandomOrder(lastShown);
+      this.currentIndex = 0;
       if (this.onShowSnackbar) {
         this.onShowSnackbar(t('cycle_complete_msg'));
       }
+      this._updateCardDisplay(animate ? 'next' : 'none');
     }
-
-    const nextIndex = this.bag.shift();
-    this.currentCardIndex = nextIndex;
-    this.seenCount++;
-    this.history.push(nextIndex);
-    if (this.history.length > 50) this.history.shift();
-
-    this.face = 'q';
-    this._updateCardDisplay(animate ? 'next' : 'none');
   }
 
   /**
-   * Go back to the previously shown card in history
+   * Go back to the previous card along the randomized list
    */
   goBack() {
     if (this.isAnimating) return;
-    if (this.history.length <= 1) return;
+    if (this.currentIndex <= 0) return;
 
-    // Pop current card
-    this.history.pop();
-    const prevIndex = this.history[this.history.length - 1];
-
-    // Put current card back at start of bag so it isn't skipped
-    if (this.currentCardIndex >= 0) {
-      this.bag.unshift(this.currentCardIndex);
-      if (this.seenCount > 1) this.seenCount--;
-    }
-
-    this.currentCardIndex = prevIndex;
-    this.face = 'q';
+    // Move backward in randomized list
+    this.currentIndex--;
     this._updateCardDisplay('back');
   }
 
   /**
-   * Reset shuffle bag and start fresh
+   * Reset and generate a new random list of questions
    */
   resetShuffle() {
     if (this.isAnimating) return;
-    this.history = [];
-    this.seenCount = 0;
-    this._initBag(-1);
-    this._drawNext(true);
+    const last = this.cardOrder.length > 0 ? this.cardOrder[this.currentIndex] : -1;
+    this._initRandomOrder(last);
+    this.currentIndex = 0;
+    if (this.onShowSnackbar) {
+      this.onShowSnackbar(t('toast_reshuffled'));
+    }
+    this._updateCardDisplay('next');
   }
 
   /**
@@ -376,9 +359,13 @@ export class StudyController {
   }
 
   _updateCardDisplay(animationType = 'none') {
-    if (this.currentCardIndex < 0 || !this.currentSet.cards[this.currentCardIndex]) return;
+    if (!this.currentSet || !this.currentSet.cards || this.currentSet.cards.length === 0) return;
+    if (this.currentIndex < 0 || this.currentIndex >= this.cardOrder.length) return;
 
-    const card = this.currentSet.cards[this.currentCardIndex];
+    const actualCardIndex = this.cardOrder[this.currentIndex];
+    const card = this.currentSet.cards[actualCardIndex];
+    if (!card) return;
+
     const frontContent = this.container.querySelector('#card-front-content');
     const backContent = this.container.querySelector('#card-back-content');
     const counterChip = this.container.querySelector('#study-counter-chip');
@@ -389,13 +376,13 @@ export class StudyController {
 
     if (counterChip) {
       counterChip.textContent = t('study_seen_chip', {
-        seen: this.seenCount,
-        total: this.currentSet.cards.length
+        seen: this.currentIndex + 1,
+        total: this.cardOrder.length
       });
     }
 
     if (backBtn) {
-      backBtn.disabled = this.history.length <= 1;
+      backBtn.disabled = this.currentIndex <= 0;
     }
 
     // Render HTML for front and back
