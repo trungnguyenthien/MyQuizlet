@@ -212,6 +212,64 @@
         console.assert(seen.size === n, 'All cards must be drawn in one cycle');
       });
 
+      // Test 9: Edit Full Set Markdown Workflow
+      await runTest('Edit Markdown: Direct set markdown update synchronizes title, cards and store', () => {
+        const setId = 'test-edit-md-set';
+        const initialSet = {
+          id: setId,
+          title: 'Initial Subject',
+          allowAnswer: true,
+          cards: [
+            { id: 'c1', q: 'Original Q1', a: 'Original A1' },
+            { id: 'c2', q: 'Original Q2', a: 'Original A2' }
+          ]
+        };
+        store.saveSet(initialSet);
+
+        // 1. Serialize current set to Markdown
+        const exportedMd = serializeSet(initialSet);
+        console.assert(exportedMd.includes('# Initial Subject'), 'Serialized Markdown must contain initial title');
+
+        // 2. User edits markdown: changes title, modifies Q1, adds Q3 with code fence
+        const editedMd = exportedMd
+          .replace('# Initial Subject', '# Advanced Algorithms')
+          .replace('Original Q1', 'Updated Graph Q1')
+          + `\n## New DFS Question\n\n\`\`\`swift\nfunc dfs() {}\n\`\`\`\n---`;
+
+        // 3. Parse updated markdown
+        const { set: parsed, warnings } = parseMarkdownSet(editedMd, initialSet.title);
+        console.assert(parsed.title === 'Advanced Algorithms', `Expected title 'Advanced Algorithms', got '${parsed.title}'`);
+        console.assert(parsed.cards.length === 3, `Expected 3 cards after editing, got ${parsed.cards.length}`);
+
+        // 4. Save back into store
+        const targetSet = store.getSet(setId);
+        targetSet.title = parsed.title;
+        targetSet.cards = parsed.cards;
+        targetSet.updatedAt = Date.now();
+        store.saveSet(targetSet);
+
+        // 5. Verify store state
+        const stored = store.getSet(setId);
+        console.assert(stored.title === 'Advanced Algorithms', 'Stored title must match edited title');
+        console.assert(stored.cards.length === 3, 'Stored card count must match edited count');
+        console.assert(stored.cards[0].q === 'Updated Graph Q1', 'First question must be updated');
+        console.assert(stored.cards[2].q === 'New DFS Question', 'Third question must be present');
+        console.assert(stored.cards[2].a.includes('```swift'), 'Third card answer must preserve code block');
+
+        // Cleanup
+        store.deleteSet(setId);
+      });
+
+      // Test 10: Edit Markdown live validation & warnings
+      await runTest('Edit Markdown Validation: Detects empty answers, missing headers, and malformed blocks', () => {
+        const malformedMd = `---\n# Incomplete Set\n---\n## Question with empty answer\n\n---\nBlock without question\n---`;
+        const { set: parsed, warnings } = parseMarkdownSet(malformedMd);
+        console.assert(parsed.cards.length === 1, 'Only 1 valid card should be recognized');
+        console.assert(warnings.length >= 2, `Expected at least 2 warnings, got ${warnings.length}`);
+        console.assert(warnings.some(w => w.includes('empty answer') || w.includes('đáp án trống')), 'Warning for empty answer expected');
+        console.assert(warnings.some(w => w.includes('Skipped') || w.includes('bỏ qua')), 'Warning for skipped block expected');
+      });
+
       // Update Summary
       summaryEl.textContent = `Completed ${passed + failed} tests: ${passed} Passed, ${failed} Failed.`;
       summaryEl.className = failed === 0 ? 'summary pass' : 'summary fail';

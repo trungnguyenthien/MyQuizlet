@@ -1,7 +1,8 @@
 /**
  * MyQuizlet - Study Controller
  * Implements Fisher-Yates shuffle bag, non-repeating cycles, history traversal,
- * 3D flip animations, shake feedback, and keyboard/touch navigation.
+ * 3D flip animations, horizontal swipe navigation, unhindered vertical scrolling,
+ * and dedicated card flipping buttons.
  */
 
 import { store } from './store.js';
@@ -187,9 +188,14 @@ export class StudyController {
     this.face = this.face === 'q' ? 'a' : 'q';
     const cardWrapper = this.container.querySelector('.study-card-wrapper');
     const liveRegion = this.container.querySelector('#study-live-region');
+    const flipLabel = this.container.querySelector('#btn-study-flip-label');
 
     if (liveRegion) {
       liveRegion.textContent = this.face === 'q' ? 'Mặt câu hỏi / Question' : 'Mặt đáp án / Answer';
+    }
+
+    if (flipLabel) {
+      flipLabel.textContent = this.face === 'q' ? t('btn_flip_to_answer') : t('btn_flip_to_question');
     }
 
     if (cardWrapper) {
@@ -229,26 +235,22 @@ export class StudyController {
     switch (e.key) {
       case ' ':
       case 'Enter':
+      case 'ArrowUp':
+      case 'ArrowDown':
         e.preventDefault();
         this.flipCard(1);
         break;
       case 'ArrowLeft':
+      case 'b':
+      case 'B':
         e.preventDefault();
-        this.flipCard(-1);
+        this.goBack();
         break;
       case 'ArrowRight':
-        e.preventDefault();
-        this.flipCard(1);
-        break;
-      case 'ArrowUp':
       case 'n':
       case 'N':
         e.preventDefault();
         this._drawNext(true);
-        break;
-      case 'ArrowDown':
-        e.preventDefault();
-        this.goBack();
         break;
     }
   }
@@ -274,24 +276,42 @@ export class StudyController {
         </header>
 
         <main class="study-card-viewport" id="study-card-viewport">
-          <div class="study-card-wrapper" id="study-card-wrapper">
-            <article class="study-card" id="study-card">
-              <!-- Front Face: Question -->
-              <div class="card-face card-front">
-                <span class="card-face-tag">Câu hỏi · Question</span>
-                <div class="card-scroll" id="card-front-scroll">
-                  <div class="card-content-box" id="card-front-content"></div>
+          <div class="study-card-track" id="study-card-track">
+            <div class="study-card-wrapper" id="study-card-wrapper">
+              <article class="study-card" id="study-card">
+                <!-- Front Face: Question -->
+                <div class="card-face card-front">
+                  <div class="card-face-header">
+                    <span class="card-face-tag">Câu hỏi · Question</span>
+                  </div>
+                  <div class="card-scroll" id="card-front-scroll">
+                    <div class="card-content-box" id="card-front-content"></div>
+                  </div>
+                  <div class="card-face-footer">
+                    <button type="button" class="btn btn-tonal card-flip-btn" id="card-flip-btn-front" aria-label="${t('btn_flip_to_answer')}">
+                      <svg class="icon-sm" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                      <span>${t('btn_flip_to_answer')}</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Back Face: Answer -->
-              <div class="card-face card-back">
-                <span class="card-face-tag">Đáp án · Answer</span>
-                <div class="card-scroll" id="card-back-scroll">
-                  <div class="card-content-box" id="card-back-content"></div>
+                <!-- Back Face: Answer -->
+                <div class="card-face card-back">
+                  <div class="card-face-header">
+                    <span class="card-face-tag">Đáp án · Answer</span>
+                  </div>
+                  <div class="card-scroll" id="card-back-scroll">
+                    <div class="card-content-box" id="card-back-content"></div>
+                  </div>
+                  <div class="card-face-footer">
+                    <button type="button" class="btn btn-tonal card-flip-btn" id="card-flip-btn-back" aria-label="${t('btn_flip_to_question')}">
+                      <svg class="icon-sm" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                      <span>${t('btn_flip_to_question')}</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </article>
+              </article>
+            </div>
           </div>
 
           <div id="study-live-region" class="sr-only" aria-live="polite"></div>
@@ -303,9 +323,9 @@ export class StudyController {
             <span>${t('btn_back')}</span>
           </button>
 
-          <button type="button" class="btn btn-primary" id="btn-study-flip" aria-label="${t('btn_flip')}">
+          <button type="button" class="btn btn-primary" id="btn-study-flip" aria-label="${t('btn_flip_to_answer')}">
             <svg class="icon" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-            <span>${t('btn_flip')}</span>
+            <span id="btn-study-flip-label">${t('btn_flip_to_answer')}</span>
           </button>
 
           <button type="button" class="btn btn-tonal" id="btn-study-next" aria-label="${t('btn_next')}">
@@ -338,13 +358,19 @@ export class StudyController {
     this.container.querySelector('#btn-study-flip').addEventListener('click', () => this.flipCard(1));
     this.container.querySelector('#study-reset-btn').addEventListener('click', () => this.resetShuffle());
 
-    // Attach gestures
-    const viewport = this.container.querySelector('#study-card-viewport');
+    // Card face dedicated flip buttons
+    const flipFrontBtn = this.container.querySelector('#card-flip-btn-front');
+    if (flipFrontBtn) flipFrontBtn.addEventListener('click', () => this.flipCard(1));
+
+    const flipBackBtn = this.container.querySelector('#card-flip-btn-back');
+    if (flipBackBtn) flipBackBtn.addEventListener('click', () => this.flipCard(-1));
+
+    // Attach horizontal swipe gestures to track element
+    const track = this.container.querySelector('#study-card-track');
     if (this.swipeCleanup) this.swipeCleanup();
-    this.swipeCleanup = attachSwipe(viewport, {
-      onUp: () => this._drawNext(true),
-      onDown: () => this.goBack(),
-      onSide: (dir) => this.flipCard(dir),
+    this.swipeCleanup = attachSwipe(track, {
+      onNext: () => this._drawNext(true),
+      onBack: () => this.goBack(),
       onTap: () => this.flipCard(1)
     });
   }
@@ -359,6 +385,7 @@ export class StudyController {
     const backBtn = this.container.querySelector('#btn-study-back');
     const cardWrapper = this.container.querySelector('#study-card-wrapper');
     const cardEl = this.container.querySelector('#study-card');
+    const flipLabel = this.container.querySelector('#btn-study-flip-label');
 
     if (counterChip) {
       counterChip.textContent = t('study_seen_chip', {
@@ -375,34 +402,38 @@ export class StudyController {
     if (frontContent) frontContent.innerHTML = renderCardFaceHTML(card, 'q');
     if (backContent) backContent.innerHTML = renderCardFaceHTML(card, 'a');
 
-    // Reset scroll positions
+    // Reset scroll positions to top
     const frontScroll = this.container.querySelector('#card-front-scroll');
     const backScroll = this.container.querySelector('#card-back-scroll');
     if (frontScroll) frontScroll.scrollTop = 0;
     if (backScroll) backScroll.scrollTop = 0;
 
-    // Reset flipped state
+    // Reset flipped state and button label
+    this.face = 'q';
     if (cardWrapper) {
       cardWrapper.classList.remove('is-flipped');
     }
+    if (flipLabel) {
+      flipLabel.textContent = t('btn_flip_to_answer');
+    }
 
-    // Slide animation
+    // Horizontal Slide animation
     if (animationType === 'next' && cardEl) {
       this.isAnimating = true;
-      cardEl.classList.remove('slide-in-up', 'slide-in-down');
+      cardEl.classList.remove('slide-in-right', 'slide-in-left');
       void cardEl.offsetWidth;
-      cardEl.classList.add('slide-in-up');
+      cardEl.classList.add('slide-in-right');
       setTimeout(() => {
-        cardEl.classList.remove('slide-in-up');
+        cardEl.classList.remove('slide-in-right');
         this.isAnimating = false;
       }, 250);
     } else if (animationType === 'back' && cardEl) {
       this.isAnimating = true;
-      cardEl.classList.remove('slide-in-up', 'slide-in-down');
+      cardEl.classList.remove('slide-in-right', 'slide-in-left');
       void cardEl.offsetWidth;
-      cardEl.classList.add('slide-in-down');
+      cardEl.classList.add('slide-in-left');
       setTimeout(() => {
-        cardEl.classList.remove('slide-in-down');
+        cardEl.classList.remove('slide-in-left');
         this.isAnimating = false;
       }, 250);
     }

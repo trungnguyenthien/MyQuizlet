@@ -92,12 +92,13 @@ Các thẻ xuất hiện ngẫu nhiên và không lặp lại cho đến khi b�
 Mở một set để:
 
 - **Đổi tên**: nhấn vào tiêu đề hoặc biểu tượng bút chì, Enter để lưu, Esc để hủy.
+- **Sửa Markdown**: nhấn nút **Sửa Markdown** (hoặc chọn trong menu ⋮ của set) để xem và chỉnh sửa trực tiếp toàn bộ nội dung Markdown của bộ thẻ (tiêu đề, câu hỏi, đáp án, thêm/bớt thẻ) với bộ đếm thẻ và kiểm tra cú pháp trực tiếp.
 - **Cho phép xem đáp án**: khi tắt, không thể lật thẻ (cử chỉ, phím lẫn nút đều bị khóa), phù hợp để tự nhẩm đáp án trước. Export vẫn bao gồm đáp án.
 - **Tìm câu hỏi** trong set.
 
 ### 5. Export và sao lưu
 
-Nhấn **Export** trong set để tải về file `.md` cùng định dạng ở trên (trên điện thoại sẽ mở bảng chia sẻ nếu trình duyệt hỗ trợ). File này import lại được nguyên vẹn, và cũng là cách để **sửa nội dung thẻ**: export → sửa file → import lại.
+Nhấn **Export** trong set để tải về file `.md` cùng định dạng ở trên (trên điện thoại sẽ mở bảng chia sẻ nếu trình duyệt hỗ trợ). File này có thể import lại nguyên vẹn hoặc dùng để sao lưu/chia sẻ cho thiết bị khác.
 
 ### 6. Xóa set
 

@@ -1,22 +1,23 @@
 /**
  * MyQuizlet - Gesture Engine
- * High-performance Pointer Events swipe and drag engine with axis locking,
- * scroll conflict resolution, code horizontal scroll passthrough, and rAF physics.
+ * High-performance Pointer Events swipe and drag engine with horizontal axis locking,
+ * completely unhindered vertical native scrolling for long answers, and rAF physics.
  */
 
 /**
- * Attach swipe and gesture handlers to a card or container element.
+ * Attach swipe and gesture handlers to a card or track element.
  * 
  * @param {HTMLElement} element 
  * @param {{
- *   onUp?: () => void,
- *   onDown?: () => void,
- *   onSide?: (direction: number) => void, // 1 for right, -1 for left
- *   onTap?: () => void
+ *   onNext?: () => void,  // Triggered on Swipe Left (advance to next card)
+ *   onBack?: () => void,  // Triggered on Swipe Right (return to previous card)
+ *   onTap?: () => void,   // Triggered on quick tap on empty area
+ *   onUp?: () => void,    // Fallback optional
+ *   onDown?: () => void   // Fallback optional
  * }} callbacks 
  * @returns {() => void} cleanup function
  */
-export function attachSwipe(element, { onUp, onDown, onSide, onTap } = {}) {
+export function attachSwipe(element, { onNext, onBack, onTap, onUp, onDown } = {}) {
   if (!element) return () => {};
 
   let pointerId = null;
@@ -28,19 +29,7 @@ export function attachSwipe(element, { onUp, onDown, onSide, onTap } = {}) {
   let axisLocked = null; // 'h' | 'v' | null
   let isDragging = false;
   let rafId = null;
-  let allowVerticalSwipe = false;
-  let targetScrollEl = null;
-
-  function findScrollableParent(target) {
-    let node = target;
-    while (node && node !== element && node !== document.body) {
-      if (node.classList && node.classList.contains('card-scroll')) {
-        return node;
-      }
-      node = node.parentElement;
-    }
-    return null;
-  }
+  let captured = false;
 
   function isInsideCodeBlock(target) {
     let node = target;
@@ -57,30 +46,24 @@ export function attachSwipe(element, { onUp, onDown, onSide, onTap } = {}) {
   }
 
   function isInteractiveElement(target) {
+    if (!target) return false;
     const tag = target.tagName;
     if (tag === 'A' || tag === 'BUTTON' || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') {
       return true;
     }
-    if (target.closest && (target.closest('button') || target.closest('a'))) {
+    if (target.closest && (target.closest('button') || target.closest('a') || target.closest('.card-flip-btn'))) {
       return true;
     }
     return false;
   }
 
   function updateTransform() {
-    if (!isDragging) return;
+    if (!isDragging || axisLocked !== 'h') return;
 
     const dx = currentX - startX;
-    const dy = currentY - startY;
-
-    if (axisLocked === 'h') {
-      // Horizontal drag: subtle rotation and resistance
-      const rot = Math.min(Math.max(dx * 0.04, -15), 15);
-      element.style.transform = `translate3d(${dx * 0.45}px, 0, 0) rotate(${rot}deg)`;
-    } else if (axisLocked === 'v' && allowVerticalSwipe) {
-      // Vertical drag: resistance pull
-      element.style.transform = `translate3d(0, ${dy * 0.45}px, 0)`;
-    }
+    // Horizontal drag: subtle rotation and resistance
+    const rot = Math.min(Math.max(dx * 0.035, -12), 12);
+    element.style.transform = `translate3d(${dx * 0.72}px, 0, 0) rotate(${rot}deg)`;
   }
 
   function resetTransform(animated = true) {
@@ -109,22 +92,17 @@ export function attachSwipe(element, { onUp, onDown, onSide, onTap } = {}) {
     startTime = Date.now();
     axisLocked = null;
     isDragging = false;
+    captured = false;
     element.style.transition = '';
-
-    targetScrollEl = findScrollableParent(e.target);
-    allowVerticalSwipe = false;
 
     // Check code block horizontal scrolling
     if (isInsideCodeBlock(e.target)) {
-      // Inside scrollable code block, let user scroll code
+      pointerId = null;
       return;
     }
 
-    try {
-      element.setPointerCapture(pointerId);
-    } catch {
-      // Ignore capture errors on unsupported browsers
-    }
+    // DO NOT call setPointerCapture here! Calling it on pointerdown prevents
+    // the browser from performing native vertical scrolling of inner content.
   }
 
   function onPointerMove(e) {
@@ -139,33 +117,26 @@ export function attachSwipe(element, { onUp, onDown, onSide, onTap } = {}) {
 
     // Axis decision threshold (10px)
     if (!axisLocked && (absX > 10 || absY > 10)) {
-      if (absX >= absY) {
+      if (absY >= absX) {
+        // Vertical movement detected: user is scrolling long card content vertically.
+        // We let native browser scroll take complete control!
+        axisLocked = 'v';
+        isDragging = false;
+        return;
+      } else {
+        // Horizontal movement detected: user is swiping between cards!
         axisLocked = 'h';
         isDragging = true;
-      } else {
-        axisLocked = 'v';
-        // Check if inner content is scrollable
-        if (targetScrollEl) {
-          const isAtTop = targetScrollEl.scrollTop <= 2;
-          const isAtBottom = targetScrollEl.scrollTop + targetScrollEl.clientHeight >= targetScrollEl.scrollHeight - 3;
-
-          // Pull down at top or pull up at bottom
-          if ((dy > 0 && isAtTop) || (dy < 0 && isAtBottom)) {
-            allowVerticalSwipe = true;
-            isDragging = true;
-          } else {
-            // Normal inner scroll
-            allowVerticalSwipe = false;
-            isDragging = false;
-          }
-        } else {
-          allowVerticalSwipe = true;
-          isDragging = true;
+        try {
+          element.setPointerCapture(pointerId);
+          captured = true;
+        } catch {
+          // Ignore
         }
       }
     }
 
-    if (isDragging) {
+    if (isDragging && axisLocked === 'h') {
       if (rafId) cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(updateTransform);
     }
@@ -181,47 +152,49 @@ export function attachSwipe(element, { onUp, onDown, onSide, onTap } = {}) {
     const dy = currentY - startY;
     const absX = Math.abs(dx);
     const absY = Math.abs(dy);
-    const velocityY = absY / duration;
+    const velocityX = absX / duration;
 
-    try {
-      element.releasePointerCapture(pointerId);
-    } catch {
-      // Ignore
+    if (captured) {
+      try {
+        element.releasePointerCapture(pointerId);
+      } catch {
+        // Ignore
+      }
+      captured = false;
     }
 
+    const currentPointer = pointerId;
     pointerId = null;
 
-    // Tap detection: short duration and small distance
-    if (!isDragging && absX < 8 && absY < 8 && duration < 320) {
+    // Clean tap detection: very little movement and quick tap
+    if (!axisLocked && absX < 8 && absY < 8 && duration < 320) {
       if (onTap) onTap();
       resetTransform(false);
+      axisLocked = null;
+      isDragging = false;
       return;
     }
 
-    // Horizontal Flip detection: |dx| > 50px
-    if (axisLocked === 'h' && absX > 50) {
-      const direction = dx > 0 ? 1 : -1;
-      resetTransform(false);
-      if (onSide) onSide(direction);
-      return;
-    }
-
-    // Vertical Next / Previous detection: |dy| > 60px or fast swipe
-    if (axisLocked === 'v' && allowVerticalSwipe) {
-      if (dy < -60 || (dy < -30 && velocityY > 0.45)) {
-        // Swipe Up -> Next
+    // Horizontal Swipe detection: |dx| > 50px or fast flick (velocityX > 0.35)
+    if (axisLocked === 'h') {
+      if (dx < -50 || (dx < -25 && velocityX > 0.35)) {
+        // Swipe Left -> Next Card
         resetTransform(false);
-        if (onUp) onUp();
+        axisLocked = null;
+        isDragging = false;
+        if (onNext) onNext();
         return;
-      } else if (dy > 60 || (dy > 30 && velocityY > 0.45)) {
-        // Swipe Down -> Back
+      } else if (dx > 50 || (dx > 25 && velocityX > 0.35)) {
+        // Swipe Right -> Previous Card
         resetTransform(false);
-        if (onDown) onDown();
+        axisLocked = null;
+        isDragging = false;
+        if (onBack) onBack();
         return;
       }
     }
 
-    // Snap back if threshold not met
+    // If axis was vertical or threshold not reached, snap back
     resetTransform(true);
     isDragging = false;
     axisLocked = null;
@@ -230,10 +203,13 @@ export function attachSwipe(element, { onUp, onDown, onSide, onTap } = {}) {
   function onPointerCancel(e) {
     if (pointerId !== null && e.pointerId === pointerId) {
       if (rafId) cancelAnimationFrame(rafId);
-      try {
-        element.releasePointerCapture(pointerId);
-      } catch {
-        // Ignore
+      if (captured) {
+        try {
+          element.releasePointerCapture(pointerId);
+        } catch {
+          // Ignore
+        }
+        captured = false;
       }
       pointerId = null;
       isDragging = false;
@@ -249,6 +225,13 @@ export function attachSwipe(element, { onUp, onDown, onSide, onTap } = {}) {
 
   return () => {
     if (rafId) cancelAnimationFrame(rafId);
+    if (captured && pointerId !== null) {
+      try {
+        element.releasePointerCapture(pointerId);
+      } catch {
+        // Ignore
+      }
+    }
     element.removeEventListener('pointerdown', onPointerDown);
     element.removeEventListener('pointermove', onPointerMove);
     element.removeEventListener('pointerup', onPointerUp);

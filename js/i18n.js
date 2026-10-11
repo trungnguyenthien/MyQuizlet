@@ -45,11 +45,22 @@ const translations = {
     // Deck actions
     action_study: 'Học ngay',
     action_rename: 'Đổi tên',
+    action_reimport: 'Re-import',
+    action_edit_markdown: 'Sửa Markdown',
     action_toggle_answers: 'Cho phép xem đáp án',
     action_answers_allowed: 'Đang cho phép xem đáp án',
     action_answers_hidden: 'Đang ẩn đáp án',
     action_export: 'Xuất file Markdown',
     action_delete: 'Xóa bộ thẻ',
+
+    // Re-import
+    reimport_sheet_title: 'Re-import: Cập nhật bộ thẻ',
+    reimport_sheet_desc: 'Chọn file .md mới hoặc dán nội dung để cập nhật lại toàn bộ thẻ trong bộ này.',
+    reimport_load_current: 'Nạp Markdown hiện tại',
+    reimport_preview_title: 'Xác nhận Re-import',
+    reimport_cards_diff: 'Số thẻ: {oldCount} thẻ ➔ {newCount} thẻ',
+    reimport_confirm_msg: 'Thao tác này sẽ ghi đè và cập nhật lại toàn bộ thẻ trong "{title}".',
+    reimport_confirm_btn: 'Cập nhật bộ thẻ',
 
     // Create / Import Bottom Sheet
     sheet_title: 'Tạo hoặc Nhập bộ thẻ',
@@ -91,11 +102,13 @@ const translations = {
     // Study Screen
     study_seen_chip: 'Đã xem {seen} / {total}',
     btn_flip: 'Lật thẻ',
+    btn_flip_to_answer: 'Xem đáp án',
+    btn_flip_to_question: 'Xem câu hỏi',
     btn_next: 'Thẻ tiếp',
     btn_back: 'Thẻ trước',
     btn_shuffle_reset: 'Trộn lại',
-    study_hint_overlay: 'Vuốt lên: thẻ tiếp theo · Vuốt ngang: lật thẻ',
-    study_hint_tap: 'Chạm bất kỳ đâu để bắt đầu',
+    study_hint_overlay: 'Vuốt trái / phải: đổi câu hỏi · Cuộn dọc: đọc nội dung dài',
+    study_hint_tap: 'Bấm nút "Xem đáp án" hoặc chạm thẻ để lật',
     single_card_hint: 'Bộ thẻ chỉ có 1 thẻ duy nhất',
     empty_deck_cannot_study: 'Bộ thẻ chưa có thẻ nào để học.',
     hidden_answer_shake_msg: 'Đáp án đã bị ẩn cho bộ thẻ này',
@@ -113,6 +126,14 @@ const translations = {
     toast_renamed: 'Đã cập nhật tên bộ thẻ',
     toast_imported: 'Đã nhập thành công {count} thẻ',
     toast_exported: 'Đã xuất file {fileName}',
+    toast_reimported: 'Đã cập nhật lại toàn bộ bộ thẻ ({count} thẻ)',
+    toast_markdown_saved: 'Đã cập nhật bộ thẻ thành công ({count} thẻ)',
+
+    // Edit Markdown Dialog
+    edit_markdown_title: 'Sửa Markdown bộ thẻ',
+    edit_markdown_help: 'Chỉnh sửa toàn bộ nội dung Markdown của bộ thẻ. Dòng đầu "# Tiêu đề", mỗi thẻ gồm "## Câu hỏi" và phần đáp án bên dưới, ngăn cách bằng "---".',
+    edit_markdown_cards_count: 'Đã nhận diện: {count} thẻ',
+    edit_markdown_save_btn: 'Lưu thay đổi',
 
     // Help Dialog
     help_dialog_title: 'Hướng dẫn định dạng Markdown',
@@ -196,11 +217,22 @@ let message = "Xin chào"
     // Deck actions
     action_study: 'Study',
     action_rename: 'Rename',
+    action_reimport: 'Re-import',
+    action_edit_markdown: 'Edit Markdown',
     action_toggle_answers: 'Allow viewing answers',
     action_answers_allowed: 'Answers visible',
     action_answers_hidden: 'Answers hidden',
     action_export: 'Export Markdown',
     action_delete: 'Delete Deck',
+
+    // Re-import
+    reimport_sheet_title: 'Re-import: Update Deck',
+    reimport_sheet_desc: 'Select a new .md file or paste Markdown to replace and update all cards in this deck.',
+    reimport_load_current: 'Load current Markdown',
+    reimport_preview_title: 'Confirm Re-import',
+    reimport_cards_diff: 'Cards: {oldCount} cards ➔ {newCount} cards',
+    reimport_confirm_msg: 'This will overwrite and update all cards in "{title}".',
+    reimport_confirm_btn: 'Update Deck',
 
     // Create / Import Bottom Sheet
     sheet_title: 'Create or Import Deck',
@@ -242,11 +274,13 @@ let message = "Xin chào"
     // Study Screen
     study_seen_chip: 'Seen {seen} / {total}',
     btn_flip: 'Flip',
+    btn_flip_to_answer: 'Show Answer',
+    btn_flip_to_question: 'Show Question',
     btn_next: 'Next',
     btn_back: 'Back',
     btn_shuffle_reset: 'Shuffle Reset',
-    study_hint_overlay: 'Swipe up: next · Swipe sideways: flip',
-    study_hint_tap: 'Tap anywhere to start',
+    study_hint_overlay: 'Swipe left / right: change cards · Scroll vertically: read long content',
+    study_hint_tap: 'Tap "Show Answer" or tap card to flip',
     single_card_hint: 'Deck has only one card',
     empty_deck_cannot_study: 'This deck has no cards to study.',
     hidden_answer_shake_msg: 'Answers are hidden for this set',
@@ -264,6 +298,14 @@ let message = "Xin chào"
     toast_renamed: 'Deck title updated',
     toast_imported: 'Successfully imported {count} cards',
     toast_exported: 'Exported file {fileName}',
+    toast_reimported: 'Deck updated successfully ({count} cards)',
+    toast_markdown_saved: 'Deck updated successfully ({count} cards)',
+
+    // Edit Markdown Dialog
+    edit_markdown_title: 'Edit Deck Markdown',
+    edit_markdown_help: 'Edit the complete Markdown content of this deck. First line "# Title", each card has "## Question" and answer below, separated by "---".',
+    edit_markdown_cards_count: 'Recognized: {count} cards',
+    edit_markdown_save_btn: 'Save Changes',
 
     // Help Dialog
     help_dialog_title: 'Markdown Format Guide',

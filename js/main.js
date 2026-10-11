@@ -7,7 +7,7 @@
 import { store } from './store.js';
 import { i18n, t } from './i18n.js';
 import { ui } from './ui.js';
-import { renderInlineQuestionHTML } from './render.js';
+import { renderInlineQuestionHTML, clearRenderCache } from './render.js';
 import { downloadSetAsMarkdown } from './serializer.js';
 import { StudyController } from './study.js';
 
@@ -327,6 +327,12 @@ class App {
                 <button type="button" class="menu-item action-rename-item" data-set-id="${set.id}">
                   <span>${t('action_rename')}</span>
                 </button>
+                <button type="button" class="menu-item action-reimport-item" data-set-id="${set.id}">
+                  <span>${t('action_reimport')}</span>
+                </button>
+                <button type="button" class="menu-item action-edit-md-item" data-set-id="${set.id}">
+                  <span>${t('action_edit_markdown')}</span>
+                </button>
                 <button type="button" class="menu-item action-toggle-item" data-set-id="${set.id}">
                   <span>${set.allowAnswer === false ? t('action_answers_allowed') : t('action_answers_hidden')}</span>
                 </button>
@@ -422,6 +428,28 @@ class App {
       });
     });
 
+    // Edit Markdown from library menu
+    this.mainContainer.querySelectorAll('.action-edit-md-item').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.setId;
+        const menu = this.mainContainer.querySelector(`#menu-${id}`);
+        if (menu) menu.classList.remove('is-open');
+        this._openEditMarkdown(id);
+      });
+    });
+
+    // Re-import from library menu
+    this.mainContainer.querySelectorAll('.action-reimport-item').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = btn.dataset.setId;
+        const menu = this.mainContainer.querySelector(`#menu-${id}`);
+        if (menu) menu.classList.remove('is-open');
+        this._openReimportSet(id);
+      });
+    });
+
     // Toggle Answers
     this.mainContainer.querySelectorAll('.action-toggle-item').forEach((btn) => {
       btn.addEventListener('click', (e) => {
@@ -483,7 +511,21 @@ class App {
 
     let questionsListHtml = '';
     if (cards.length === 0) {
-      questionsListHtml = `<p class="empty-deck-notice">${t('empty_deck_hint')}</p>`;
+      questionsListHtml = `
+        <div class="empty-deck-notice-box">
+          <p class="empty-deck-notice">${t('empty_deck_hint')}</p>
+          <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary" id="empty-deck-reimport-btn">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+              <span>${t('action_reimport')}</span>
+            </button>
+            <button type="button" class="btn btn-tonal" id="empty-deck-edit-md-btn">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              <span>${t('action_edit_markdown')}</span>
+            </button>
+          </div>
+        </div>
+      `;
     } else if (filteredCards.length === 0) {
       questionsListHtml = `<p class="empty-deck-notice">${t('empty_search_questions', { query: this.questionSearchQuery })}</p>`;
     } else {
@@ -529,6 +571,16 @@ class App {
             <button type="button" class="btn btn-primary" id="detail-study-btn" ${cards.length === 0 ? 'disabled' : ''}>
               <svg class="icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
               <span>${t('action_study')}</span>
+            </button>
+
+            <button type="button" class="btn btn-tonal" id="detail-reimport-btn">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+              <span>${t('action_reimport')}</span>
+            </button>
+
+            <button type="button" class="btn btn-tonal" id="detail-edit-md-btn">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              <span>${t('action_edit_markdown')}</span>
             </button>
 
             <button type="button" class="btn btn-tonal" id="detail-export-btn">
@@ -616,6 +668,26 @@ class App {
       window.location.hash = `#/study/${setId}`;
     });
 
+    const openEditMd = () => {
+      this._openEditMarkdown(setId);
+    };
+
+    const editMdBtn = this.mainContainer.querySelector('#detail-edit-md-btn');
+    if (editMdBtn) editMdBtn.addEventListener('click', openEditMd);
+
+    const emptyEditMdBtn = this.mainContainer.querySelector('#empty-deck-edit-md-btn');
+    if (emptyEditMdBtn) emptyEditMdBtn.addEventListener('click', openEditMd);
+
+    const openReimport = () => {
+      this._openReimportSet(setId);
+    };
+
+    const reimportBtn = this.mainContainer.querySelector('#detail-reimport-btn');
+    if (reimportBtn) reimportBtn.addEventListener('click', openReimport);
+
+    const emptyReimportBtn = this.mainContainer.querySelector('#empty-deck-reimport-btn');
+    if (emptyReimportBtn) emptyReimportBtn.addEventListener('click', openReimport);
+
     this.mainContainer.querySelector('#detail-export-btn').addEventListener('click', async () => {
       const res = await downloadSetAsMarkdown(set);
       ui.showSnackbar(t('toast_exported', { fileName: res.fileName }));
@@ -653,6 +725,73 @@ class App {
     });
 
     this.studyController.start(setId);
+  }
+
+  _openReimportSet(setId) {
+    const currentSet = store.getSet(setId);
+    if (!currentSet) {
+      ui.showSnackbar('Bộ thẻ không tồn tại / Deck not found');
+      return;
+    }
+
+    ui.openReimportSheet({
+      currentSet,
+      onReimported: (newParsedSet) => {
+        try {
+          currentSet.cards = newParsedSet.cards || [];
+          if (newParsedSet.title && newParsedSet.title !== 'Untitled' && newParsedSet.title !== 'Pasted-Deck' && newParsedSet.title !== 'Reimported-Deck') {
+            currentSet.title = newParsedSet.title;
+          }
+          currentSet.updatedAt = Date.now();
+
+          clearRenderCache();
+          store.saveSet(currentSet);
+
+          ui.showSnackbar(t('toast_reimported', { count: currentSet.cards.length }));
+
+          if (this.currentRoute.path === 'set' && this.currentRoute.param === setId) {
+            this.renderSetDetail(setId);
+          } else if (this.currentRoute.path === 'library') {
+            this.renderLibrary();
+          }
+        } catch (err) {
+          if (err.name === 'QuotaExceededError') {
+            ui.showSnackbar(t('toast_quota_error'));
+          } else {
+            ui.showSnackbar(`Lỗi cập nhật bộ thẻ: ${err.message}`);
+          }
+        }
+      }
+    });
+  }
+
+  _openEditMarkdown(setId) {
+    const set = store.getSet(setId);
+    if (!set) return;
+
+    ui.showEditMarkdownDialog({
+      set,
+      onSave: (parsedSet) => {
+        try {
+          set.title = parsedSet.title;
+          set.cards = parsedSet.cards;
+          set.updatedAt = Date.now();
+          store.saveSet(set);
+          ui.showSnackbar(t('toast_markdown_saved', { count: set.cards.length }));
+          if (this.currentRoute.path === 'set' && this.currentRoute.param === setId) {
+            this.renderSetDetail(setId);
+          } else if (this.currentRoute.path === 'library') {
+            this.renderLibrary();
+          }
+        } catch (err) {
+          if (err.name === 'QuotaExceededError') {
+            ui.showSnackbar(t('toast_quota_error'));
+          } else {
+            ui.showSnackbar(`Lỗi lưu bộ thẻ: ${err.message}`);
+          }
+        }
+      }
+    });
   }
 
   _openImportSheet() {

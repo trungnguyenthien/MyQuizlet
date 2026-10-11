@@ -4,7 +4,7 @@
  * navigation fallback, clean activation, and skipWaiting handling.
  */
 
-const CACHE_NAME = 'mq-static-v2';
+const CACHE_NAME = 'mq-static-v3';
 
 const PRECACHE_ASSETS = [
   './',

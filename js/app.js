@@ -356,11 +356,21 @@
       // Deck actions
       action_study: "H\u1ECDc ngay",
       action_rename: "\u0110\u1ED5i t\xEAn",
+      action_reimport: "Re-import",
+      action_edit_markdown: "S\u1EEDa Markdown",
       action_toggle_answers: "Cho ph\xE9p xem \u0111\xE1p \xE1n",
       action_answers_allowed: "\u0110ang cho ph\xE9p xem \u0111\xE1p \xE1n",
       action_answers_hidden: "\u0110ang \u1EA9n \u0111\xE1p \xE1n",
       action_export: "Xu\u1EA5t file Markdown",
       action_delete: "X\xF3a b\u1ED9 th\u1EBB",
+      // Re-import
+      reimport_sheet_title: "Re-import: C\u1EADp nh\u1EADt b\u1ED9 th\u1EBB",
+      reimport_sheet_desc: "Ch\u1ECDn file .md m\u1EDBi ho\u1EB7c d\xE1n n\u1ED9i dung \u0111\u1EC3 c\u1EADp nh\u1EADt l\u1EA1i to\xE0n b\u1ED9 th\u1EBB trong b\u1ED9 n\xE0y.",
+      reimport_load_current: "N\u1EA1p Markdown hi\u1EC7n t\u1EA1i",
+      reimport_preview_title: "X\xE1c nh\u1EADn Re-import",
+      reimport_cards_diff: "S\u1ED1 th\u1EBB: {oldCount} th\u1EBB \u2794 {newCount} th\u1EBB",
+      reimport_confirm_msg: 'Thao t\xE1c n\xE0y s\u1EBD ghi \u0111\xE8 v\xE0 c\u1EADp nh\u1EADt l\u1EA1i to\xE0n b\u1ED9 th\u1EBB trong "{title}".',
+      reimport_confirm_btn: "C\u1EADp nh\u1EADt b\u1ED9 th\u1EBB",
       // Create / Import Bottom Sheet
       sheet_title: "T\u1EA1o ho\u1EB7c Nh\u1EADp b\u1ED9 th\u1EBB",
       sheet_tab_file: "T\u1EC7p Markdown (.md)",
@@ -398,11 +408,13 @@
       // Study Screen
       study_seen_chip: "\u0110\xE3 xem {seen} / {total}",
       btn_flip: "L\u1EADt th\u1EBB",
+      btn_flip_to_answer: "Xem \u0111\xE1p \xE1n",
+      btn_flip_to_question: "Xem c\xE2u h\u1ECFi",
       btn_next: "Th\u1EBB ti\u1EBFp",
       btn_back: "Th\u1EBB tr\u01B0\u1EDBc",
       btn_shuffle_reset: "Tr\u1ED9n l\u1EA1i",
-      study_hint_overlay: "Vu\u1ED1t l\xEAn: th\u1EBB ti\u1EBFp theo \xB7 Vu\u1ED1t ngang: l\u1EADt th\u1EBB",
-      study_hint_tap: "Ch\u1EA1m b\u1EA5t k\u1EF3 \u0111\xE2u \u0111\u1EC3 b\u1EAFt \u0111\u1EA7u",
+      study_hint_overlay: "Vu\u1ED1t tr\xE1i / ph\u1EA3i: \u0111\u1ED5i c\xE2u h\u1ECFi \xB7 Cu\u1ED9n d\u1ECDc: \u0111\u1ECDc n\u1ED9i dung d\xE0i",
+      study_hint_tap: 'B\u1EA5m n\xFAt "Xem \u0111\xE1p \xE1n" ho\u1EB7c ch\u1EA1m th\u1EBB \u0111\u1EC3 l\u1EADt',
       single_card_hint: "B\u1ED9 th\u1EBB ch\u1EC9 c\xF3 1 th\u1EBB duy nh\u1EA5t",
       empty_deck_cannot_study: "B\u1ED9 th\u1EBB ch\u01B0a c\xF3 th\u1EBB n\xE0o \u0111\u1EC3 h\u1ECDc.",
       hidden_answer_shake_msg: "\u0110\xE1p \xE1n \u0111\xE3 b\u1ECB \u1EA9n cho b\u1ED9 th\u1EBB n\xE0y",
@@ -419,6 +431,13 @@
       toast_renamed: "\u0110\xE3 c\u1EADp nh\u1EADt t\xEAn b\u1ED9 th\u1EBB",
       toast_imported: "\u0110\xE3 nh\u1EADp th\xE0nh c\xF4ng {count} th\u1EBB",
       toast_exported: "\u0110\xE3 xu\u1EA5t file {fileName}",
+      toast_reimported: "\u0110\xE3 c\u1EADp nh\u1EADt l\u1EA1i to\xE0n b\u1ED9 b\u1ED9 th\u1EBB ({count} th\u1EBB)",
+      toast_markdown_saved: "\u0110\xE3 c\u1EADp nh\u1EADt b\u1ED9 th\u1EBB th\xE0nh c\xF4ng ({count} th\u1EBB)",
+      // Edit Markdown Dialog
+      edit_markdown_title: "S\u1EEDa Markdown b\u1ED9 th\u1EBB",
+      edit_markdown_help: 'Ch\u1EC9nh s\u1EEDa to\xE0n b\u1ED9 n\u1ED9i dung Markdown c\u1EE7a b\u1ED9 th\u1EBB. D\xF2ng \u0111\u1EA7u "# Ti\xEAu \u0111\u1EC1", m\u1ED7i th\u1EBB g\u1ED3m "## C\xE2u h\u1ECFi" v\xE0 ph\u1EA7n \u0111\xE1p \xE1n b\xEAn d\u01B0\u1EDBi, ng\u0103n c\xE1ch b\u1EB1ng "---".',
+      edit_markdown_cards_count: "\u0110\xE3 nh\u1EADn di\u1EC7n: {count} th\u1EBB",
+      edit_markdown_save_btn: "L\u01B0u thay \u0111\u1ED5i",
       // Help Dialog
       help_dialog_title: "H\u01B0\u1EDBng d\u1EABn \u0111\u1ECBnh d\u1EA1ng Markdown",
       help_dialog_intro: "MyQuizlet ph\xE2n t\xEDch file Markdown \u0111\u01A1n gi\u1EA3n th\xE0nh c\xE1c th\u1EBB h\u1ECDc:",
@@ -496,11 +515,21 @@ let message = "Xin ch\xE0o"
       // Deck actions
       action_study: "Study",
       action_rename: "Rename",
+      action_reimport: "Re-import",
+      action_edit_markdown: "Edit Markdown",
       action_toggle_answers: "Allow viewing answers",
       action_answers_allowed: "Answers visible",
       action_answers_hidden: "Answers hidden",
       action_export: "Export Markdown",
       action_delete: "Delete Deck",
+      // Re-import
+      reimport_sheet_title: "Re-import: Update Deck",
+      reimport_sheet_desc: "Select a new .md file or paste Markdown to replace and update all cards in this deck.",
+      reimport_load_current: "Load current Markdown",
+      reimport_preview_title: "Confirm Re-import",
+      reimport_cards_diff: "Cards: {oldCount} cards \u2794 {newCount} cards",
+      reimport_confirm_msg: 'This will overwrite and update all cards in "{title}".',
+      reimport_confirm_btn: "Update Deck",
       // Create / Import Bottom Sheet
       sheet_title: "Create or Import Deck",
       sheet_tab_file: "Markdown File (.md)",
@@ -538,11 +567,13 @@ let message = "Xin ch\xE0o"
       // Study Screen
       study_seen_chip: "Seen {seen} / {total}",
       btn_flip: "Flip",
+      btn_flip_to_answer: "Show Answer",
+      btn_flip_to_question: "Show Question",
       btn_next: "Next",
       btn_back: "Back",
       btn_shuffle_reset: "Shuffle Reset",
-      study_hint_overlay: "Swipe up: next \xB7 Swipe sideways: flip",
-      study_hint_tap: "Tap anywhere to start",
+      study_hint_overlay: "Swipe left / right: change cards \xB7 Scroll vertically: read long content",
+      study_hint_tap: 'Tap "Show Answer" or tap card to flip',
       single_card_hint: "Deck has only one card",
       empty_deck_cannot_study: "This deck has no cards to study.",
       hidden_answer_shake_msg: "Answers are hidden for this set",
@@ -559,6 +590,13 @@ let message = "Xin ch\xE0o"
       toast_renamed: "Deck title updated",
       toast_imported: "Successfully imported {count} cards",
       toast_exported: "Exported file {fileName}",
+      toast_reimported: "Deck updated successfully ({count} cards)",
+      toast_markdown_saved: "Deck updated successfully ({count} cards)",
+      // Edit Markdown Dialog
+      edit_markdown_title: "Edit Deck Markdown",
+      edit_markdown_help: 'Edit the complete Markdown content of this deck. First line "# Title", each card has "## Question" and answer below, separated by "---".',
+      edit_markdown_cards_count: "Recognized: {count} cards",
+      edit_markdown_save_btn: "Save Changes",
       // Help Dialog
       help_dialog_title: "Markdown Format Guide",
       help_dialog_intro: "MyQuizlet parses standard Markdown files into study decks:",
@@ -820,6 +858,75 @@ let greeting = "Hello"
     return { set, warnings };
   }
 
+  // js/serializer.js
+  function slugify(title) {
+    if (!title || typeof title !== "string") return "myquizlet-deck";
+    const clean = title.trim().replace(/[\\/:*?"<>|#^]+/g, "").replace(/\s+/g, "-").replace(/-+/g, "-");
+    return clean || "myquizlet-deck";
+  }
+  function serializeSet(set) {
+    const title = (set && set.title ? set.title.trim() : "") || "Untitled";
+    let markdown = `---
+# ${title}
+---
+`;
+    if (!set || !Array.isArray(set.cards) || set.cards.length === 0) {
+      return markdown;
+    }
+    for (let i = 0; i < set.cards.length; i++) {
+      const card = set.cards[i];
+      const q = (card && card.q ? card.q.trim() : "") || "Untitled Question";
+      const a = card && card.a ? card.a : "";
+      if (a) {
+        markdown += `## ${q}
+
+${a}
+---
+`;
+      } else {
+        markdown += `## ${q}
+
+---
+`;
+      }
+    }
+    return markdown;
+  }
+  async function downloadSetAsMarkdown(set) {
+    const content = serializeSet(set);
+    const fileName = `${slugify(set.title)}.md`;
+    const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
+    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
+      try {
+        const file = new File([blob], fileName, { type: "text/markdown;charset=utf-8" });
+        if (typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: set.title,
+            text: `B\u1ED9 th\u1EBB MyQuizlet: ${set.title}`
+          });
+          return { shared: true, fileName };
+        }
+      } catch (err) {
+        if (err.name === "AbortError") {
+          return { shared: false, fileName };
+        }
+      }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    a.style.display = "none";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => {
+      URL.revokeObjectURL(url);
+    }, 1500);
+    return { shared: false, fileName };
+  }
+
   // js/render.js
   var renderCache = /* @__PURE__ */ new Map();
   function ensureMarkedConfigured() {
@@ -887,6 +994,9 @@ let greeting = "Hello"
     FORBID_TAGS: ["script", "style", "iframe", "frame", "object", "embed", "form", "input"],
     FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "javascript:"]
   };
+  function clearRenderCache() {
+    renderCache.clear();
+  }
   function renderCardFaceHTML(card, face) {
     if (!card) return "";
     const cacheKey = `${card.id || "temp"}:${face}`;
@@ -1280,6 +1390,280 @@ let greeting = "Hello"
       });
     }
     /**
+     * Open the Re-import Bottom Sheet for an existing deck
+     * @param {{
+     *   currentSet: any,
+     *   onReimported: (parsedSet: any) => void
+     * }} options
+     */
+    openReimportSheet({ currentSet, onReimported }) {
+      const existing = document.getElementById("reimport-bottom-sheet");
+      if (existing) document.body.removeChild(existing);
+      const sheet = document.createElement("div");
+      sheet.id = "reimport-bottom-sheet";
+      sheet.className = "bottom-sheet-backdrop";
+      sheet.innerHTML = `
+      <div class="bottom-sheet" role="dialog" aria-modal="true" aria-labelledby="reimport-heading">
+        <div class="sheet-handle-bar">
+          <div class="sheet-handle"></div>
+        </div>
+
+        <div class="sheet-header">
+          <div>
+            <h2 id="reimport-heading" class="sheet-title">${t("reimport_sheet_title")}</h2>
+            <p class="sheet-subtitle">${t("reimport_sheet_desc")}</p>
+          </div>
+          <button type="button" class="icon-btn" id="reimport-close-btn" aria-label="${t("close")}">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+        </div>
+
+        <div class="sheet-tabs" role="tablist">
+          <button type="button" class="tab-btn is-active" id="reimport-tab-file" role="tab" aria-selected="true">${t("sheet_tab_file")}</button>
+          <button type="button" class="tab-btn" id="reimport-tab-paste" role="tab" aria-selected="false">${t("sheet_tab_paste")}</button>
+        </div>
+
+        <div class="sheet-body">
+          <!-- File Tab Panel -->
+          <div class="tab-panel is-active" id="reimport-panel-file">
+            <div class="file-dropzone" id="reimport-file-dropzone">
+              <svg class="dropzone-icon" viewBox="0 0 24 24">
+                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+              </svg>
+              <p class="dropzone-text">${t("drop_files_here")}</p>
+              <label class="btn btn-primary" for="reimport-file-input-control">
+                ${t("browse_files_btn")}
+              </label>
+              <input type="file" id="reimport-file-input-control" accept=".md,.markdown,.txt" class="sr-only" />
+            </div>
+          </div>
+
+          <!-- Paste Tab Panel -->
+          <div class="tab-panel hidden" id="reimport-panel-paste">
+            <div class="paste-form">
+              <div class="paste-top-bar" style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+                <button type="button" class="btn btn-tonal btn-sm" id="btn-reimport-load-current" style="font-size:0.85rem; padding:4px 12px; min-height:34px;">
+                  <svg class="icon-sm" viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                  <span>${t("reimport_load_current")}</span>
+                </button>
+              </div>
+              <textarea id="reimport-paste-textarea" class="paste-input" rows="8" placeholder="${t("paste_textarea_placeholder")}"></textarea>
+              <div class="paste-footer">
+                <span class="live-counter" id="reimport-live-card-counter">${t("live_card_count_zero")}</span>
+                <button type="button" class="btn btn-primary" id="btn-reimport-preview-paste" disabled>${t("preview_btn")}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+      document.body.appendChild(sheet);
+      requestAnimationFrame(() => {
+        sheet.classList.add("is-open");
+      });
+      const closeSheet = () => {
+        sheet.classList.remove("is-open");
+        setTimeout(() => {
+          if (sheet.parentNode === document.body) {
+            document.body.removeChild(sheet);
+          }
+        }, 300);
+      };
+      sheet.querySelector("#reimport-close-btn").addEventListener("click", closeSheet);
+      sheet.addEventListener("click", (e) => {
+        if (e.target === sheet) closeSheet();
+      });
+      const tabs = [
+        { btn: sheet.querySelector("#reimport-tab-file"), panel: sheet.querySelector("#reimport-panel-file") },
+        { btn: sheet.querySelector("#reimport-tab-paste"), panel: sheet.querySelector("#reimport-panel-paste") }
+      ];
+      tabs.forEach(({ btn, panel }) => {
+        btn.addEventListener("click", () => {
+          tabs.forEach((t2) => {
+            t2.btn.classList.remove("is-active");
+            t2.btn.setAttribute("aria-selected", "false");
+            t2.panel.classList.add("hidden");
+            t2.panel.classList.remove("is-active");
+          });
+          btn.classList.add("is-active");
+          btn.setAttribute("aria-selected", "true");
+          panel.classList.remove("hidden");
+          panel.classList.add("is-active");
+        });
+      });
+      const fileInput = sheet.querySelector("#reimport-file-input-control");
+      const dropzone = sheet.querySelector("#reimport-file-dropzone");
+      const handleFile = async (file) => {
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+          this.showSnackbar(`File "${file.name}" v\u01B0\u1EE3t qu\xE1 gi\u1EDBi h\u1EA1n 5 MB / File exceeds 5 MB`);
+          return;
+        }
+        try {
+          const text = await file.text();
+          const { set, warnings } = parseMarkdownSet(text, file.name);
+          if (!set.cards || set.cards.length === 0) {
+            this.showSnackbar(`Kh\xF4ng t\xECm th\u1EA5y th\u1EBB n\xE0o trong "${file.name}" / No cards found in file`);
+            return;
+          }
+          closeSheet();
+          this.showReimportPreviewDialog({
+            currentSet,
+            parsedSet: set,
+            warnings,
+            onConfirmed: (finalSet) => {
+              if (onReimported) onReimported(finalSet);
+            }
+          });
+        } catch (err) {
+          this.showSnackbar(`L\u1ED7i \u0111\u1ECDc file: ${err.message}`);
+        }
+      };
+      fileInput.addEventListener("change", (e) => {
+        if (e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+      });
+      dropzone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropzone.classList.add("is-dragover");
+      });
+      dropzone.addEventListener("dragleave", () => {
+        dropzone.classList.remove("is-dragover");
+      });
+      dropzone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropzone.classList.remove("is-dragover");
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+          handleFile(e.dataTransfer.files[0]);
+        }
+      });
+      const pasteInput = sheet.querySelector("#reimport-paste-textarea");
+      const liveCounter = sheet.querySelector("#reimport-live-card-counter");
+      const previewBtn = sheet.querySelector("#btn-reimport-preview-paste");
+      const loadCurrentBtn = sheet.querySelector("#btn-reimport-load-current");
+      let pasteDebounce = null;
+      let latestParsed = null;
+      loadCurrentBtn.addEventListener("click", () => {
+        pasteInput.value = serializeSet(currentSet);
+        pasteInput.dispatchEvent(new Event("input"));
+      });
+      pasteInput.addEventListener("input", () => {
+        if (pasteDebounce) clearTimeout(pasteDebounce);
+        pasteDebounce = setTimeout(() => {
+          const text = pasteInput.value.trim();
+          if (!text) {
+            liveCounter.textContent = t("live_card_count_zero");
+            previewBtn.disabled = true;
+            latestParsed = null;
+            return;
+          }
+          try {
+            const res = parseMarkdownSet(text, currentSet.title || "Reimported-Deck");
+            latestParsed = res;
+            const count = res.set.cards.length;
+            if (count > 0) {
+              liveCounter.textContent = t("live_card_count", { count });
+              previewBtn.disabled = false;
+            } else {
+              liveCounter.textContent = t("live_card_count_zero");
+              previewBtn.disabled = true;
+            }
+          } catch {
+            liveCounter.textContent = t("live_card_count_zero");
+            previewBtn.disabled = true;
+            latestParsed = null;
+          }
+        }, 250);
+      });
+      previewBtn.addEventListener("click", () => {
+        if (!latestParsed || !latestParsed.set.cards.length) return;
+        closeSheet();
+        this.showReimportPreviewDialog({
+          currentSet,
+          parsedSet: latestParsed.set,
+          warnings: latestParsed.warnings,
+          onConfirmed: (finalSet) => {
+            if (onReimported) onReimported(finalSet);
+          }
+        });
+      });
+    }
+    /**
+     * Show Re-import Preview Confirmation Dialog
+     * @param {{
+     *   currentSet: any,
+     *   parsedSet: any,
+     *   warnings: string[],
+     *   onConfirmed: (finalSet: any) => void
+     * }} options
+     */
+    showReimportPreviewDialog({ currentSet, parsedSet, warnings, onConfirmed }) {
+      const dialog = document.createElement("dialog");
+      dialog.className = "modal-dialog preview-dialog";
+      const firstQuestions = parsedSet.cards.slice(0, 3);
+      const questionsListHtml = firstQuestions.map((c, idx) => `<li><span class="preview-q-idx">${idx + 1}.</span> <span>${renderInlineQuestionHTML(c.q)}</span></li>`).join("");
+      const warningsHtml = warnings && warnings.length > 0 ? `
+        <div class="preview-warnings-box">
+          <div class="warnings-header">\u26A0\uFE0F ${t("preview_warnings", { count: warnings.length })}</div>
+          <ul class="warnings-list">
+            ${warnings.map((w) => `<li>${w}</li>`).join("")}
+          </ul>
+        </div>
+      ` : "";
+      const oldCount = currentSet.cards ? currentSet.cards.length : 0;
+      const newCount = parsedSet.cards ? parsedSet.cards.length : 0;
+      dialog.innerHTML = `
+      <div class="dialog-content">
+        <h2 class="dialog-title">${t("reimport_preview_title")}</h2>
+
+        <div class="preview-field-group">
+          <label class="form-label" for="reimport-title-input">${t("preview_deck_title")}</label>
+          <input type="text" id="reimport-title-input" class="text-input" value="${(parsedSet.title || currentSet.title).replace(/"/g, "&quot;")}" maxlength="120" required />
+        </div>
+
+        <div class="preview-meta-row">
+          <span class="preview-count-chip">${t("reimport_cards_diff", { oldCount, newCount })}</span>
+        </div>
+
+        <div class="preview-conflict-box" style="margin-top:4px;">
+          <div class="conflict-title">\u26A0\uFE0F ${t("reimport_confirm_msg", { title: currentSet.title })}</div>
+        </div>
+
+        ${warningsHtml}
+
+        <div class="preview-samples-box">
+          <span class="preview-samples-label">${t("preview_sample_questions")}</span>
+          <ul class="preview-samples-list">
+            ${questionsListHtml}
+          </ul>
+        </div>
+
+        <div class="dialog-actions">
+          <button type="button" class="btn btn-text" id="reimport-preview-cancel">${t("cancel")}</button>
+          <button type="button" class="btn btn-primary" id="reimport-preview-confirm">${t("reimport_confirm_btn")}</button>
+        </div>
+      </div>
+    `;
+      document.body.appendChild(dialog);
+      dialog.showModal();
+      const cleanup = () => {
+        dialog.close();
+        if (dialog.parentNode === document.body) {
+          document.body.removeChild(dialog);
+        }
+      };
+      dialog.querySelector("#reimport-preview-cancel").addEventListener("click", cleanup);
+      dialog.addEventListener("cancel", cleanup);
+      dialog.querySelector("#reimport-preview-confirm").addEventListener("click", () => {
+        const titleInput = dialog.querySelector("#reimport-title-input");
+        const editedTitle = (titleInput.value || "").trim();
+        if (editedTitle) {
+          parsedSet.title = editedTitle;
+        }
+        cleanup();
+        if (onConfirmed) onConfirmed(parsedSet);
+      });
+    }
+    /**
      * Show Import Preview Dialog
      * @param {{
      *   parsedSet: any,
@@ -1368,6 +1752,121 @@ let greeting = "Hello"
         cleanup();
         if (onConfirmed) onConfirmed(parsedSet, mode);
       });
+    }
+    /**
+     * Show Markdown Editor Dialog for an entire set
+     * @param {{ set: any, onSave: (parsedSet: any) => void }} options
+     */
+    showEditMarkdownDialog({ set, onSave }) {
+      const dialog = document.createElement("dialog");
+      dialog.className = "modal-dialog edit-markdown-dialog";
+      const currentMarkdown = serializeSet(set);
+      dialog.innerHTML = `
+      <div class="dialog-content edit-markdown-dialog-content">
+        <div class="dialog-header-with-close">
+          <h2 class="dialog-title">${t("edit_markdown_title")}</h2>
+          <button type="button" class="icon-btn" id="edit-md-close-btn" aria-label="${t("close")}">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+        </div>
+
+        <p class="edit-md-help-text">${t("edit_markdown_help")}</p>
+
+        <div class="edit-md-editor-wrapper">
+          <textarea id="edit-md-textarea" class="edit-md-textarea" spellcheck="false" placeholder="---
+# T\xEAn b\u1ED9 th\u1EBB
+---
+## C\xE2u h\u1ECFi 1
+\u0110\xE1p \xE1n 1
+---"></textarea>
+        </div>
+
+        <div class="edit-md-toolbar">
+          <div class="edit-md-status">
+            <span class="preview-count-chip" id="edit-md-count-chip">${t("edit_markdown_cards_count", { count: set.cards ? set.cards.length : 0 })}</span>
+          </div>
+          <div class="edit-md-warnings hidden" id="edit-md-warnings"></div>
+        </div>
+
+        <div class="dialog-actions">
+          <button type="button" class="btn btn-text" id="edit-md-btn-cancel">${t("cancel")}</button>
+          <button type="button" class="btn btn-primary" id="edit-md-btn-save">
+            <svg class="icon-sm" viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>
+            <span>${t("edit_markdown_save_btn")}</span>
+          </button>
+        </div>
+      </div>
+    `;
+      document.body.appendChild(dialog);
+      dialog.showModal();
+      const textarea = dialog.querySelector("#edit-md-textarea");
+      textarea.value = currentMarkdown;
+      const countChip = dialog.querySelector("#edit-md-count-chip");
+      const warningsBox = dialog.querySelector("#edit-md-warnings");
+      const saveBtn = dialog.querySelector("#edit-md-btn-save");
+      let parseDebounce = null;
+      const updateLiveValidation = () => {
+        const text = textarea.value;
+        try {
+          const { set: parsed, warnings } = parseMarkdownSet(text, set.title || "Untitled");
+          countChip.textContent = t("edit_markdown_cards_count", { count: parsed.cards.length });
+          countChip.classList.remove("chip-error");
+          if (warnings && warnings.length > 0) {
+            warningsBox.innerHTML = `
+            <div class="warnings-header">\u26A0\uFE0F ${t("preview_warnings", { count: warnings.length })}</div>
+            <ul class="warnings-list">${warnings.map((w) => `<li>${w}</li>`).join("")}</ul>
+          `;
+            warningsBox.classList.remove("hidden");
+          } else {
+            warningsBox.classList.add("hidden");
+          }
+        } catch (err) {
+          countChip.textContent = `L\u1ED7i: ${err.message}`;
+          countChip.classList.add("chip-error");
+          warningsBox.classList.add("hidden");
+        }
+      };
+      textarea.addEventListener("input", () => {
+        clearTimeout(parseDebounce);
+        parseDebounce = setTimeout(updateLiveValidation, 200);
+      });
+      textarea.addEventListener("keydown", (e) => {
+        if (e.key === "Tab") {
+          e.preventDefault();
+          const start = textarea.selectionStart;
+          const end = textarea.selectionEnd;
+          textarea.value = textarea.value.substring(0, start) + "  " + textarea.value.substring(end);
+          textarea.selectionStart = textarea.selectionEnd = start + 2;
+          updateLiveValidation();
+        } else if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+          e.preventDefault();
+          saveBtn.click();
+        }
+      });
+      updateLiveValidation();
+      const cleanup = () => {
+        clearTimeout(parseDebounce);
+        dialog.close();
+        if (dialog.parentNode === document.body) {
+          document.body.removeChild(dialog);
+        }
+      };
+      dialog.querySelector("#edit-md-close-btn").addEventListener("click", cleanup);
+      dialog.querySelector("#edit-md-btn-cancel").addEventListener("click", cleanup);
+      dialog.addEventListener("cancel", cleanup);
+      saveBtn.addEventListener("click", () => {
+        const text = textarea.value;
+        try {
+          const { set: parsed } = parseMarkdownSet(text, set.title || "Untitled");
+          cleanup();
+          if (onSave) onSave(parsed);
+        } catch (err) {
+          this.showSnackbar(`L\u1ED7i \u0111\u1ECBnh d\u1EA1ng: ${err.message}`);
+        }
+      });
+      setTimeout(() => {
+        textarea.focus();
+      }, 100);
     }
     /**
      * Show Help Dialog (Markdown Specification Guide)
@@ -1531,77 +2030,8 @@ let greeting = "Hello"
   };
   var ui = new UIManager();
 
-  // js/serializer.js
-  function slugify(title) {
-    if (!title || typeof title !== "string") return "myquizlet-deck";
-    const clean = title.trim().replace(/[\\/:*?"<>|#^]+/g, "").replace(/\s+/g, "-").replace(/-+/g, "-");
-    return clean || "myquizlet-deck";
-  }
-  function serializeSet(set) {
-    const title = (set && set.title ? set.title.trim() : "") || "Untitled";
-    let markdown = `---
-# ${title}
----
-`;
-    if (!set || !Array.isArray(set.cards) || set.cards.length === 0) {
-      return markdown;
-    }
-    for (let i = 0; i < set.cards.length; i++) {
-      const card = set.cards[i];
-      const q = (card && card.q ? card.q.trim() : "") || "Untitled Question";
-      const a = card && card.a ? card.a : "";
-      if (a) {
-        markdown += `## ${q}
-
-${a}
----
-`;
-      } else {
-        markdown += `## ${q}
-
----
-`;
-      }
-    }
-    return markdown;
-  }
-  async function downloadSetAsMarkdown(set) {
-    const content = serializeSet(set);
-    const fileName = `${slugify(set.title)}.md`;
-    const blob = new Blob([content], { type: "text/markdown;charset=utf-8" });
-    if (typeof navigator !== "undefined" && typeof navigator.share === "function") {
-      try {
-        const file = new File([blob], fileName, { type: "text/markdown;charset=utf-8" });
-        if (typeof navigator.canShare === "function" && navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: set.title,
-            text: `B\u1ED9 th\u1EBB MyQuizlet: ${set.title}`
-          });
-          return { shared: true, fileName };
-        }
-      } catch (err) {
-        if (err.name === "AbortError") {
-          return { shared: false, fileName };
-        }
-      }
-    }
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = fileName;
-    a.style.display = "none";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 1500);
-    return { shared: false, fileName };
-  }
-
   // js/gestures.js
-  function attachSwipe(element, { onUp, onDown, onSide, onTap } = {}) {
+  function attachSwipe(element, { onNext, onBack, onTap, onUp, onDown } = {}) {
     if (!element) return () => {
     };
     let pointerId = null;
@@ -1613,18 +2043,7 @@ ${a}
     let axisLocked = null;
     let isDragging = false;
     let rafId = null;
-    let allowVerticalSwipe = false;
-    let targetScrollEl = null;
-    function findScrollableParent(target) {
-      let node = target;
-      while (node && node !== element && node !== document.body) {
-        if (node.classList && node.classList.contains("card-scroll")) {
-          return node;
-        }
-        node = node.parentElement;
-      }
-      return null;
-    }
+    let captured = false;
     function isInsideCodeBlock(target) {
       let node = target;
       while (node && node !== element) {
@@ -1638,25 +2057,21 @@ ${a}
       return false;
     }
     function isInteractiveElement(target) {
+      if (!target) return false;
       const tag = target.tagName;
       if (tag === "A" || tag === "BUTTON" || tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
         return true;
       }
-      if (target.closest && (target.closest("button") || target.closest("a"))) {
+      if (target.closest && (target.closest("button") || target.closest("a") || target.closest(".card-flip-btn"))) {
         return true;
       }
       return false;
     }
     function updateTransform() {
-      if (!isDragging) return;
+      if (!isDragging || axisLocked !== "h") return;
       const dx = currentX - startX;
-      const dy = currentY - startY;
-      if (axisLocked === "h") {
-        const rot = Math.min(Math.max(dx * 0.04, -15), 15);
-        element.style.transform = `translate3d(${dx * 0.45}px, 0, 0) rotate(${rot}deg)`;
-      } else if (axisLocked === "v" && allowVerticalSwipe) {
-        element.style.transform = `translate3d(0, ${dy * 0.45}px, 0)`;
-      }
+      const rot = Math.min(Math.max(dx * 0.035, -12), 12);
+      element.style.transform = `translate3d(${dx * 0.72}px, 0, 0) rotate(${rot}deg)`;
     }
     function resetTransform(animated = true) {
       if (animated) {
@@ -1681,15 +2096,11 @@ ${a}
       startTime = Date.now();
       axisLocked = null;
       isDragging = false;
+      captured = false;
       element.style.transition = "";
-      targetScrollEl = findScrollableParent(e.target);
-      allowVerticalSwipe = false;
       if (isInsideCodeBlock(e.target)) {
+        pointerId = null;
         return;
-      }
-      try {
-        element.setPointerCapture(pointerId);
-      } catch {
       }
     }
     function onPointerMove(e) {
@@ -1701,28 +2112,21 @@ ${a}
       const absX = Math.abs(dx);
       const absY = Math.abs(dy);
       if (!axisLocked && (absX > 10 || absY > 10)) {
-        if (absX >= absY) {
+        if (absY >= absX) {
+          axisLocked = "v";
+          isDragging = false;
+          return;
+        } else {
           axisLocked = "h";
           isDragging = true;
-        } else {
-          axisLocked = "v";
-          if (targetScrollEl) {
-            const isAtTop = targetScrollEl.scrollTop <= 2;
-            const isAtBottom = targetScrollEl.scrollTop + targetScrollEl.clientHeight >= targetScrollEl.scrollHeight - 3;
-            if (dy > 0 && isAtTop || dy < 0 && isAtBottom) {
-              allowVerticalSwipe = true;
-              isDragging = true;
-            } else {
-              allowVerticalSwipe = false;
-              isDragging = false;
-            }
-          } else {
-            allowVerticalSwipe = true;
-            isDragging = true;
+          try {
+            element.setPointerCapture(pointerId);
+            captured = true;
+          } catch {
           }
         }
       }
-      if (isDragging) {
+      if (isDragging && axisLocked === "h") {
         if (rafId) cancelAnimationFrame(rafId);
         rafId = requestAnimationFrame(updateTransform);
       }
@@ -1736,31 +2140,35 @@ ${a}
       const dy = currentY - startY;
       const absX = Math.abs(dx);
       const absY = Math.abs(dy);
-      const velocityY = absY / duration;
-      try {
-        element.releasePointerCapture(pointerId);
-      } catch {
+      const velocityX = absX / duration;
+      if (captured) {
+        try {
+          element.releasePointerCapture(pointerId);
+        } catch {
+        }
+        captured = false;
       }
+      const currentPointer = pointerId;
       pointerId = null;
-      if (!isDragging && absX < 8 && absY < 8 && duration < 320) {
+      if (!axisLocked && absX < 8 && absY < 8 && duration < 320) {
         if (onTap) onTap();
         resetTransform(false);
+        axisLocked = null;
+        isDragging = false;
         return;
       }
-      if (axisLocked === "h" && absX > 50) {
-        const direction = dx > 0 ? 1 : -1;
-        resetTransform(false);
-        if (onSide) onSide(direction);
-        return;
-      }
-      if (axisLocked === "v" && allowVerticalSwipe) {
-        if (dy < -60 || dy < -30 && velocityY > 0.45) {
+      if (axisLocked === "h") {
+        if (dx < -50 || dx < -25 && velocityX > 0.35) {
           resetTransform(false);
-          if (onUp) onUp();
+          axisLocked = null;
+          isDragging = false;
+          if (onNext) onNext();
           return;
-        } else if (dy > 60 || dy > 30 && velocityY > 0.45) {
+        } else if (dx > 50 || dx > 25 && velocityX > 0.35) {
           resetTransform(false);
-          if (onDown) onDown();
+          axisLocked = null;
+          isDragging = false;
+          if (onBack) onBack();
           return;
         }
       }
@@ -1771,9 +2179,12 @@ ${a}
     function onPointerCancel(e) {
       if (pointerId !== null && e.pointerId === pointerId) {
         if (rafId) cancelAnimationFrame(rafId);
-        try {
-          element.releasePointerCapture(pointerId);
-        } catch {
+        if (captured) {
+          try {
+            element.releasePointerCapture(pointerId);
+          } catch {
+          }
+          captured = false;
         }
         pointerId = null;
         isDragging = false;
@@ -1787,6 +2198,12 @@ ${a}
     element.addEventListener("pointercancel", onPointerCancel);
     return () => {
       if (rafId) cancelAnimationFrame(rafId);
+      if (captured && pointerId !== null) {
+        try {
+          element.releasePointerCapture(pointerId);
+        } catch {
+        }
+      }
       element.removeEventListener("pointerdown", onPointerDown);
       element.removeEventListener("pointermove", onPointerMove);
       element.removeEventListener("pointerup", onPointerUp);
@@ -1936,8 +2353,12 @@ ${a}
       this.face = this.face === "q" ? "a" : "q";
       const cardWrapper = this.container.querySelector(".study-card-wrapper");
       const liveRegion = this.container.querySelector("#study-live-region");
+      const flipLabel = this.container.querySelector("#btn-study-flip-label");
       if (liveRegion) {
         liveRegion.textContent = this.face === "q" ? "M\u1EB7t c\xE2u h\u1ECFi / Question" : "M\u1EB7t \u0111\xE1p \xE1n / Answer";
+      }
+      if (flipLabel) {
+        flipLabel.textContent = this.face === "q" ? t("btn_flip_to_answer") : t("btn_flip_to_question");
       }
       if (cardWrapper) {
         const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -1971,26 +2392,22 @@ ${a}
       switch (e.key) {
         case " ":
         case "Enter":
+        case "ArrowUp":
+        case "ArrowDown":
           e.preventDefault();
           this.flipCard(1);
           break;
         case "ArrowLeft":
+        case "b":
+        case "B":
           e.preventDefault();
-          this.flipCard(-1);
+          this.goBack();
           break;
         case "ArrowRight":
-          e.preventDefault();
-          this.flipCard(1);
-          break;
-        case "ArrowUp":
         case "n":
         case "N":
           e.preventDefault();
           this._drawNext(true);
-          break;
-        case "ArrowDown":
-          e.preventDefault();
-          this.goBack();
           break;
       }
     }
@@ -2015,24 +2432,42 @@ ${a}
         </header>
 
         <main class="study-card-viewport" id="study-card-viewport">
-          <div class="study-card-wrapper" id="study-card-wrapper">
-            <article class="study-card" id="study-card">
-              <!-- Front Face: Question -->
-              <div class="card-face card-front">
-                <span class="card-face-tag">C\xE2u h\u1ECFi \xB7 Question</span>
-                <div class="card-scroll" id="card-front-scroll">
-                  <div class="card-content-box" id="card-front-content"></div>
+          <div class="study-card-track" id="study-card-track">
+            <div class="study-card-wrapper" id="study-card-wrapper">
+              <article class="study-card" id="study-card">
+                <!-- Front Face: Question -->
+                <div class="card-face card-front">
+                  <div class="card-face-header">
+                    <span class="card-face-tag">C\xE2u h\u1ECFi \xB7 Question</span>
+                  </div>
+                  <div class="card-scroll" id="card-front-scroll">
+                    <div class="card-content-box" id="card-front-content"></div>
+                  </div>
+                  <div class="card-face-footer">
+                    <button type="button" class="btn btn-tonal card-flip-btn" id="card-flip-btn-front" aria-label="${t("btn_flip_to_answer")}">
+                      <svg class="icon-sm" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                      <span>${t("btn_flip_to_answer")}</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
 
-              <!-- Back Face: Answer -->
-              <div class="card-face card-back">
-                <span class="card-face-tag">\u0110\xE1p \xE1n \xB7 Answer</span>
-                <div class="card-scroll" id="card-back-scroll">
-                  <div class="card-content-box" id="card-back-content"></div>
+                <!-- Back Face: Answer -->
+                <div class="card-face card-back">
+                  <div class="card-face-header">
+                    <span class="card-face-tag">\u0110\xE1p \xE1n \xB7 Answer</span>
+                  </div>
+                  <div class="card-scroll" id="card-back-scroll">
+                    <div class="card-content-box" id="card-back-content"></div>
+                  </div>
+                  <div class="card-face-footer">
+                    <button type="button" class="btn btn-tonal card-flip-btn" id="card-flip-btn-back" aria-label="${t("btn_flip_to_question")}">
+                      <svg class="icon-sm" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                      <span>${t("btn_flip_to_question")}</span>
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </article>
+              </article>
+            </div>
           </div>
 
           <div id="study-live-region" class="sr-only" aria-live="polite"></div>
@@ -2044,9 +2479,9 @@ ${a}
             <span>${t("btn_back")}</span>
           </button>
 
-          <button type="button" class="btn btn-primary" id="btn-study-flip" aria-label="${t("btn_flip")}">
+          <button type="button" class="btn btn-primary" id="btn-study-flip" aria-label="${t("btn_flip_to_answer")}">
             <svg class="icon" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-            <span>${t("btn_flip")}</span>
+            <span id="btn-study-flip-label">${t("btn_flip_to_answer")}</span>
           </button>
 
           <button type="button" class="btn btn-tonal" id="btn-study-next" aria-label="${t("btn_next")}">
@@ -2074,12 +2509,15 @@ ${a}
       this.container.querySelector("#btn-study-next").addEventListener("click", () => this._drawNext(true));
       this.container.querySelector("#btn-study-flip").addEventListener("click", () => this.flipCard(1));
       this.container.querySelector("#study-reset-btn").addEventListener("click", () => this.resetShuffle());
-      const viewport = this.container.querySelector("#study-card-viewport");
+      const flipFrontBtn = this.container.querySelector("#card-flip-btn-front");
+      if (flipFrontBtn) flipFrontBtn.addEventListener("click", () => this.flipCard(1));
+      const flipBackBtn = this.container.querySelector("#card-flip-btn-back");
+      if (flipBackBtn) flipBackBtn.addEventListener("click", () => this.flipCard(-1));
+      const track = this.container.querySelector("#study-card-track");
       if (this.swipeCleanup) this.swipeCleanup();
-      this.swipeCleanup = attachSwipe(viewport, {
-        onUp: () => this._drawNext(true),
-        onDown: () => this.goBack(),
-        onSide: (dir) => this.flipCard(dir),
+      this.swipeCleanup = attachSwipe(track, {
+        onNext: () => this._drawNext(true),
+        onBack: () => this.goBack(),
         onTap: () => this.flipCard(1)
       });
     }
@@ -2092,6 +2530,7 @@ ${a}
       const backBtn = this.container.querySelector("#btn-study-back");
       const cardWrapper = this.container.querySelector("#study-card-wrapper");
       const cardEl = this.container.querySelector("#study-card");
+      const flipLabel = this.container.querySelector("#btn-study-flip-label");
       if (counterChip) {
         counterChip.textContent = t("study_seen_chip", {
           seen: this.seenCount,
@@ -2107,25 +2546,29 @@ ${a}
       const backScroll = this.container.querySelector("#card-back-scroll");
       if (frontScroll) frontScroll.scrollTop = 0;
       if (backScroll) backScroll.scrollTop = 0;
+      this.face = "q";
       if (cardWrapper) {
         cardWrapper.classList.remove("is-flipped");
       }
+      if (flipLabel) {
+        flipLabel.textContent = t("btn_flip_to_answer");
+      }
       if (animationType === "next" && cardEl) {
         this.isAnimating = true;
-        cardEl.classList.remove("slide-in-up", "slide-in-down");
+        cardEl.classList.remove("slide-in-right", "slide-in-left");
         void cardEl.offsetWidth;
-        cardEl.classList.add("slide-in-up");
+        cardEl.classList.add("slide-in-right");
         setTimeout(() => {
-          cardEl.classList.remove("slide-in-up");
+          cardEl.classList.remove("slide-in-right");
           this.isAnimating = false;
         }, 250);
       } else if (animationType === "back" && cardEl) {
         this.isAnimating = true;
-        cardEl.classList.remove("slide-in-up", "slide-in-down");
+        cardEl.classList.remove("slide-in-right", "slide-in-left");
         void cardEl.offsetWidth;
-        cardEl.classList.add("slide-in-down");
+        cardEl.classList.add("slide-in-left");
         setTimeout(() => {
-          cardEl.classList.remove("slide-in-down");
+          cardEl.classList.remove("slide-in-left");
           this.isAnimating = false;
         }, 250);
       }
@@ -2408,6 +2851,12 @@ ${a}
                 <button type="button" class="menu-item action-rename-item" data-set-id="${set.id}">
                   <span>${t("action_rename")}</span>
                 </button>
+                <button type="button" class="menu-item action-reimport-item" data-set-id="${set.id}">
+                  <span>${t("action_reimport")}</span>
+                </button>
+                <button type="button" class="menu-item action-edit-md-item" data-set-id="${set.id}">
+                  <span>${t("action_edit_markdown")}</span>
+                </button>
                 <button type="button" class="menu-item action-toggle-item" data-set-id="${set.id}">
                   <span>${set.allowAnswer === false ? t("action_answers_allowed") : t("action_answers_hidden")}</span>
                 </button>
@@ -2487,6 +2936,24 @@ ${a}
           this._promptRenameSet(id);
         });
       });
+      this.mainContainer.querySelectorAll(".action-edit-md-item").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.setId;
+          const menu = this.mainContainer.querySelector(`#menu-${id}`);
+          if (menu) menu.classList.remove("is-open");
+          this._openEditMarkdown(id);
+        });
+      });
+      this.mainContainer.querySelectorAll(".action-reimport-item").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.setId;
+          const menu = this.mainContainer.querySelector(`#menu-${id}`);
+          if (menu) menu.classList.remove("is-open");
+          this._openReimportSet(id);
+        });
+      });
       this.mainContainer.querySelectorAll(".action-toggle-item").forEach((btn) => {
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
@@ -2536,7 +3003,21 @@ ${a}
       const filteredCards = this.questionSearchQuery ? cards.filter((c) => (c.q || "").toLowerCase().includes(this.questionSearchQuery.toLowerCase())) : cards;
       let questionsListHtml = "";
       if (cards.length === 0) {
-        questionsListHtml = `<p class="empty-deck-notice">${t("empty_deck_hint")}</p>`;
+        questionsListHtml = `
+        <div class="empty-deck-notice-box">
+          <p class="empty-deck-notice">${t("empty_deck_hint")}</p>
+          <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
+            <button type="button" class="btn btn-primary" id="empty-deck-reimport-btn">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+              <span>${t("action_reimport")}</span>
+            </button>
+            <button type="button" class="btn btn-tonal" id="empty-deck-edit-md-btn">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              <span>${t("action_edit_markdown")}</span>
+            </button>
+          </div>
+        </div>
+      `;
       } else if (filteredCards.length === 0) {
         questionsListHtml = `<p class="empty-deck-notice">${t("empty_search_questions", { query: this.questionSearchQuery })}</p>`;
       } else {
@@ -2576,6 +3057,16 @@ ${a}
             <button type="button" class="btn btn-primary" id="detail-study-btn" ${cards.length === 0 ? "disabled" : ""}>
               <svg class="icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
               <span>${t("action_study")}</span>
+            </button>
+
+            <button type="button" class="btn btn-tonal" id="detail-reimport-btn">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+              <span>${t("action_reimport")}</span>
+            </button>
+
+            <button type="button" class="btn btn-tonal" id="detail-edit-md-btn">
+              <svg class="icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+              <span>${t("action_edit_markdown")}</span>
             </button>
 
             <button type="button" class="btn btn-tonal" id="detail-export-btn">
@@ -2648,6 +3139,20 @@ ${a}
       this.mainContainer.querySelector("#detail-study-btn").addEventListener("click", () => {
         window.location.hash = `#/study/${setId}`;
       });
+      const openEditMd = () => {
+        this._openEditMarkdown(setId);
+      };
+      const editMdBtn = this.mainContainer.querySelector("#detail-edit-md-btn");
+      if (editMdBtn) editMdBtn.addEventListener("click", openEditMd);
+      const emptyEditMdBtn = this.mainContainer.querySelector("#empty-deck-edit-md-btn");
+      if (emptyEditMdBtn) emptyEditMdBtn.addEventListener("click", openEditMd);
+      const openReimport = () => {
+        this._openReimportSet(setId);
+      };
+      const reimportBtn = this.mainContainer.querySelector("#detail-reimport-btn");
+      if (reimportBtn) reimportBtn.addEventListener("click", openReimport);
+      const emptyReimportBtn = this.mainContainer.querySelector("#empty-deck-reimport-btn");
+      if (emptyReimportBtn) emptyReimportBtn.addEventListener("click", openReimport);
       this.mainContainer.querySelector("#detail-export-btn").addEventListener("click", async () => {
         const res = await downloadSetAsMarkdown(set);
         ui.showSnackbar(t("toast_exported", { fileName: res.fileName }));
@@ -2679,6 +3184,66 @@ ${a}
         onShowSnackbar: (msg) => ui.showSnackbar(msg)
       });
       this.studyController.start(setId);
+    }
+    _openReimportSet(setId) {
+      const currentSet = store.getSet(setId);
+      if (!currentSet) {
+        ui.showSnackbar("B\u1ED9 th\u1EBB kh\xF4ng t\u1ED3n t\u1EA1i / Deck not found");
+        return;
+      }
+      ui.openReimportSheet({
+        currentSet,
+        onReimported: (newParsedSet) => {
+          try {
+            currentSet.cards = newParsedSet.cards || [];
+            if (newParsedSet.title && newParsedSet.title !== "Untitled" && newParsedSet.title !== "Pasted-Deck" && newParsedSet.title !== "Reimported-Deck") {
+              currentSet.title = newParsedSet.title;
+            }
+            currentSet.updatedAt = Date.now();
+            clearRenderCache();
+            store.saveSet(currentSet);
+            ui.showSnackbar(t("toast_reimported", { count: currentSet.cards.length }));
+            if (this.currentRoute.path === "set" && this.currentRoute.param === setId) {
+              this.renderSetDetail(setId);
+            } else if (this.currentRoute.path === "library") {
+              this.renderLibrary();
+            }
+          } catch (err) {
+            if (err.name === "QuotaExceededError") {
+              ui.showSnackbar(t("toast_quota_error"));
+            } else {
+              ui.showSnackbar(`L\u1ED7i c\u1EADp nh\u1EADt b\u1ED9 th\u1EBB: ${err.message}`);
+            }
+          }
+        }
+      });
+    }
+    _openEditMarkdown(setId) {
+      const set = store.getSet(setId);
+      if (!set) return;
+      ui.showEditMarkdownDialog({
+        set,
+        onSave: (parsedSet) => {
+          try {
+            set.title = parsedSet.title;
+            set.cards = parsedSet.cards;
+            set.updatedAt = Date.now();
+            store.saveSet(set);
+            ui.showSnackbar(t("toast_markdown_saved", { count: set.cards.length }));
+            if (this.currentRoute.path === "set" && this.currentRoute.param === setId) {
+              this.renderSetDetail(setId);
+            } else if (this.currentRoute.path === "library") {
+              this.renderLibrary();
+            }
+          } catch (err) {
+            if (err.name === "QuotaExceededError") {
+              ui.showSnackbar(t("toast_quota_error"));
+            } else {
+              ui.showSnackbar(`L\u1ED7i l\u01B0u b\u1ED9 th\u1EBB: ${err.message}`);
+            }
+          }
+        }
+      });
     }
     _openImportSheet() {
       ui.openImportSheet({
