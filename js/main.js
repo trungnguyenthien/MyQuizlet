@@ -184,41 +184,49 @@ class App {
         menuDropdown.classList.toggle('is-open');
       };
 
-      menuDropdown.innerHTML = `
-        <button type="button" class="menu-item" id="menu-opt-lang">
-          <svg class="menu-icon" viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
-          <span>${t('language')}: <strong>${i18n.getLang() === 'vi' ? 'Tiếng Việt' : 'English'}</strong></span>
-        </button>
-        <button type="button" class="menu-item" id="menu-opt-storage">
-          <svg class="menu-icon" viewBox="0 0 24 24"><path d="M2 20h20v-4H2v4zm2-3h2v2H4v-2zM2 4v4h20V4H2zm4 3H4V5h2v2zm-4 7h20v-4H2v4zm2-3h2v2H4v-2z"/></svg>
-          <span>${t('storage')}</span>
-        </button>
-        <button type="button" class="menu-item" id="menu-opt-help">
-          <svg class="menu-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
-          <span>${t('help')}</span>
-        </button>
-        <button type="button" class="menu-item" id="menu-opt-about">
-          <svg class="menu-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-          <span>${t('about')}</span>
-        </button>
-      `;
+      const langSpan = menuDropdown.querySelector('#menu-lang-text');
+      if (langSpan) {
+        langSpan.innerHTML = `${t('language')}: <strong>${i18n.getLang() === 'vi' ? 'Tiếng Việt' : 'English'}</strong>`;
+      }
+      const storageSpan = menuDropdown.querySelector('#menu-storage-text');
+      if (storageSpan) storageSpan.textContent = t('storage');
+      const helpSpan = menuDropdown.querySelector('#menu-help-text');
+      if (helpSpan) helpSpan.textContent = t('help');
+      const aboutSpan = menuDropdown.querySelector('#menu-about-text');
+      if (aboutSpan) aboutSpan.textContent = t('about');
 
-      menuDropdown.querySelector('#menu-opt-lang').onclick = () => {
-        menuDropdown.classList.remove('is-open');
-        i18n.toggleLang();
-      };
-      menuDropdown.querySelector('#menu-opt-storage').onclick = () => {
-        menuDropdown.classList.remove('is-open');
-        ui.showStorageDialog();
-      };
-      menuDropdown.querySelector('#menu-opt-help').onclick = () => {
-        menuDropdown.classList.remove('is-open');
-        ui.showHelpDialog();
-      };
-      menuDropdown.querySelector('#menu-opt-about').onclick = () => {
-        menuDropdown.classList.remove('is-open');
-        ui.showAboutDialog();
-      };
+      const optLang = menuDropdown.querySelector('#menu-opt-lang');
+      if (optLang) {
+        optLang.onclick = (e) => {
+          e.stopPropagation();
+          menuDropdown.classList.remove('is-open');
+          i18n.toggleLang();
+        };
+      }
+      const optStorage = menuDropdown.querySelector('#menu-opt-storage');
+      if (optStorage) {
+        optStorage.onclick = (e) => {
+          e.stopPropagation();
+          menuDropdown.classList.remove('is-open');
+          ui.showStorageDialog();
+        };
+      }
+      const optHelp = menuDropdown.querySelector('#menu-opt-help');
+      if (optHelp) {
+        optHelp.onclick = (e) => {
+          e.stopPropagation();
+          menuDropdown.classList.remove('is-open');
+          ui.showHelpDialog();
+        };
+      }
+      const optAbout = menuDropdown.querySelector('#menu-opt-about');
+      if (optAbout) {
+        optAbout.onclick = (e) => {
+          e.stopPropagation();
+          menuDropdown.classList.remove('is-open');
+          ui.showAboutDialog();
+        };
+      }
     }
   }
 

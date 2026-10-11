@@ -37,10 +37,27 @@
 
     <div class="app-bar-right">
       <div class="menu-anchor">
-        <button type="button" class="icon-btn menu-trigger" id="app-menu-btn" aria-label="Menu tác vụ">
+        <button type="button" class="icon-btn menu-trigger" id="app-menu-btn" aria-label="Menu tác vụ" onclick="document.getElementById('app-menu-dropdown').classList.toggle('is-open'); event.stopPropagation();">
           <svg class="icon" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
         </button>
-        <div class="dropdown-menu" id="app-menu-dropdown"></div>
+        <div class="dropdown-menu" id="app-menu-dropdown">
+          <button type="button" class="menu-item" id="menu-opt-lang">
+            <svg class="menu-icon" viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+            <span id="menu-lang-text">Ngôn ngữ (Language): <strong>Tiếng Việt</strong></span>
+          </button>
+          <button type="button" class="menu-item" id="menu-opt-storage">
+            <svg class="menu-icon" viewBox="0 0 24 24"><path d="M2 20h20v-4H2v4zm2-3h2v2H4v-2zM2 4v4h20V4H2zm4 3H4V5h2v2zm-4 7h20v-4H2v4zm2-3h2v2H4v-2z"/></svg>
+            <span id="menu-storage-text">Dung lượng lưu trữ</span>
+          </button>
+          <button type="button" class="menu-item" id="menu-opt-help">
+            <svg class="menu-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
+            <span id="menu-help-text">Hướng dẫn Markdown</span>
+          </button>
+          <button type="button" class="menu-item" id="menu-opt-about">
+            <svg class="menu-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            <span id="menu-about-text">Giới thiệu</span>
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -59,7 +76,7 @@
   <script src="vendor/highlight-kotlin.min.js"></script>
   <script src="vendor/highlight-dart.min.js"></script>
 
-  <!-- Main Application ES Module -->
-  <script type="module" src="js/main.js"></script>
+  <!-- Application Script (Supports both file:// and http://) -->
+  <script src="js/app.js"></script>
 </body>
 </html>

@@ -4,7 +4,7 @@
  * navigation fallback, clean activation, and skipWaiting handling.
  */
 
-const CACHE_NAME = 'mq-static-v1';
+const CACHE_NAME = 'mq-static-v2';
 
 const PRECACHE_ASSETS = [
   './',
@@ -19,6 +19,7 @@ const PRECACHE_ASSETS = [
   './vendor/highlight-swift.min.js',
   './vendor/highlight-kotlin.min.js',
   './vendor/highlight-dart.min.js',
+  './js/app.js',
   './js/main.js',
   './js/store.js',
   './js/parser.js',
