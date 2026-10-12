@@ -70,6 +70,9 @@ class App {
   _registerServiceWorker() {
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       navigator.serviceWorker.register('./sw.js', { scope: './' }).then((registration) => {
+        // Immediately check for updates so users receive new versions without waiting
+        registration.update().catch(() => {});
+
         // Check for updates
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;

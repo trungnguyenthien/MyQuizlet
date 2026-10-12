@@ -476,7 +476,7 @@ let message = "Xin ch\xE0o"
       about_dialog_title: "Gi\u1EDBi thi\u1EC7u MyQuizlet",
       about_desc: "MyQuizlet l\xE0 \u1EE9ng d\u1EE5ng PWA h\u1ECDc flashcard \u0111\u1ED9c l\u1EADp, kh\xF4ng c\u1EA7n t\xE0i kho\u1EA3n, ho\u1EA1t \u0111\u1ED9ng 100% offline v\xE0 kh\xF4ng g\u1EEDi d\u1EEF li\u1EC7u ra b\xEAn ngo\xE0i.",
       about_features: "T\u1ED1i \u01B0u cho Markdown, hi\u1EC3n th\u1ECB code block v\u1EDBi syntax highlighting phong c\xE1ch GitHub, h\u1ED7 tr\u1EE3 c\u1EED ch\u1EC9 vu\u1ED1t m\u01B0\u1EE3t m\xE0 60fps.",
-      about_version: "Phi\xEAn b\u1EA3n 1.0.0 (Offline PWA)"
+      about_version: "Phi\xEAn b\u1EA3n 1.3.0 (Offline PWA)"
     },
     en: {
       // App & Navigation
@@ -635,7 +635,7 @@ let greeting = "Hello"
       about_dialog_title: "About MyQuizlet",
       about_desc: "MyQuizlet is a standalone offline PWA flashcard app. No account required, 100% offline, with zero data sent off-device.",
       about_features: "Engineered for Markdown notes, syntax-highlighted code blocks with GitHub themes, and smooth 60fps swipe gestures.",
-      about_version: "Version 1.0.0 (Offline PWA)"
+      about_version: "Version 1.3.0 (Offline PWA)"
     }
   };
   var I18n = class {
@@ -2628,6 +2628,8 @@ ${a}
     _registerServiceWorker() {
       if ("serviceWorker" in navigator && location.protocol !== "file:") {
         navigator.serviceWorker.register("./sw.js", { scope: "./" }).then((registration) => {
+          registration.update().catch(() => {
+          });
           registration.addEventListener("updatefound", () => {
             const newWorker = registration.installing;
             if (!newWorker) return;

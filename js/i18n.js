@@ -175,7 +175,7 @@ let message = "Xin chào"
     about_dialog_title: 'Giới thiệu MyQuizlet',
     about_desc: 'MyQuizlet là ứng dụng PWA học flashcard độc lập, không cần tài khoản, hoạt động 100% offline và không gửi dữ liệu ra bên ngoài.',
     about_features: 'Tối ưu cho Markdown, hiển thị code block với syntax highlighting phong cách GitHub, hỗ trợ cử chỉ vuốt mượt mà 60fps.',
-    about_version: 'Phiên bản 1.0.0 (Offline PWA)'
+    about_version: 'Phiên bản 1.3.0 (Offline PWA)'
   },
 
   en: {
@@ -347,7 +347,7 @@ let greeting = "Hello"
     about_dialog_title: 'About MyQuizlet',
     about_desc: 'MyQuizlet is a standalone offline PWA flashcard app. No account required, 100% offline, with zero data sent off-device.',
     about_features: 'Engineered for Markdown notes, syntax-highlighted code blocks with GitHub themes, and smooth 60fps swipe gestures.',
-    about_version: 'Version 1.0.0 (Offline PWA)'
+    about_version: 'Version 1.3.0 (Offline PWA)'
   }
 };
 
