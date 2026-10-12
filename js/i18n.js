@@ -103,6 +103,7 @@ const translations = {
 
     // Study Screen
     study_seen_chip: 'Đã xem {seen} / {total}',
+    study_progress_label: 'Tiến độ học',
     btn_flip: 'Lật thẻ',
     btn_flip_to_answer: 'Xem đáp án',
     btn_flip_to_question: 'Xem câu hỏi',
@@ -275,6 +276,7 @@ let message = "Xin chào"
 
     // Study Screen
     study_seen_chip: 'Seen {seen} / {total}',
+    study_progress_label: 'Study progress',
     btn_flip: 'Flip',
     btn_flip_to_answer: 'Show Answer',
     btn_flip_to_question: 'Show Question',

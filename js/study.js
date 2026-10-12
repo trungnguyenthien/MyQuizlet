@@ -291,6 +291,12 @@ export class StudyController {
           <div class="study-chip" id="study-counter-chip">Đã xem 0 / 0</div>
         </div>
 
+        <div class="study-progress-container">
+          <div class="study-progress-bar" id="study-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="${t('study_progress_label')}">
+            <div class="study-progress-fill" id="study-progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+
         <footer class="study-bottom-bar">
           <button type="button" class="circle-btn circle-btn-tonal" id="btn-study-back" aria-label="${t('btn_back')}">
             <svg class="icon" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
@@ -355,11 +361,25 @@ export class StudyController {
     const cardEl = this.container.querySelector('#study-card');
     const flipBtn = this.container.querySelector('#btn-study-flip');
 
+    const totalCards = this.cardOrder.length;
+    const currentCardNum = this.currentIndex + 1;
+    const progressPercent = totalCards > 0 ? Math.min(100, Math.max(0, Math.round((currentCardNum / totalCards) * 100))) : 0;
+
+    const progressBar = this.container.querySelector('#study-progress-bar');
+    const progressFill = this.container.querySelector('#study-progress-fill');
+
     if (counterChip) {
       counterChip.textContent = t('study_seen_chip', {
-        seen: this.currentIndex + 1,
-        total: this.cardOrder.length
+        seen: currentCardNum,
+        total: totalCards
       });
+    }
+
+    if (progressBar) {
+      progressBar.setAttribute('aria-valuenow', String(progressPercent));
+    }
+    if (progressFill) {
+      progressFill.style.width = `${progressPercent}%`;
     }
 
     if (backBtn) {

@@ -920,7 +920,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 var(--space-4) var(--space-3);
+  padding: 0 var(--space-4) var(--space-2);
   flex-shrink: 0;
 }
 
@@ -934,6 +934,43 @@ button {
   white-space: nowrap;
   letter-spacing: 0.2px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.study-progress-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 0 var(--space-4) var(--space-3);
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.study-progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: var(--md-sys-color-outline, #E0E0E0);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  position: relative;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.study-progress-fill {
+  height: 100%;
+  width: 0%;
+  background-color: var(--md-sys-color-primary, #3F51B5);
+  border-radius: var(--radius-full);
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: width;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .study-progress-fill {
+    transition: none;
+  }
 }
 
 .study-card-viewport {

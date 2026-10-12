@@ -409,6 +409,7 @@
       answer_hidden_in_detail: "(\u0110\xE1p \xE1n \u0111ang b\u1ECB \u1EA9n cho b\u1ED9 th\u1EBB n\xE0y)",
       // Study Screen
       study_seen_chip: "\u0110\xE3 xem {seen} / {total}",
+      study_progress_label: "Ti\u1EBFn \u0111\u1ED9 h\u1ECDc",
       btn_flip: "L\u1EADt th\u1EBB",
       btn_flip_to_answer: "Xem \u0111\xE1p \xE1n",
       btn_flip_to_question: "Xem c\xE2u h\u1ECFi",
@@ -568,6 +569,7 @@ let message = "Xin ch\xE0o"
       answer_hidden_in_detail: "(Answers are hidden for this deck)",
       // Study Screen
       study_seen_chip: "Seen {seen} / {total}",
+      study_progress_label: "Study progress",
       btn_flip: "Flip",
       btn_flip_to_answer: "Show Answer",
       btn_flip_to_question: "Show Question",
@@ -2459,6 +2461,12 @@ ${a}
           <div class="study-chip" id="study-counter-chip">\u0110\xE3 xem 0 / 0</div>
         </div>
 
+        <div class="study-progress-container">
+          <div class="study-progress-bar" id="study-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="${t("study_progress_label")}">
+            <div class="study-progress-fill" id="study-progress-fill" style="width: 0%;"></div>
+          </div>
+        </div>
+
         <footer class="study-bottom-bar">
           <button type="button" class="circle-btn circle-btn-tonal" id="btn-study-back" aria-label="${t("btn_back")}">
             <svg class="icon" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
@@ -2513,11 +2521,22 @@ ${a}
       const cardWrapper = this.container.querySelector("#study-card-wrapper");
       const cardEl = this.container.querySelector("#study-card");
       const flipBtn = this.container.querySelector("#btn-study-flip");
+      const totalCards = this.cardOrder.length;
+      const currentCardNum = this.currentIndex + 1;
+      const progressPercent = totalCards > 0 ? Math.min(100, Math.max(0, Math.round(currentCardNum / totalCards * 100))) : 0;
+      const progressBar = this.container.querySelector("#study-progress-bar");
+      const progressFill = this.container.querySelector("#study-progress-fill");
       if (counterChip) {
         counterChip.textContent = t("study_seen_chip", {
-          seen: this.currentIndex + 1,
-          total: this.cardOrder.length
+          seen: currentCardNum,
+          total: totalCards
         });
+      }
+      if (progressBar) {
+        progressBar.setAttribute("aria-valuenow", String(progressPercent));
+      }
+      if (progressFill) {
+        progressFill.style.width = `${progressPercent}%`;
       }
       if (backBtn) {
         backBtn.disabled = this.currentIndex <= 0;
