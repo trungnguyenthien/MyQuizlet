@@ -171,14 +171,14 @@ export class StudyController {
     this.face = this.face === 'q' ? 'a' : 'q';
     const cardWrapper = this.container.querySelector('.study-card-wrapper');
     const liveRegion = this.container.querySelector('#study-live-region');
-    const flipLabel = this.container.querySelector('#btn-study-flip-label');
+    const flipBtn = this.container.querySelector('#btn-study-flip');
 
     if (liveRegion) {
       liveRegion.textContent = this.face === 'q' ? 'Mặt câu hỏi / Question' : 'Mặt đáp án / Answer';
     }
 
-    if (flipLabel) {
-      flipLabel.textContent = this.face === 'q' ? t('btn_flip_to_answer') : t('btn_flip_to_question');
+    if (flipBtn) {
+      flipBtn.setAttribute('aria-label', this.face === 'q' ? t('btn_flip_to_answer') : t('btn_flip_to_question'));
     }
 
     if (cardWrapper) {
@@ -248,7 +248,6 @@ export class StudyController {
           
           <div class="study-title-group">
             <h1 class="study-deck-title" id="study-deck-title"></h1>
-            <div class="study-chip" id="study-counter-chip">Đã xem 0 / 0</div>
           </div>
 
           <div class="study-actions">
@@ -288,19 +287,20 @@ export class StudyController {
           <div id="study-live-region" class="sr-only" aria-live="polite"></div>
         </main>
 
+        <div class="study-counter-row">
+          <div class="study-chip" id="study-counter-chip">Đã xem 0 / 0</div>
+        </div>
+
         <footer class="study-bottom-bar">
-          <button type="button" class="btn btn-tonal" id="btn-study-back" aria-label="${t('btn_back')}">
+          <button type="button" class="circle-btn circle-btn-tonal" id="btn-study-back" aria-label="${t('btn_back')}">
             <svg class="icon" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-            <span>${t('btn_back')}</span>
           </button>
 
-          <button type="button" class="btn btn-primary" id="btn-study-flip" aria-label="${t('btn_flip_to_answer')}">
+          <button type="button" class="circle-btn circle-btn-primary study-flip-btn" id="btn-study-flip" aria-label="${t('btn_flip_to_answer')}">
             <svg class="icon" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-            <span id="btn-study-flip-label">${t('btn_flip_to_answer')}</span>
           </button>
 
-          <button type="button" class="btn btn-tonal" id="btn-study-next" aria-label="${t('btn_next')}">
-            <span>${t('btn_next')}</span>
+          <button type="button" class="circle-btn circle-btn-tonal" id="btn-study-next" aria-label="${t('btn_next')}">
             <svg class="icon" viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
           </button>
         </footer>
@@ -353,7 +353,7 @@ export class StudyController {
     const backBtn = this.container.querySelector('#btn-study-back');
     const cardWrapper = this.container.querySelector('#study-card-wrapper');
     const cardEl = this.container.querySelector('#study-card');
-    const flipLabel = this.container.querySelector('#btn-study-flip-label');
+    const flipBtn = this.container.querySelector('#btn-study-flip');
 
     if (counterChip) {
       counterChip.textContent = t('study_seen_chip', {
@@ -381,8 +381,8 @@ export class StudyController {
     if (cardWrapper) {
       cardWrapper.classList.remove('is-flipped');
     }
-    if (flipLabel) {
-      flipLabel.textContent = t('btn_flip_to_answer');
+    if (flipBtn) {
+      flipBtn.setAttribute('aria-label', t('btn_flip_to_answer'));
     }
 
     // Horizontal Slide animation
