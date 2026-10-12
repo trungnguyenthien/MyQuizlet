@@ -792,6 +792,13 @@ button {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.detail-questions-section .search-input {
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 .section-heading-row {
@@ -813,6 +820,8 @@ button {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .question-list-item {
@@ -824,6 +833,8 @@ button {
   border: 1px solid var(--md-sys-color-outline-variant);
   border-radius: var(--radius-md);
   box-shadow: var(--elevation-1);
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .q-item-num {
@@ -833,11 +844,15 @@ button {
   width: 28px;
   padding-top: 1px;
   flex-shrink: 0;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .q-item-body {
   flex: 1;
   min-width: 0;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .q-item-title {
@@ -846,6 +861,13 @@ button {
   line-height: 1.45;
   margin-bottom: 0;
   color: var(--md-sys-color-on-surface);
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.q-item-title * {
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .detail-card-a {
@@ -902,18 +924,24 @@ button {
 .study-title-group {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  justify-content: center;
   overflow: hidden;
   flex: 1;
+  min-width: 0;
+  margin: 0 var(--space-2);
 }
 
 .study-deck-title {
-  font-size: 1.1rem;
+  font-size: 1.05rem;
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 320px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--md-sys-color-primary);
+  max-width: 100%;
 }
 
 .study-counter-row {
