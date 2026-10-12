@@ -514,14 +514,12 @@ class App {
       questionsListHtml = `
         <div class="empty-deck-notice-box">
           <p class="empty-deck-notice">${t('empty_deck_hint')}</p>
-          <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap;">
-            <button type="button" class="btn btn-primary" id="empty-deck-reimport-btn">
+          <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap; align-items:center;">
+            <button type="button" class="circle-btn circle-btn-primary" id="empty-deck-reimport-btn" title="${t('action_reimport')}" aria-label="${t('action_reimport')}">
               <svg class="icon" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-              <span>${t('action_reimport')}</span>
             </button>
-            <button type="button" class="btn btn-tonal" id="empty-deck-edit-md-btn">
+            <button type="button" class="circle-btn circle-btn-tonal" id="empty-deck-edit-md-btn" title="${t('action_edit_markdown')}" aria-label="${t('action_edit_markdown')}">
               <svg class="icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-              <span>${t('action_edit_markdown')}</span>
             </button>
           </div>
         </div>
@@ -532,16 +530,11 @@ class App {
       questionsListHtml = filteredCards
         .map((c, idx) => {
           const qHtml = renderInlineQuestionHTML(c.q);
-          const answerPreview = set.allowAnswer === false
-            ? `<span class="answer-hidden-label">${t('answer_hidden_in_detail')}</span>`
-            : (c.a ? `<div class="detail-card-a">${this._escapeHTML(c.a.slice(0, 120))}${c.a.length > 120 ? '...' : ''}</div>` : `<span class="answer-empty-label">${t('question_no_answer')}</span>`);
-
           return `
             <div class="question-list-item">
               <div class="q-item-num">${idx + 1}</div>
               <div class="q-item-body">
                 <div class="q-item-title">${qHtml}</div>
-                ${answerPreview}
               </div>
             </div>
           `;
@@ -568,29 +561,24 @@ class App {
           </div>
 
           <div class="detail-actions-row">
-            <button type="button" class="btn btn-primary" id="detail-study-btn" ${cards.length === 0 ? 'disabled' : ''}>
+            <button type="button" class="circle-btn circle-btn-primary" id="detail-study-btn" title="${t('action_study')}" aria-label="${t('action_study')}" ${cards.length === 0 ? 'disabled' : ''}>
               <svg class="icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-              <span>${t('action_study')}</span>
             </button>
 
-            <button type="button" class="btn btn-tonal" id="detail-reimport-btn">
+            <button type="button" class="circle-btn circle-btn-tonal" id="detail-reimport-btn" title="${t('action_reimport')}" aria-label="${t('action_reimport')}">
               <svg class="icon" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
-              <span>${t('action_reimport')}</span>
             </button>
 
-            <button type="button" class="btn btn-tonal" id="detail-edit-md-btn">
+            <button type="button" class="circle-btn circle-btn-tonal" id="detail-edit-md-btn" title="${t('action_edit_markdown')}" aria-label="${t('action_edit_markdown')}">
               <svg class="icon" viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
-              <span>${t('action_edit_markdown')}</span>
             </button>
 
-            <button type="button" class="btn btn-tonal" id="detail-export-btn">
+            <button type="button" class="circle-btn circle-btn-tonal" id="detail-export-btn" title="${t('action_export')}" aria-label="${t('action_export')}">
               <svg class="icon" viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .67l2.59-2.58L17 11.5l-5 5-5-5 1.41-1.41L11 12.67V3h2v9.67z"/></svg>
-              <span>${t('action_export')}</span>
             </button>
 
-            <button type="button" class="btn btn-danger-tonal" id="detail-delete-btn">
+            <button type="button" class="circle-btn circle-btn-danger" id="detail-delete-btn" title="${t('action_delete')}" aria-label="${t('action_delete')}">
               <svg class="icon" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
-              <span>${t('action_delete')}</span>
             </button>
           </div>
         </header>

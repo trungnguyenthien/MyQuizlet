@@ -698,8 +698,94 @@ button {
 
 .detail-actions-row {
   display: flex;
-  gap: var(--space-2);
+  align-items: center;
+  gap: var(--space-3);
   flex-wrap: wrap;
+}
+
+/* Circular Action Buttons (Set Detail) */
+.circle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: var(--radius-full);
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  user-select: none;
+  flex-shrink: 0;
+  transition: transform 0.16s cubic-bezier(0.2, 0, 0, 1),
+              background-color 0.16s ease,
+              box-shadow 0.16s ease,
+              border-color 0.16s ease;
+}
+
+.circle-btn .icon {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+
+.circle-btn-primary {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  box-shadow: 0 2px 6px rgba(63, 81, 181, 0.3);
+}
+
+.circle-btn-primary:hover {
+  background-color: #354497;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(63, 81, 181, 0.4);
+}
+
+.circle-btn-primary:active {
+  transform: scale(0.94);
+}
+
+.circle-btn-tonal {
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-primary);
+  border-color: rgba(63, 81, 181, 0.15);
+}
+
+.circle-btn-tonal:hover {
+  background-color: #D9DCF0;
+  border-color: var(--md-sys-color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(63, 81, 181, 0.18);
+}
+
+.circle-btn-tonal:active {
+  transform: scale(0.94);
+}
+
+.circle-btn-danger {
+  background-color: var(--md-sys-color-error-container);
+  color: var(--md-sys-color-error);
+  border-color: rgba(198, 40, 40, 0.2);
+}
+
+.circle-btn-danger:hover {
+  background-color: #FFCDD2;
+  border-color: var(--md-sys-color-error);
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(198, 40, 40, 0.2);
+}
+
+.circle-btn-danger:active {
+  transform: scale(0.94);
+}
+
+.circle-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+  box-shadow: none;
 }
 
 .detail-questions-section {
@@ -731,6 +817,7 @@ button {
 
 .question-list-item {
   display: flex;
+  align-items: flex-start;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   background-color: var(--md-sys-color-surface);
@@ -743,19 +830,22 @@ button {
   font-size: 0.85rem;
   font-weight: 700;
   color: var(--md-sys-color-primary);
-  width: 24px;
+  width: 28px;
+  padding-top: 1px;
   flex-shrink: 0;
 }
 
 .q-item-body {
   flex: 1;
+  min-width: 0;
 }
 
 .q-item-title {
   font-weight: 600;
-  font-size: 1rem;
-  line-height: 1.4;
-  margin-bottom: var(--space-1);
+  font-size: 0.98rem;
+  line-height: 1.45;
+  margin-bottom: 0;
+  color: var(--md-sys-color-on-surface);
 }
 
 .detail-card-a {
