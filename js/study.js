@@ -270,12 +270,6 @@ export class StudyController {
                   <div class="card-scroll" id="card-front-scroll">
                     <div class="card-content-box" id="card-front-content"></div>
                   </div>
-                  <div class="card-face-footer">
-                    <button type="button" class="btn btn-tonal card-flip-btn" id="card-flip-btn-front" aria-label="${t('btn_flip_to_answer')}">
-                      <svg class="icon-sm" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-                      <span>${t('btn_flip_to_answer')}</span>
-                    </button>
-                  </div>
                 </div>
 
                 <!-- Back Face: Answer -->
@@ -285,12 +279,6 @@ export class StudyController {
                   </div>
                   <div class="card-scroll" id="card-back-scroll">
                     <div class="card-content-box" id="card-back-content"></div>
-                  </div>
-                  <div class="card-face-footer">
-                    <button type="button" class="btn btn-tonal card-flip-btn" id="card-flip-btn-back" aria-label="${t('btn_flip_to_question')}">
-                      <svg class="icon-sm" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
-                      <span>${t('btn_flip_to_question')}</span>
-                    </button>
                   </div>
                 </div>
               </article>
@@ -340,13 +328,6 @@ export class StudyController {
     this.container.querySelector('#btn-study-next').addEventListener('click', () => this._drawNext(true));
     this.container.querySelector('#btn-study-flip').addEventListener('click', () => this.flipCard(1));
     this.container.querySelector('#study-reset-btn').addEventListener('click', () => this.resetShuffle());
-
-    // Card face dedicated flip buttons
-    const flipFrontBtn = this.container.querySelector('#card-flip-btn-front');
-    if (flipFrontBtn) flipFrontBtn.addEventListener('click', () => this.flipCard(1));
-
-    const flipBackBtn = this.container.querySelector('#card-flip-btn-back');
-    if (flipBackBtn) flipBackBtn.addEventListener('click', () => this.flipCard(-1));
 
     // Attach horizontal swipe gestures to track element
     const track = this.container.querySelector('#study-card-track');
