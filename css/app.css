@@ -1376,22 +1376,23 @@ button {
   animation: slideInDown 0.22s cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
 
+/* Card Slide-in / Fan Appearance Animations (Linear) */
 @keyframes slideInRight {
-  0% { transform: translate3d(70px, 0, 0) scale(0.96); opacity: 0; }
-  100% { transform: translate3d(0, 0, 0) scale(1); opacity: 1; }
+  0% { transform: translate3d(85px, 0, 0) rotate(5deg) scale(0.96); opacity: 0; }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); opacity: 1; }
 }
 
 @keyframes slideInLeft {
-  0% { transform: translate3d(-70px, 0, 0) scale(0.96); opacity: 0; }
-  100% { transform: translate3d(0, 0, 0) scale(1); opacity: 1; }
+  0% { transform: translate3d(-85px, 0, 0) rotate(-5deg) scale(0.96); opacity: 0; }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg) scale(1); opacity: 1; }
 }
 
 .slide-in-right {
-  animation: slideInRight 0.24s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  animation: slideInRight 0.22s linear both;
 }
 
 .slide-in-left {
-  animation: slideInLeft 0.24s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  animation: slideInLeft 0.22s linear both;
 }
 
 /* First-Run Hint Overlay */
@@ -1448,7 +1449,7 @@ button {
     opacity: 1;
     pointer-events: auto;
   }
-  .slide-in-up, .slide-in-down, .card-shake {
+  .slide-in-up, .slide-in-down, .slide-in-right, .slide-in-left, .card-shake {
     animation: none;
   }
 }

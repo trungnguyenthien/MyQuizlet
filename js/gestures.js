@@ -177,19 +177,46 @@ export function attachSwipe(element, { onNext, onBack, onTap, onUp, onDown } = {
 
     // Horizontal Swipe detection: |dx| > 50px or fast flick (velocityX > 0.35)
     if (axisLocked === 'h') {
+      const reducedMotion = typeof window !== 'undefined' && window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if (dx < -50 || (dx < -25 && velocityX > 0.35)) {
         // Swipe Left -> Next Card
-        resetTransform(false);
         axisLocked = null;
         isDragging = false;
-        if (onNext) onNext();
+        if (reducedMotion) {
+          resetTransform(false);
+          if (onNext) onNext();
+        } else {
+          // Smooth linear fan exit in swipe direction, followed by linear appearance of next card
+          element.style.transition = 'transform 0.12s linear, opacity 0.12s linear';
+          element.style.transform = 'translate3d(-105%, 0, 0) rotate(-10deg)';
+          element.style.opacity = '0';
+          setTimeout(() => {
+            element.style.transition = '';
+            element.style.opacity = '';
+            resetTransform(false);
+            if (onNext) onNext();
+          }, 120);
+        }
         return;
       } else if (dx > 50 || (dx > 25 && velocityX > 0.35)) {
         // Swipe Right -> Previous Card
-        resetTransform(false);
         axisLocked = null;
         isDragging = false;
-        if (onBack) onBack();
+        if (reducedMotion) {
+          resetTransform(false);
+          if (onBack) onBack();
+        } else {
+          // Smooth linear fan exit in swipe direction, followed by linear appearance of previous card
+          element.style.transition = 'transform 0.12s linear, opacity 0.12s linear';
+          element.style.transform = 'translate3d(105%, 0, 0) rotate(10deg)';
+          element.style.opacity = '0';
+          setTimeout(() => {
+            element.style.transition = '';
+            element.style.opacity = '';
+            resetTransform(false);
+            if (onBack) onBack();
+          }, 120);
+        }
         return;
       }
     }
