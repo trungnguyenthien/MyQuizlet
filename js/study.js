@@ -29,8 +29,9 @@ export class StudyController {
   /**
    * Start study session for a set
    * @param {string} setId 
+   * @param {{ resume?: boolean }} [options]
    */
-  start(setId) {
+  start(setId, { resume = false } = {}) {
     const set = store.getSet(setId);
     if (!set) {
       if (this.onShowSnackbar) this.onShowSnackbar('Bộ thẻ không tồn tại / Set not found');
@@ -47,15 +48,22 @@ export class StudyController {
     this.currentSet = set;
     store.touchLastStudied(setId);
 
-    // 1. Generate randomized question order list upfront
-    this._initRandomOrder(-1);
-    this.currentIndex = 0;
+    const savedProgress = resume ? store.getStudyProgress(setId) : null;
+    if (savedProgress && savedProgress.totalCards === set.cards.length) {
+      this.cardOrder = savedProgress.cardOrder;
+      this.currentIndex = savedProgress.currentIndex;
+    } else {
+      // 1. Generate randomized question order list upfront
+      this._initRandomOrder(-1);
+      this.currentIndex = 0;
+      this._saveCurrentProgress();
+    }
     this.face = 'q';
 
     // 2. Render layout
     this._renderStudyLayout();
 
-    // 3. Display first random card
+    // 3. Display current card
     this._updateCardDisplay('none');
 
     // 4. Attach keyboard listener
@@ -63,6 +71,16 @@ export class StudyController {
 
     // 5. Check first run hint
     this._checkFirstRunHint();
+  }
+
+  _saveCurrentProgress() {
+    if (!this.currentSet || !this.currentSet.id || !this.cardOrder || this.cardOrder.length === 0) return;
+    store.saveStudyProgress(this.currentSet.id, {
+      cardOrder: this.cardOrder,
+      currentIndex: this.currentIndex,
+      totalCards: this.cardOrder.length,
+      updatedAt: Date.now()
+    });
   }
 
   destroy() {
@@ -381,6 +399,9 @@ export class StudyController {
     if (progressFill) {
       progressFill.style.width = `${progressPercent}%`;
     }
+
+    // Persist current study progress
+    this._saveCurrentProgress();
 
     if (backBtn) {
       backBtn.disabled = this.currentIndex <= 0;

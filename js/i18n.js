@@ -138,6 +138,18 @@ const translations = {
     edit_markdown_help: 'Chỉnh sửa toàn bộ nội dung Markdown của bộ thẻ. Dòng đầu "# Tiêu đề", mỗi câu hỏi bắt đầu bằng "## Câu hỏi" và phần đáp án bên dưới.',
     edit_markdown_cards_count: 'Đã nhận diện: {count} thẻ',
     edit_markdown_save_btn: 'Lưu thay đổi',
+    edit_markdown_replace_clipboard: 'Replace from clipboard',
+    toast_clipboard_replaced: 'Đã thay thế nội dung từ clipboard',
+    toast_clipboard_empty: 'Clipboard đang trống',
+    toast_clipboard_error: 'Không thể đọc clipboard. Vui lòng cấp quyền hoặc dán thủ công bằng Ctrl+V / Cmd+V',
+    toast_clipboard_not_supported: 'Trình duyệt không hỗ trợ đọc clipboard tự động. Vui lòng dán thủ công bằng Ctrl+V / Cmd+V',
+
+    // Study Resume Dialog
+    study_resume_title: 'Tiến trình học',
+    study_resume_desc: 'Bạn muốn tiếp tục tiến trình học trước đó hay bắt đầu lại lượt học mới?',
+    study_resume_seen_label: 'Tiến trình:',
+    study_resume_continue_btn: 'Tiếp tục tiến trình cũ {seen}/{total}',
+    study_resume_restart_btn: 'Start mới',
 
     // Help Dialog
     help_dialog_title: 'Hướng dẫn định dạng Markdown',
@@ -311,6 +323,18 @@ let message = "Xin chào"
     edit_markdown_help: 'Edit the complete Markdown content of this deck. First line "# Title", each question starts with "## Question" followed by the answer below.',
     edit_markdown_cards_count: 'Recognized: {count} cards',
     edit_markdown_save_btn: 'Save Changes',
+    edit_markdown_replace_clipboard: 'Replace from clipboard',
+    toast_clipboard_replaced: 'Content replaced from clipboard',
+    toast_clipboard_empty: 'Clipboard is empty',
+    toast_clipboard_error: 'Unable to access clipboard. Please grant permission or paste manually with Ctrl+V / Cmd+V',
+    toast_clipboard_not_supported: 'Your browser does not support automatic clipboard reading. Please paste manually with Ctrl+V / Cmd+V',
+
+    // Study Resume Dialog
+    study_resume_title: 'Study Progress',
+    study_resume_desc: 'Would you like to resume your previous study progress or start fresh?',
+    study_resume_seen_label: 'Progress:',
+    study_resume_continue_btn: 'Continue previous progress {seen}/{total}',
+    study_resume_restart_btn: 'Start new',
 
     // Help Dialog
     help_dialog_title: 'Markdown Format Guide',

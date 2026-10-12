@@ -3,6 +3,7 @@
   var STORAGE_KEYS = {
     INDEX: "mq:v1:index",
     SET_PREFIX: "mq:v1:set:",
+    PROGRESS_PREFIX: "mq:v1:progress:",
     PREFS: "mq:v1:prefs",
     SCHEMA: "mq:v1:schema"
   };
@@ -208,6 +209,7 @@
       const set = this.getSet(id);
       if (!set) return null;
       this._removeItem(STORAGE_KEYS.SET_PREFIX + id);
+      this.clearStudyProgress(id);
       const index = this.getIndex().filter((item) => item.id !== id);
       this._saveIndex(index);
       if (this.recentlyDeleted && this.recentlyDeleted.timer) {
@@ -297,6 +299,68 @@
       const updated = { ...current, ...newPrefs };
       this._setItem(STORAGE_KEYS.PREFS, JSON.stringify(updated));
       return updated;
+    }
+    /**
+     * Get saved study progress for a set
+     * @param {string} setId 
+     * @returns {{ cardOrder: number[], currentIndex: number, totalCards: number, updatedAt: number } | null}
+     */
+    getStudyProgress(setId) {
+      if (!setId) return null;
+      const raw = this._getItem(STORAGE_KEYS.PROGRESS_PREFIX + setId);
+      if (!raw) return null;
+      try {
+        const progress = JSON.parse(raw);
+        if (!progress || !Array.isArray(progress.cardOrder) || typeof progress.currentIndex !== "number") {
+          this.clearStudyProgress(setId);
+          return null;
+        }
+        const set = this.getSet(setId);
+        if (!set || !Array.isArray(set.cards) || set.cards.length === 0) {
+          this.clearStudyProgress(setId);
+          return null;
+        }
+        if (set.cards.length !== progress.totalCards || progress.cardOrder.length !== set.cards.length) {
+          this.clearStudyProgress(setId);
+          return null;
+        }
+        if (progress.currentIndex < 0 || progress.currentIndex >= progress.totalCards) {
+          this.clearStudyProgress(setId);
+          return null;
+        }
+        return progress;
+      } catch (err) {
+        console.warn(`[MyQuizlet] Failed to parse study progress for set ${setId}:`, err);
+        this.clearStudyProgress(setId);
+        return null;
+      }
+    }
+    /**
+     * Save study progress for a set
+     * @param {string} setId 
+     * @param {{ cardOrder: number[], currentIndex: number, totalCards: number, updatedAt?: number }} progress 
+     */
+    saveStudyProgress(setId, progress) {
+      if (!setId || !progress) return;
+      try {
+        const record = {
+          cardOrder: progress.cardOrder,
+          currentIndex: progress.currentIndex,
+          totalCards: progress.totalCards,
+          updatedAt: progress.updatedAt || Date.now()
+        };
+        this._setItem(STORAGE_KEYS.PROGRESS_PREFIX + setId, JSON.stringify(record));
+      } catch (err) {
+        console.warn(`[MyQuizlet] Failed to save study progress for set ${setId}:`, err);
+      }
+    }
+    /**
+     * Clear study progress for a set
+     * @param {string} setId 
+     */
+    clearStudyProgress(setId) {
+      if (!setId) return;
+      this._removeItem(STORAGE_KEYS.PROGRESS_PREFIX + setId);
     }
     /**
      * Change listener support
@@ -442,6 +506,17 @@
       edit_markdown_help: 'Ch\u1EC9nh s\u1EEDa to\xE0n b\u1ED9 n\u1ED9i dung Markdown c\u1EE7a b\u1ED9 th\u1EBB. D\xF2ng \u0111\u1EA7u "# Ti\xEAu \u0111\u1EC1", m\u1ED7i c\xE2u h\u1ECFi b\u1EAFt \u0111\u1EA7u b\u1EB1ng "## C\xE2u h\u1ECFi" v\xE0 ph\u1EA7n \u0111\xE1p \xE1n b\xEAn d\u01B0\u1EDBi.',
       edit_markdown_cards_count: "\u0110\xE3 nh\u1EADn di\u1EC7n: {count} th\u1EBB",
       edit_markdown_save_btn: "L\u01B0u thay \u0111\u1ED5i",
+      edit_markdown_replace_clipboard: "Replace from clipboard",
+      toast_clipboard_replaced: "\u0110\xE3 thay th\u1EBF n\u1ED9i dung t\u1EEB clipboard",
+      toast_clipboard_empty: "Clipboard \u0111ang tr\u1ED1ng",
+      toast_clipboard_error: "Kh\xF4ng th\u1EC3 \u0111\u1ECDc clipboard. Vui l\xF2ng c\u1EA5p quy\u1EC1n ho\u1EB7c d\xE1n th\u1EE7 c\xF4ng b\u1EB1ng Ctrl+V / Cmd+V",
+      toast_clipboard_not_supported: "Tr\xECnh duy\u1EC7t kh\xF4ng h\u1ED7 tr\u1EE3 \u0111\u1ECDc clipboard t\u1EF1 \u0111\u1ED9ng. Vui l\xF2ng d\xE1n th\u1EE7 c\xF4ng b\u1EB1ng Ctrl+V / Cmd+V",
+      // Study Resume Dialog
+      study_resume_title: "Ti\u1EBFn tr\xECnh h\u1ECDc",
+      study_resume_desc: "B\u1EA1n mu\u1ED1n ti\u1EBFp t\u1EE5c ti\u1EBFn tr\xECnh h\u1ECDc tr\u01B0\u1EDBc \u0111\xF3 hay b\u1EAFt \u0111\u1EA7u l\u1EA1i l\u01B0\u1EE3t h\u1ECDc m\u1EDBi?",
+      study_resume_seen_label: "Ti\u1EBFn tr\xECnh:",
+      study_resume_continue_btn: "Ti\u1EBFp t\u1EE5c ti\u1EBFn tr\xECnh c\u0169 {seen}/{total}",
+      study_resume_restart_btn: "Start m\u1EDBi",
       // Help Dialog
       help_dialog_title: "H\u01B0\u1EDBng d\u1EABn \u0111\u1ECBnh d\u1EA1ng Markdown",
       help_dialog_intro: "MyQuizlet ph\xE2n t\xEDch file Markdown \u0111\u01A1n gi\u1EA3n th\xE0nh c\xE1c th\u1EBB h\u1ECDc:",
@@ -602,6 +677,17 @@ let message = "Xin ch\xE0o"
       edit_markdown_help: 'Edit the complete Markdown content of this deck. First line "# Title", each question starts with "## Question" followed by the answer below.',
       edit_markdown_cards_count: "Recognized: {count} cards",
       edit_markdown_save_btn: "Save Changes",
+      edit_markdown_replace_clipboard: "Replace from clipboard",
+      toast_clipboard_replaced: "Content replaced from clipboard",
+      toast_clipboard_empty: "Clipboard is empty",
+      toast_clipboard_error: "Unable to access clipboard. Please grant permission or paste manually with Ctrl+V / Cmd+V",
+      toast_clipboard_not_supported: "Your browser does not support automatic clipboard reading. Please paste manually with Ctrl+V / Cmd+V",
+      // Study Resume Dialog
+      study_resume_title: "Study Progress",
+      study_resume_desc: "Would you like to resume your previous study progress or start fresh?",
+      study_resume_seen_label: "Progress:",
+      study_resume_continue_btn: "Continue previous progress {seen}/{total}",
+      study_resume_restart_btn: "Start new",
       // Help Dialog
       help_dialog_title: "Markdown Format Guide",
       help_dialog_intro: "MyQuizlet parses standard Markdown files into study decks:",
@@ -1781,7 +1867,13 @@ ${a}
           </button>
         </div>
 
-        <p class="edit-md-help-text">${t("edit_markdown_help")}</p>
+        <div class="edit-md-top-bar">
+          <p class="edit-md-help-text">${t("edit_markdown_help")}</p>
+          <button type="button" class="btn btn-tonal btn-sm edit-md-btn-clipboard" id="edit-md-btn-clipboard" title="${t("edit_markdown_replace_clipboard")}">
+            <svg class="icon-sm" viewBox="0 0 24 24"><path d="M19 2h-4.18C14.4.84 13.3 0 12 0c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm7 18H5V4h2v3h10V4h2v16z"/></svg>
+            <span>${t("edit_markdown_replace_clipboard")}</span>
+          </button>
+        </div>
 
         <div class="edit-md-editor-wrapper">
           <textarea id="edit-md-textarea" class="edit-md-textarea" spellcheck="false" placeholder="---
@@ -1815,6 +1907,7 @@ ${a}
       const countChip = dialog.querySelector("#edit-md-count-chip");
       const warningsBox = dialog.querySelector("#edit-md-warnings");
       const saveBtn = dialog.querySelector("#edit-md-btn-save");
+      const clipboardBtn = dialog.querySelector("#edit-md-btn-clipboard");
       let parseDebounce = null;
       const updateLiveValidation = () => {
         const text = textarea.value;
@@ -1854,6 +1947,40 @@ ${a}
           saveBtn.click();
         }
       });
+      if (clipboardBtn) {
+        clipboardBtn.addEventListener("click", async () => {
+          try {
+            if (!navigator.clipboard || !navigator.clipboard.readText) {
+              this.showSnackbar(t("toast_clipboard_not_supported"));
+              return;
+            }
+            const text = await navigator.clipboard.readText();
+            if (!text || text.trim() === "") {
+              this.showSnackbar(t("toast_clipboard_empty"));
+              return;
+            }
+            textarea.focus();
+            textarea.select();
+            let replaced = false;
+            try {
+              replaced = document.execCommand("insertText", false, text);
+            } catch {
+              replaced = false;
+            }
+            if (!replaced || textarea.value !== text) {
+              textarea.value = text;
+            }
+            textarea.scrollTop = 0;
+            textarea.selectionStart = 0;
+            textarea.selectionEnd = 0;
+            updateLiveValidation();
+            this.showSnackbar(t("toast_clipboard_replaced"));
+          } catch (err) {
+            console.warn("Clipboard read error:", err);
+            this.showSnackbar(t("toast_clipboard_error"));
+          }
+        });
+      }
       updateLiveValidation();
       const cleanup = () => {
         clearTimeout(parseDebounce);
@@ -1878,6 +2005,91 @@ ${a}
       setTimeout(() => {
         textarea.focus();
       }, 100);
+    }
+    _escapeHTML(str) {
+      if (!str) return "";
+      return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    }
+    /**
+     * Show Study Resume Options Dialog
+     * @param {{ set: any, progress: any, onResume: Function, onRestart: Function, onCancel?: Function }} options
+     */
+    showStudyResumeDialog({ set, progress, onResume, onRestart, onCancel }) {
+      const dialog = document.createElement("dialog");
+      dialog.className = "modal-dialog study-resume-dialog";
+      const seenCount = (progress.currentIndex || 0) + 1;
+      const totalCount = progress.totalCards || (set.cards ? set.cards.length : 0);
+      const progressPercent = totalCount > 0 ? Math.min(100, Math.max(0, Math.round(seenCount / totalCount * 100))) : 0;
+      dialog.innerHTML = `
+      <div class="dialog-content study-resume-dialog-content">
+        <div class="dialog-header-with-close">
+          <h2 class="dialog-title">${t("study_resume_title")}</h2>
+          <button type="button" class="icon-btn" id="resume-close-btn" aria-label="${t("close")}">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+        </div>
+
+        <div class="resume-deck-banner">
+          <div class="resume-deck-name">${this._escapeHTML(set.title || "Untitled")}</div>
+          <div class="resume-progress-info">
+            <div class="resume-progress-stats">
+              <span class="resume-stats-label">${t("study_resume_seen_label")}</span>
+              <span class="resume-stats-val">${seenCount} / ${totalCount} (${progressPercent}%)</span>
+            </div>
+            <div class="resume-progress-track">
+              <div class="resume-progress-bar" style="width: ${progressPercent}%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <p class="dialog-body">${t("study_resume_desc")}</p>
+
+        <div class="resume-options-list">
+          <button type="button" class="btn btn-primary btn-block resume-btn-continue" id="resume-btn-continue">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+            <span>${t("study_resume_continue_btn", { seen: seenCount, total: totalCount })}</span>
+          </button>
+
+          <button type="button" class="btn btn-tonal btn-block resume-btn-restart" id="resume-btn-restart">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+            <span>${t("study_resume_restart_btn")}</span>
+          </button>
+        </div>
+      </div>
+    `;
+      document.body.appendChild(dialog);
+      dialog.showModal();
+      let handled = false;
+      const cleanup = () => {
+        dialog.close();
+        if (dialog.parentNode === document.body) {
+          document.body.removeChild(dialog);
+        }
+      };
+      dialog.querySelector("#resume-close-btn").addEventListener("click", () => {
+        if (handled) return;
+        handled = true;
+        cleanup();
+        if (onCancel) onCancel();
+      });
+      dialog.addEventListener("cancel", () => {
+        if (handled) return;
+        handled = true;
+        cleanup();
+        if (onCancel) onCancel();
+      });
+      dialog.querySelector("#resume-btn-continue").addEventListener("click", () => {
+        if (handled) return;
+        handled = true;
+        cleanup();
+        if (onResume) onResume();
+      });
+      dialog.querySelector("#resume-btn-restart").addEventListener("click", () => {
+        if (handled) return;
+        handled = true;
+        cleanup();
+        if (onRestart) onRestart();
+      });
     }
     /**
      * Show Help Dialog (Markdown Specification Guide)
@@ -2265,8 +2477,9 @@ ${a}
     /**
      * Start study session for a set
      * @param {string} setId 
+     * @param {{ resume?: boolean }} [options]
      */
-    start(setId) {
+    start(setId, { resume = false } = {}) {
       const set = store.getSet(setId);
       if (!set) {
         if (this.onShowSnackbar) this.onShowSnackbar("B\u1ED9 th\u1EBB kh\xF4ng t\u1ED3n t\u1EA1i / Set not found");
@@ -2280,13 +2493,29 @@ ${a}
       }
       this.currentSet = set;
       store.touchLastStudied(setId);
-      this._initRandomOrder(-1);
-      this.currentIndex = 0;
+      const savedProgress = resume ? store.getStudyProgress(setId) : null;
+      if (savedProgress && savedProgress.totalCards === set.cards.length) {
+        this.cardOrder = savedProgress.cardOrder;
+        this.currentIndex = savedProgress.currentIndex;
+      } else {
+        this._initRandomOrder(-1);
+        this.currentIndex = 0;
+        this._saveCurrentProgress();
+      }
       this.face = "q";
       this._renderStudyLayout();
       this._updateCardDisplay("none");
       window.addEventListener("keydown", this.boundKeyHandler);
       this._checkFirstRunHint();
+    }
+    _saveCurrentProgress() {
+      if (!this.currentSet || !this.currentSet.id || !this.cardOrder || this.cardOrder.length === 0) return;
+      store.saveStudyProgress(this.currentSet.id, {
+        cardOrder: this.cardOrder,
+        currentIndex: this.currentIndex,
+        totalCards: this.cardOrder.length,
+        updatedAt: Date.now()
+      });
     }
     destroy() {
       if (this.swipeCleanup) {
@@ -2563,6 +2792,7 @@ ${a}
       if (progressFill) {
         progressFill.style.width = `${progressPercent}%`;
       }
+      this._saveCurrentProgress();
       if (backBtn) {
         backBtn.disabled = this.currentIndex <= 0;
       }
@@ -2625,6 +2855,7 @@ ${a}
       this.questionSearchQuery = "";
     }
     init() {
+      this.resumeStudySession = null;
       i18n.init();
       store.requestPersistentStorage();
       this.appBar = document.getElementById("app-bar");
@@ -2936,7 +3167,7 @@ ${a}
         btn.addEventListener("click", (e) => {
           e.stopPropagation();
           const id = btn.dataset.setId;
-          window.location.hash = `#/study/${id}`;
+          this.startStudyFlow(id);
         });
       });
       this.mainContainer.querySelectorAll(".action-detail-item").forEach((btn) => {
@@ -3156,7 +3387,7 @@ ${a}
         this.renderSetDetail(setId);
       });
       this.mainContainer.querySelector("#detail-study-btn").addEventListener("click", () => {
-        window.location.hash = `#/study/${setId}`;
+        this.startStudyFlow(setId);
       });
       const openEditMd = () => {
         this._openEditMarkdown(setId);
@@ -3188,10 +3419,83 @@ ${a}
       }
     }
     /**
+     * Start Study Flow: prompts user if an ongoing study progress exists
+     * @param {string} setId
+     */
+    startStudyFlow(setId) {
+      const set = store.getSet(setId);
+      if (!set) {
+        ui.showSnackbar("B\u1ED9 th\u1EBB kh\xF4ng t\u1ED3n t\u1EA1i / Deck not found");
+        return;
+      }
+      if (!set.cards || set.cards.length === 0) {
+        ui.showSnackbar(t("empty_deck_cannot_study"));
+        return;
+      }
+      const progress = store.getStudyProgress(setId);
+      if (progress && progress.totalCards === set.cards.length) {
+        ui.showStudyResumeDialog({
+          set,
+          progress,
+          onResume: () => {
+            this.resumeStudySession = true;
+            if (window.location.hash === `#/study/${setId}`) {
+              this.renderStudy(setId);
+            } else {
+              window.location.hash = `#/study/${setId}`;
+            }
+          },
+          onRestart: () => {
+            this.resumeStudySession = false;
+            store.clearStudyProgress(setId);
+            if (window.location.hash === `#/study/${setId}`) {
+              this.renderStudy(setId);
+            } else {
+              window.location.hash = `#/study/${setId}`;
+            }
+          }
+        });
+        return;
+      }
+      this.resumeStudySession = false;
+      if (window.location.hash === `#/study/${setId}`) {
+        this.renderStudy(setId);
+      } else {
+        window.location.hash = `#/study/${setId}`;
+      }
+    }
+    /**
      * Screen 3: Study Screen (A9, A10, A11, A12)
      * @param {string} setId 
      */
     renderStudy(setId) {
+      if (this.studyController) {
+        this.studyController.destroy();
+      }
+      const chosenResume = this.resumeStudySession;
+      this.resumeStudySession = null;
+      const progress = store.getStudyProgress(setId);
+      const set = store.getSet(setId);
+      if (chosenResume === null && progress && set && progress.totalCards === set.cards.length) {
+        ui.showStudyResumeDialog({
+          set,
+          progress,
+          onResume: () => {
+            this._launchStudyController(setId, true);
+          },
+          onRestart: () => {
+            store.clearStudyProgress(setId);
+            this._launchStudyController(setId, false);
+          },
+          onCancel: () => {
+            window.location.hash = `#/set/${setId}`;
+          }
+        });
+        return;
+      }
+      this._launchStudyController(setId, Boolean(chosenResume));
+    }
+    _launchStudyController(setId, resume) {
       if (this.studyController) {
         this.studyController.destroy();
       }
@@ -3202,7 +3506,7 @@ ${a}
         },
         onShowSnackbar: (msg) => ui.showSnackbar(msg)
       });
-      this.studyController.start(setId);
+      this.studyController.start(setId, { resume });
     }
     _openReimportSet(setId) {
       const currentSet = store.getSet(setId);

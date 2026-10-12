@@ -7,6 +7,7 @@
 const STORAGE_KEYS = {
   INDEX: 'mq:v1:index',
   SET_PREFIX: 'mq:v1:set:',
+  PROGRESS_PREFIX: 'mq:v1:progress:',
   PREFS: 'mq:v1:prefs',
   SCHEMA: 'mq:v1:schema'
 };
@@ -237,6 +238,7 @@ class Store {
 
     // Remove from index and storage immediately
     this._removeItem(STORAGE_KEYS.SET_PREFIX + id);
+    this.clearStudyProgress(id);
     const index = this.getIndex().filter((item) => item.id !== id);
     this._saveIndex(index);
 
@@ -341,6 +343,77 @@ class Store {
     const updated = { ...current, ...newPrefs };
     this._setItem(STORAGE_KEYS.PREFS, JSON.stringify(updated));
     return updated;
+  }
+
+  /**
+   * Get saved study progress for a set
+   * @param {string} setId 
+   * @returns {{ cardOrder: number[], currentIndex: number, totalCards: number, updatedAt: number } | null}
+   */
+  getStudyProgress(setId) {
+    if (!setId) return null;
+    const raw = this._getItem(STORAGE_KEYS.PROGRESS_PREFIX + setId);
+    if (!raw) return null;
+    try {
+      const progress = JSON.parse(raw);
+      if (!progress || !Array.isArray(progress.cardOrder) || typeof progress.currentIndex !== 'number') {
+        this.clearStudyProgress(setId);
+        return null;
+      }
+
+      // Cross-check against the set
+      const set = this.getSet(setId);
+      if (!set || !Array.isArray(set.cards) || set.cards.length === 0) {
+        this.clearStudyProgress(setId);
+        return null;
+      }
+
+      // If cards count changed or indices are out of sync, invalidate progress
+      if (set.cards.length !== progress.totalCards || progress.cardOrder.length !== set.cards.length) {
+        this.clearStudyProgress(setId);
+        return null;
+      }
+
+      if (progress.currentIndex < 0 || progress.currentIndex >= progress.totalCards) {
+        this.clearStudyProgress(setId);
+        return null;
+      }
+
+      return progress;
+    } catch (err) {
+      console.warn(`[MyQuizlet] Failed to parse study progress for set ${setId}:`, err);
+      this.clearStudyProgress(setId);
+      return null;
+    }
+  }
+
+  /**
+   * Save study progress for a set
+   * @param {string} setId 
+   * @param {{ cardOrder: number[], currentIndex: number, totalCards: number, updatedAt?: number }} progress 
+   */
+  saveStudyProgress(setId, progress) {
+    if (!setId || !progress) return;
+    try {
+      const record = {
+        cardOrder: progress.cardOrder,
+        currentIndex: progress.currentIndex,
+        totalCards: progress.totalCards,
+        updatedAt: progress.updatedAt || Date.now()
+      };
+      this._setItem(STORAGE_KEYS.PROGRESS_PREFIX + setId, JSON.stringify(record));
+    } catch (err) {
+      console.warn(`[MyQuizlet] Failed to save study progress for set ${setId}:`, err);
+    }
+  }
+
+  /**
+   * Clear study progress for a set
+   * @param {string} setId 
+   */
+  clearStudyProgress(setId) {
+    if (!setId) return;
+    this._removeItem(STORAGE_KEYS.PROGRESS_PREFIX + setId);
   }
 
   /**

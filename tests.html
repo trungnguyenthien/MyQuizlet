@@ -79,6 +79,8 @@
     import { serializeSet, slugify } from './js/serializer.js';
     import { store } from './js/store.js';
     import { renderCardFaceHTML } from './js/render.js';
+    import { ui } from './js/ui.js';
+    import { StudyController } from './js/study.js';
 
     const resultsContainer = document.getElementById('results');
     const summaryEl = document.getElementById('summary');
@@ -354,6 +356,163 @@ Present, appearing, or found everywhere.`;
         const stored = store.getSet(set.id);
         console.assert(stored && stored.cards.length === 5, 'Stored set must contain all 5 question-only cards');
         store.deleteSet(set.id);
+      });
+
+      // Test 13: Edit Markdown Dialog 'Replace from clipboard' button test
+      await runTest('Edit Markdown: "Replace from clipboard" button exists and updates content from clipboard', async () => {
+        const testSet = {
+          id: 'test-clipboard-set',
+          title: 'Initial Title',
+          cards: [{ id: 'c1', q: 'Initial Question', a: 'Initial Answer' }]
+        };
+
+        // Mock navigator.clipboard
+        const originalClipboard = navigator.clipboard;
+        const clipboardMockText = `# New Clipboard Deck\n\n## Clipboard Q1\nClipboard A1\n\n## Clipboard Q2\nClipboard A2`;
+        Object.defineProperty(navigator, 'clipboard', {
+          value: {
+            readText: async () => clipboardMockText
+          },
+          configurable: true,
+          writable: true
+        });
+
+        ui.showEditMarkdownDialog({
+          set: testSet,
+          onSave: () => {}
+        });
+
+        const dialog = document.querySelector('.edit-markdown-dialog');
+        console.assert(Boolean(dialog), 'Dialog should be appended to body');
+
+        const clipboardBtn = dialog.querySelector('#edit-md-btn-clipboard');
+        console.assert(Boolean(clipboardBtn), 'Replace from clipboard button must exist');
+        console.assert(clipboardBtn.textContent.includes('Replace from clipboard'), 'Button text must contain "Replace from clipboard"');
+
+        const textarea = dialog.querySelector('#edit-md-textarea');
+        console.assert(textarea.value.includes('Initial Question'), 'Initial content must be present in textarea');
+
+        // Click clipboard button
+        clipboardBtn.click();
+
+        // Wait a tick for async readText
+        await new Promise(resolve => setTimeout(resolve, 60));
+
+        console.assert(textarea.value === clipboardMockText, 'Textarea value should be replaced with clipboard content');
+
+        const countChip = dialog.querySelector('#edit-md-count-chip');
+        console.assert(countChip.textContent.includes('2'), `Count chip should show 2 cards, got: ${countChip.textContent}`);
+
+        // Cleanup dialog
+        dialog.querySelector('#edit-md-close-btn').click();
+
+        // Restore clipboard
+        Object.defineProperty(navigator, 'clipboard', {
+          value: originalClipboard,
+          configurable: true,
+          writable: true
+        });
+      });
+
+      // Test 14: Study Progress Store Persistence
+      await runTest('Study Progress: saveStudyProgress, getStudyProgress validation, and clearStudyProgress', () => {
+        const testSet = {
+          id: 'test-progress-store-set',
+          title: 'Store Progress Deck',
+          cards: [
+            { id: '1', q: 'Q1', a: 'A1' },
+            { id: '2', q: 'Q2', a: 'A2' },
+            { id: '3', q: 'Q3', a: 'A3' },
+            { id: '4', q: 'Q4', a: 'A4' },
+            { id: '5', q: 'Q5', a: 'A5' }
+          ]
+        };
+        store.saveSet(testSet);
+
+        const progress = {
+          cardOrder: [4, 2, 0, 1, 3],
+          currentIndex: 2,
+          totalCards: 5
+        };
+        store.saveStudyProgress(testSet.id, progress);
+
+        const loaded = store.getStudyProgress(testSet.id);
+        console.assert(Boolean(loaded), 'Saved progress must be retrieved from store');
+        console.assert(loaded.currentIndex === 2, `Expected currentIndex 2, got ${loaded.currentIndex}`);
+        console.assert(loaded.totalCards === 5, `Expected totalCards 5, got ${loaded.totalCards}`);
+        console.assert(JSON.stringify(loaded.cardOrder) === JSON.stringify([4, 2, 0, 1, 3]), 'Card order must match exactly');
+
+        // Test invalidation when set card count is altered
+        const modifiedSet = { ...testSet, cards: [...testSet.cards, { id: '6', q: 'Q6', a: 'A6' }] };
+        store.saveSet(modifiedSet);
+        const outOfSync = store.getStudyProgress(testSet.id);
+        console.assert(outOfSync === null, 'Out of sync progress must be automatically invalidated and return null');
+
+        // Re-save with 5 cards and test clearStudyProgress
+        store.saveSet(testSet);
+        store.saveStudyProgress(testSet.id, progress);
+        store.clearStudyProgress(testSet.id);
+        console.assert(store.getStudyProgress(testSet.id) === null, 'Cleared progress must return null');
+
+        store.deleteSet(testSet.id);
+      });
+
+      // Test 15: Study Resume Dialog and Controller State Restoration
+      await runTest('Study Resume Dialog: Renders "Start mới" and "Tiếp tục tiến trình cũ" with accurate callbacks', async () => {
+        const testSet = {
+          id: 'test-resume-dialog-set',
+          title: 'Resume Dialog Test Deck',
+          cards: Array.from({ length: 10 }, (_, i) => ({ id: `card-${i}`, q: `Question ${i + 1}`, a: `Answer ${i + 1}` }))
+        };
+        store.saveSet(testSet);
+
+        const savedProgress = {
+          cardOrder: [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+          currentIndex: 4, // 5th card seen (5/10)
+          totalCards: 10
+        };
+        store.saveStudyProgress(testSet.id, savedProgress);
+
+        let resumeCalled = false;
+        let restartCalled = false;
+
+        ui.showStudyResumeDialog({
+          set: testSet,
+          progress: savedProgress,
+          onResume: () => { resumeCalled = true; },
+          onRestart: () => { restartCalled = true; },
+          onCancel: () => {}
+        });
+
+        const dialog = document.querySelector('.study-resume-dialog');
+        console.assert(Boolean(dialog), 'Study resume dialog should be rendered in DOM');
+
+        const continueBtn = dialog.querySelector('#resume-btn-continue');
+        const restartBtn = dialog.querySelector('#resume-btn-restart');
+        console.assert(Boolean(continueBtn), 'Continue previous progress button must exist');
+        console.assert(Boolean(restartBtn), 'Start fresh button must exist');
+
+        console.assert(continueBtn.textContent.includes('5/10') || continueBtn.textContent.includes('5 / 10'), `Continue button must include "5/10", got: ${continueBtn.textContent}`);
+        console.assert(restartBtn.textContent.includes('Start mới') || restartBtn.textContent.includes('Start new'), `Restart button must include "Start mới", got: ${restartBtn.textContent}`);
+
+        // Click continue button
+        continueBtn.click();
+        console.assert(resumeCalled === true, 'onResume callback must be fired when clicking continue');
+
+        // Verify StudyController restores exact state when resume: true
+        const dummyContainer = document.createElement('div');
+        const controller = new StudyController({
+          container: dummyContainer,
+          onBack: () => {},
+          onShowSnackbar: () => {}
+        });
+
+        controller.start(testSet.id, { resume: true });
+        console.assert(controller.currentIndex === 4, `Controller currentIndex should be 4, got ${controller.currentIndex}`);
+        console.assert(controller.cardOrder[4] === 5, `Controller cardOrder at index 4 should be 5, got ${controller.cardOrder[4]}`);
+
+        controller.destroy();
+        store.deleteSet(testSet.id);
       });
 
       // Update Summary

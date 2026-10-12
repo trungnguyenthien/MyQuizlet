@@ -272,6 +272,13 @@ button {
   font-size: 1.05rem;
 }
 
+.btn-sm {
+  min-height: 34px;
+  padding: 0 var(--space-3);
+  font-size: 0.85rem;
+  gap: var(--space-1);
+}
+
 /* Floating Action Button (FAB) */
 .fab {
   position: fixed;
@@ -1989,6 +1996,24 @@ button {
   box-sizing: border-box;
 }
 
+.edit-md-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.edit-md-top-bar .edit-md-help-text {
+  flex: 1 1 260px;
+}
+
+.edit-md-btn-clipboard {
+  flex-shrink: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 .edit-md-help-text {
   font-size: 0.88rem;
   color: var(--md-sys-color-on-surface);
@@ -2063,4 +2088,85 @@ button {
   gap: var(--space-3);
   padding: var(--space-6) var(--space-4);
   text-align: center;
+}
+
+/* ==========================================================================
+   Study Resume Dialog (Continue Previous Progress vs Start Fresh)
+   ========================================================================== */
+.study-resume-dialog {
+  max-width: 480px;
+}
+
+.study-resume-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.resume-deck-banner {
+  background: var(--md-sys-color-surface-container);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.resume-deck-name {
+  font-weight: 700;
+  font-size: 1.05rem;
+  color: var(--md-sys-color-primary);
+  line-height: 1.35;
+}
+
+.resume-progress-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.resume-progress-stats {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.88rem;
+  color: var(--md-sys-color-on-surface);
+  opacity: 0.9;
+}
+
+.resume-stats-val {
+  font-weight: 600;
+  color: var(--md-sys-color-primary);
+}
+
+.resume-progress-track {
+  width: 100%;
+  height: 8px;
+  background-color: var(--md-sys-color-surface-container-high, #e0e0e0);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+}
+
+.resume-progress-bar {
+  height: 100%;
+  background-color: var(--md-sys-color-primary);
+  border-radius: var(--radius-full);
+  transition: width 0.3s ease;
+}
+
+.resume-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+}
+
+.resume-btn-continue,
+.resume-btn-restart {
+  font-size: 0.98rem;
+  font-weight: 600;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-full);
+  min-height: 48px;
+  justify-content: center;
 }

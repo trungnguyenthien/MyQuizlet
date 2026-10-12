@@ -22,6 +22,8 @@ class App {
   }
 
   init() {
+    this.resumeStudySession = null;
+
     // 1. Initialize i18n and store
     i18n.init();
     store.requestPersistentStorage();
@@ -395,7 +397,7 @@ class App {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
         const id = btn.dataset.setId;
-        window.location.hash = `#/study/${id}`;
+        this.startStudyFlow(id);
       });
     });
 
@@ -656,7 +658,7 @@ class App {
 
     // Buttons
     this.mainContainer.querySelector('#detail-study-btn').addEventListener('click', () => {
-      window.location.hash = `#/study/${setId}`;
+      this.startStudyFlow(setId);
     });
 
     const openEditMd = () => {
@@ -699,10 +701,93 @@ class App {
   }
 
   /**
+   * Start Study Flow: prompts user if an ongoing study progress exists
+   * @param {string} setId
+   */
+  startStudyFlow(setId) {
+    const set = store.getSet(setId);
+    if (!set) {
+      ui.showSnackbar('Bộ thẻ không tồn tại / Deck not found');
+      return;
+    }
+
+    if (!set.cards || set.cards.length === 0) {
+      ui.showSnackbar(t('empty_deck_cannot_study'));
+      return;
+    }
+
+    const progress = store.getStudyProgress(setId);
+    if (progress && progress.totalCards === set.cards.length) {
+      ui.showStudyResumeDialog({
+        set,
+        progress,
+        onResume: () => {
+          this.resumeStudySession = true;
+          if (window.location.hash === `#/study/${setId}`) {
+            this.renderStudy(setId);
+          } else {
+            window.location.hash = `#/study/${setId}`;
+          }
+        },
+        onRestart: () => {
+          this.resumeStudySession = false;
+          store.clearStudyProgress(setId);
+          if (window.location.hash === `#/study/${setId}`) {
+            this.renderStudy(setId);
+          } else {
+            window.location.hash = `#/study/${setId}`;
+          }
+        }
+      });
+      return;
+    }
+
+    this.resumeStudySession = false;
+    if (window.location.hash === `#/study/${setId}`) {
+      this.renderStudy(setId);
+    } else {
+      window.location.hash = `#/study/${setId}`;
+    }
+  }
+
+  /**
    * Screen 3: Study Screen (A9, A10, A11, A12)
    * @param {string} setId 
    */
   renderStudy(setId) {
+    if (this.studyController) {
+      this.studyController.destroy();
+    }
+
+    const chosenResume = this.resumeStudySession;
+    this.resumeStudySession = null;
+
+    const progress = store.getStudyProgress(setId);
+    const set = store.getSet(setId);
+
+    // If user arrived directly (e.g. reload or link) and has saved progress
+    if (chosenResume === null && progress && set && progress.totalCards === set.cards.length) {
+      ui.showStudyResumeDialog({
+        set,
+        progress,
+        onResume: () => {
+          this._launchStudyController(setId, true);
+        },
+        onRestart: () => {
+          store.clearStudyProgress(setId);
+          this._launchStudyController(setId, false);
+        },
+        onCancel: () => {
+          window.location.hash = `#/set/${setId}`;
+        }
+      });
+      return;
+    }
+
+    this._launchStudyController(setId, Boolean(chosenResume));
+  }
+
+  _launchStudyController(setId, resume) {
     if (this.studyController) {
       this.studyController.destroy();
     }
@@ -715,7 +800,7 @@ class App {
       onShowSnackbar: (msg) => ui.showSnackbar(msg)
     });
 
-    this.studyController.start(setId);
+    this.studyController.start(setId, { resume });
   }
 
   _openReimportSet(setId) {
