@@ -4,15 +4,16 @@
  * navigation fallback, clean activation, and skipWaiting handling.
  */
 
-const CACHE_NAME = 'mq-static-v17';
+const CACHE_NAME = 'mq-static-v18';
 
 const PRECACHE_ASSETS = [
   './',
   './index.html',
   './favicon.ico',
+  './favicon.ico?v=4',
   './manifest.webmanifest',
   './css/app.css',
-  './css/app.css?v=13',
+  './css/app.css?v=14',
   './vendor/github.min.css',
   './vendor/marked.min.js',
   './vendor/purify.min.js',
@@ -21,7 +22,7 @@ const PRECACHE_ASSETS = [
   './vendor/highlight-kotlin.min.js',
   './vendor/highlight-dart.min.js',
   './js/app.js',
-  './js/app.js?v=13',
+  './js/app.js?v=14',
   './js/main.js',
   './js/store.js',
   './js/parser.js',
@@ -32,13 +33,13 @@ const PRECACHE_ASSETS = [
   './js/ui.js',
   './js/i18n.js',
   './icons/favicon-32.png',
-  './icons/favicon-32.png?v=3',
+  './icons/favicon-32.png?v=4',
   './icons/icon-192.png',
-  './icons/icon-192.png?v=3',
+  './icons/icon-192.png?v=4',
   './icons/icon-512.png',
   './icons/icon-maskable-512.png',
   './icons/apple-touch-icon.png',
-  './icons/apple-touch-icon.png?v=3',
+  './icons/apple-touch-icon.png?v=4',
   './samples/sample.md'
 ];
 
