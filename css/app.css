@@ -184,6 +184,7 @@ button {
 }
 
 .icon-btn-sm {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -192,6 +193,16 @@ button {
   border-radius: var(--radius-full);
   color: var(--md-sys-color-on-surface);
   transition: background-color 0.15s ease;
+}
+
+.icon-btn-sm::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .icon-btn-sm:hover {
@@ -387,7 +398,7 @@ button {
   align-items: center;
   justify-content: space-between;
   height: 56px;
-  padding: 0 var(--space-3);
+  padding: 0 calc(var(--space-3) + var(--sar)) 0 calc(var(--space-3) + var(--sal));
   background-color: var(--md-sys-color-surface);
   border-bottom: 1px solid var(--md-sys-color-outline-variant);
   position: sticky;
@@ -1633,7 +1644,66 @@ button {
   color: var(--md-sys-color-on-surface);
 }
 
-/* Dialog Modals */
+/* Tabular numbers for all numeric counters, timers, and progress indicators (PWA Standard 10) */
+.chip-count,
+.meta-time,
+.q-item-num,
+.questions-count,
+.study-seen-chip,
+.study-progress-bar,
+.storage-stat-num,
+.q-counter,
+[role="progressbar"] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Dialog Modals & Backdrops */
+.dialog-backdrop,
+.modal-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  padding: var(--space-4);
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.2s cubic-bezier(0.2, 0, 0, 1), visibility 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.dialog-backdrop.hidden,
+.modal-dialog-backdrop.hidden {
+  display: none !important;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.dialog-panel {
+  background-color: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elevation-3);
+  width: 100%;
+  overflow: hidden;
+  animation: modalPopIn 0.22s cubic-bezier(0.2, 0, 0, 1);
+}
+
+@keyframes modalPopIn {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 .modal-dialog {
   margin: auto;
   border: none;

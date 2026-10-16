@@ -24,6 +24,8 @@ export class StudyController {
     this.swipeCleanup = null;
     this.isAnimating = false;
     this.boundKeyHandler = this.handleKeyDown.bind(this);
+    this.wakeLock = null;
+    this.boundVisibilityHandler = this._handleVisibilityChange.bind(this);
   }
 
   /**
@@ -71,6 +73,38 @@ export class StudyController {
 
     // 5. Check first run hint
     this._checkFirstRunHint();
+
+    // 6. Request Screen Wake Lock (PWA Standard 9)
+    this._requestWakeLock();
+    document.addEventListener('visibilitychange', this.boundVisibilityHandler);
+  }
+
+  async _requestWakeLock() {
+    if (typeof navigator !== 'undefined' && 'wakeLock' in navigator && !this.wakeLock) {
+      try {
+        this.wakeLock = await navigator.wakeLock.request('screen');
+        this.wakeLock.addEventListener('release', () => {
+          this.wakeLock = null;
+        });
+      } catch (err) {
+        // Wake Lock may fail on low battery or non-active tabs - safe to ignore
+      }
+    }
+  }
+
+  _releaseWakeLock() {
+    if (this.wakeLock) {
+      try {
+        this.wakeLock.release().catch(() => {});
+      } catch {}
+      this.wakeLock = null;
+    }
+  }
+
+  _handleVisibilityChange() {
+    if (document.visibilityState === 'visible' && this.currentSet) {
+      this._requestWakeLock();
+    }
   }
 
   _saveCurrentProgress() {
@@ -84,6 +118,8 @@ export class StudyController {
   }
 
   destroy() {
+    this._releaseWakeLock();
+    document.removeEventListener('visibilitychange', this.boundVisibilityHandler);
     if (this.swipeCleanup) {
       this.swipeCleanup();
       this.swipeCleanup = null;

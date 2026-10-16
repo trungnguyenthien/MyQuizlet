@@ -188,7 +188,18 @@ let message = "Xin chào"
     about_dialog_title: 'Giới thiệu MyQuizlet',
     about_desc: 'MyQuizlet là ứng dụng PWA học flashcard độc lập, không cần tài khoản, hoạt động 100% offline và không gửi dữ liệu ra bên ngoài.',
     about_features: 'Tối ưu cho Markdown, hiển thị code block với syntax highlighting phong cách GitHub, hỗ trợ cử chỉ vuốt mượt mà 60fps.',
-    about_version: 'Phiên bản 1.3.0 (Offline PWA)'
+    about_version: 'Phiên bản 1.3.0 (Offline PWA)',
+
+    // PWA Installation & iOS Modal
+    install_btn: 'Cài đặt',
+    install_btn_aria: 'Cài đặt ứng dụng',
+    app_installed_success: 'Cài đặt ứng dụng thành công!',
+    ios_install_title: 'Cài đặt trên iOS',
+    ios_install_intro: 'Để cài đặt ứng dụng lên iPhone hoặc iPad:',
+    ios_step_1: '1. Nhấn nút <strong>Chia sẻ (Share)</strong> <span aria-hidden="true">⎋</span> ở thanh công cụ dưới đáy Safari.',
+    ios_step_2: '2. Cuộn xuống và chọn <strong>Thêm vào Màn hình chính (Add to Home Screen)</strong> <span aria-hidden="true">⊕</span>.',
+    ios_step_3: '3. Nhấn <strong>Thêm (Add)</strong> ở góc trên bên phải để hoàn tất.',
+    ios_install_got_it: 'Đã hiểu'
   },
 
   en: {
@@ -373,7 +384,18 @@ let greeting = "Hello"
     about_dialog_title: 'About MyQuizlet',
     about_desc: 'MyQuizlet is a standalone offline PWA flashcard app. No account required, 100% offline, with zero data sent off-device.',
     about_features: 'Engineered for Markdown notes, syntax-highlighted code blocks with GitHub themes, and smooth 60fps swipe gestures.',
-    about_version: 'Version 1.3.0 (Offline PWA)'
+    about_version: 'Version 1.3.0 (Offline PWA)',
+
+    // PWA Installation & iOS Modal
+    install_btn: 'Install',
+    install_btn_aria: 'Install application',
+    app_installed_success: 'App installed successfully!',
+    ios_install_title: 'Install on iOS',
+    ios_install_intro: 'To install this app on iPhone or iPad:',
+    ios_step_1: '1. Tap the <strong>Share</strong> button <span aria-hidden="true">⎋</span> in the Safari toolbar.',
+    ios_step_2: '2. Scroll down and tap <strong>Add to Home Screen</strong> <span aria-hidden="true">⊕</span>.',
+    ios_step_3: '3. Tap <strong>Add</strong> in the top-right corner to complete.',
+    ios_install_got_it: 'Got it'
   }
 };
 

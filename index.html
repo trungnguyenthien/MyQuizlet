@@ -9,7 +9,7 @@
   <!-- PWA Theme & Manifest -->
   <meta name="theme-color" content="#3F51B5" />
   <meta name="color-scheme" content="light" />
-  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="manifest" href="manifest.webmanifest?v=15" />
   <link rel="icon" type="image/x-icon" href="favicon.ico?v=4" />
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=4" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=4" />
@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="vendor/github.min.css" />
 
   <!-- App Stylesheet -->
-  <link rel="stylesheet" href="css/app.css?v=14" />
+  <link rel="stylesheet" href="css/app.css?v=15" />
 </head>
 <body>
   <!-- Global App Bar -->
@@ -37,6 +37,16 @@
     </div>
 
     <div class="app-bar-right">
+      <!-- PWA Install Button (Top App Bar - hidden by default) -->
+      <button id="btnInstall" type="button" class="btn btn-tonal btn-sm hidden" aria-label="Cài đặt ứng dụng">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span id="btn-install-text">Cài đặt</span>
+      </button>
+
       <div class="menu-anchor">
         <button type="button" class="icon-btn menu-trigger" id="app-menu-btn" aria-label="Menu tác vụ" onclick="document.getElementById('app-menu-dropdown').classList.toggle('is-open'); event.stopPropagation();">
           <svg class="icon" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
@@ -69,6 +79,33 @@
   <!-- Snackbar Notification Container -->
   <div id="snackbar-container" class="snackbar-container" aria-live="polite"></div>
 
+  <!-- iOS Safari PWA Installation Guidance Modal -->
+  <div id="iosInstallModal" class="dialog-backdrop modal-dialog-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="iosModalTitle">
+    <div class="dialog-panel modal-dialog" style="max-width: 420px;">
+      <div class="dialog-header-with-close" style="padding: 16px 20px 0 20px;">
+        <h2 id="iosModalTitle" class="dialog-title" style="margin: 0; font-size: 1.25rem;">Cài đặt trên iOS</h2>
+        <button id="btnCloseIosModal" type="button" class="icon-btn" aria-label="Đóng">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="dialog-body" style="padding: 16px 20px; text-align: center;">
+        <p id="ios-install-intro" style="font-size: 0.9375rem; margin-bottom: 16px; color: var(--md-sys-color-on-surface);">
+          Để cài đặt ứng dụng lên iPhone hoặc iPad:
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 12px; text-align: left; background: var(--md-sys-color-surface-variant); padding: 16px; border-radius: 12px; font-size: 0.9rem; line-height: 1.5;">
+          <div id="ios-step-1">1. Nhấn nút <strong>Chia sẻ (Share)</strong> <span aria-hidden="true">⎋</span> ở thanh công cụ dưới đáy Safari.</div>
+          <div id="ios-step-2">2. Cuộn xuống và chọn <strong>Thêm vào Màn hình chính (Add to Home Screen)</strong> <span aria-hidden="true">⊕</span>.</div>
+          <div id="ios-step-3">3. Nhấn <strong>Thêm (Add)</strong> ở góc trên bên phải để hoàn tất.</div>
+        </div>
+      </div>
+      <div class="dialog-footer" style="display: flex; justify-content: flex-end; padding: 0 20px 16px 20px;">
+        <button id="btnGotItIos" type="button" class="btn btn-primary">Đã hiểu</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Local Vendored Libraries (Precached for 100% Offline Mode) -->
   <script src="vendor/marked.min.js"></script>
   <script src="vendor/purify.min.js"></script>
@@ -78,6 +115,6 @@
   <script src="vendor/highlight-dart.min.js"></script>
 
   <!-- Application Script (Supports both file:// and http://) -->
-  <script src="js/app.js?v=14"></script>
+  <script src="js/app.js?v=15"></script>
 </body>
 </html>

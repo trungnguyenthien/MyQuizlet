@@ -1,5 +1,5 @@
 {
-  "id": "./?pwa=myquizlet",
+  "id": "/MyQuizlet/",
   "name": "MyQuizlet",
   "short_name": "MyQuizlet",
   "description": "Offline flashcard study app powered by plain Markdown notes",

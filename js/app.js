@@ -552,7 +552,17 @@ let message = "Xin ch\xE0o"
       about_dialog_title: "Gi\u1EDBi thi\u1EC7u MyQuizlet",
       about_desc: "MyQuizlet l\xE0 \u1EE9ng d\u1EE5ng PWA h\u1ECDc flashcard \u0111\u1ED9c l\u1EADp, kh\xF4ng c\u1EA7n t\xE0i kho\u1EA3n, ho\u1EA1t \u0111\u1ED9ng 100% offline v\xE0 kh\xF4ng g\u1EEDi d\u1EEF li\u1EC7u ra b\xEAn ngo\xE0i.",
       about_features: "T\u1ED1i \u01B0u cho Markdown, hi\u1EC3n th\u1ECB code block v\u1EDBi syntax highlighting phong c\xE1ch GitHub, h\u1ED7 tr\u1EE3 c\u1EED ch\u1EC9 vu\u1ED1t m\u01B0\u1EE3t m\xE0 60fps.",
-      about_version: "Phi\xEAn b\u1EA3n 1.3.0 (Offline PWA)"
+      about_version: "Phi\xEAn b\u1EA3n 1.3.0 (Offline PWA)",
+      // PWA Installation & iOS Modal
+      install_btn: "C\xE0i \u0111\u1EB7t",
+      install_btn_aria: "C\xE0i \u0111\u1EB7t \u1EE9ng d\u1EE5ng",
+      app_installed_success: "C\xE0i \u0111\u1EB7t \u1EE9ng d\u1EE5ng th\xE0nh c\xF4ng!",
+      ios_install_title: "C\xE0i \u0111\u1EB7t tr\xEAn iOS",
+      ios_install_intro: "\u0110\u1EC3 c\xE0i \u0111\u1EB7t \u1EE9ng d\u1EE5ng l\xEAn iPhone ho\u1EB7c iPad:",
+      ios_step_1: '1. Nh\u1EA5n n\xFAt <strong>Chia s\u1EBB (Share)</strong> <span aria-hidden="true">\u238B</span> \u1EDF thanh c\xF4ng c\u1EE5 d\u01B0\u1EDBi \u0111\xE1y Safari.',
+      ios_step_2: '2. Cu\u1ED9n xu\u1ED1ng v\xE0 ch\u1ECDn <strong>Th\xEAm v\xE0o M\xE0n h\xECnh ch\xEDnh (Add to Home Screen)</strong> <span aria-hidden="true">\u2295</span>.',
+      ios_step_3: "3. Nh\u1EA5n <strong>Th\xEAm (Add)</strong> \u1EDF g\xF3c tr\xEAn b\xEAn ph\u1EA3i \u0111\u1EC3 ho\xE0n t\u1EA5t.",
+      ios_install_got_it: "\u0110\xE3 hi\u1EC3u"
     },
     en: {
       // App & Navigation
@@ -723,7 +733,17 @@ let greeting = "Hello"
       about_dialog_title: "About MyQuizlet",
       about_desc: "MyQuizlet is a standalone offline PWA flashcard app. No account required, 100% offline, with zero data sent off-device.",
       about_features: "Engineered for Markdown notes, syntax-highlighted code blocks with GitHub themes, and smooth 60fps swipe gestures.",
-      about_version: "Version 1.3.0 (Offline PWA)"
+      about_version: "Version 1.3.0 (Offline PWA)",
+      // PWA Installation & iOS Modal
+      install_btn: "Install",
+      install_btn_aria: "Install application",
+      app_installed_success: "App installed successfully!",
+      ios_install_title: "Install on iOS",
+      ios_install_intro: "To install this app on iPhone or iPad:",
+      ios_step_1: '1. Tap the <strong>Share</strong> button <span aria-hidden="true">\u238B</span> in the Safari toolbar.',
+      ios_step_2: '2. Scroll down and tap <strong>Add to Home Screen</strong> <span aria-hidden="true">\u2295</span>.',
+      ios_step_3: "3. Tap <strong>Add</strong> in the top-right corner to complete.",
+      ios_install_got_it: "Got it"
     }
   };
   var I18n = class {
@@ -2473,6 +2493,8 @@ ${a}
       this.swipeCleanup = null;
       this.isAnimating = false;
       this.boundKeyHandler = this.handleKeyDown.bind(this);
+      this.wakeLock = null;
+      this.boundVisibilityHandler = this._handleVisibilityChange.bind(this);
     }
     /**
      * Start study session for a set
@@ -2507,6 +2529,34 @@ ${a}
       this._updateCardDisplay("none");
       window.addEventListener("keydown", this.boundKeyHandler);
       this._checkFirstRunHint();
+      this._requestWakeLock();
+      document.addEventListener("visibilitychange", this.boundVisibilityHandler);
+    }
+    async _requestWakeLock() {
+      if (typeof navigator !== "undefined" && "wakeLock" in navigator && !this.wakeLock) {
+        try {
+          this.wakeLock = await navigator.wakeLock.request("screen");
+          this.wakeLock.addEventListener("release", () => {
+            this.wakeLock = null;
+          });
+        } catch (err) {
+        }
+      }
+    }
+    _releaseWakeLock() {
+      if (this.wakeLock) {
+        try {
+          this.wakeLock.release().catch(() => {
+          });
+        } catch {
+        }
+        this.wakeLock = null;
+      }
+    }
+    _handleVisibilityChange() {
+      if (document.visibilityState === "visible" && this.currentSet) {
+        this._requestWakeLock();
+      }
     }
     _saveCurrentProgress() {
       if (!this.currentSet || !this.currentSet.id || !this.cardOrder || this.cardOrder.length === 0) return;
@@ -2518,6 +2568,8 @@ ${a}
       });
     }
     destroy() {
+      this._releaseWakeLock();
+      document.removeEventListener("visibilitychange", this.boundVisibilityHandler);
       if (this.swipeCleanup) {
         this.swipeCleanup();
         this.swipeCleanup = null;
@@ -2853,6 +2905,7 @@ ${a}
       this.currentRoute = { path: "", param: "" };
       this.searchQuery = "";
       this.questionSearchQuery = "";
+      this.deferredInstallPrompt = null;
     }
     init() {
       this.resumeStudySession = null;
@@ -2862,6 +2915,7 @@ ${a}
       this.mainContainer = document.getElementById("main-content");
       this._setupGlobalListeners();
       this._registerServiceWorker();
+      this._initPWAInstallation();
       this._handleRouteChange();
     }
     _setupGlobalListeners() {
@@ -2889,27 +2943,92 @@ ${a}
         navigator.serviceWorker.register("./sw.js", { scope: "./" }).then((registration) => {
           registration.update().catch(() => {
           });
+          const promptUpdate = (worker) => {
+            if (!worker) return;
+            ui.showSnackbar(t("toast_update_available"), {
+              actionLabel: t("toast_update_reload_btn"),
+              onAction: () => {
+                worker.postMessage({ action: "skipWaiting", type: "SKIP_WAITING" });
+                window.location.reload();
+              },
+              duration: 15e3
+            });
+          };
+          if (registration.waiting && navigator.serviceWorker.controller) {
+            promptUpdate(registration.waiting);
+          }
           registration.addEventListener("updatefound", () => {
             const newWorker = registration.installing;
             if (!newWorker) return;
             newWorker.addEventListener("statechange", () => {
               if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-                ui.showSnackbar(t("toast_update_available"), {
-                  actionLabel: t("toast_update_reload_btn"),
-                  onAction: () => {
-                    newWorker.postMessage({ type: "SKIP_WAITING" });
-                    window.location.reload();
-                  },
-                  duration: 1e4
-                });
+                promptUpdate(newWorker);
               }
             });
           });
         }).catch((err) => {
           console.warn("[MyQuizlet] Service Worker registration failed:", err);
         });
+        let refreshing = false;
         navigator.serviceWorker.addEventListener("controllerchange", () => {
-          window.location.reload();
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
+      }
+    }
+    _initPWAInstallation() {
+      const btnInstall = document.getElementById("btnInstall");
+      const iosInstallModal = document.getElementById("iosInstallModal");
+      const btnCloseIosModal = document.getElementById("btnCloseIosModal");
+      const btnGotItIos = document.getElementById("btnGotItIos");
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+      if (isStandalone) {
+        if (btnInstall) btnInstall.classList.add("hidden");
+      } else if (isIOS && btnInstall) {
+        btnInstall.classList.remove("hidden");
+      }
+      window.addEventListener("beforeinstallprompt", (e) => {
+        e.preventDefault();
+        this.deferredInstallPrompt = e;
+        if (!isStandalone && btnInstall) {
+          btnInstall.classList.remove("hidden");
+        }
+      });
+      window.addEventListener("appinstalled", () => {
+        this.deferredInstallPrompt = null;
+        if (btnInstall) btnInstall.classList.add("hidden");
+        ui.showSnackbar(t("app_installed_success"));
+      });
+      if (btnInstall) {
+        btnInstall.addEventListener("click", async () => {
+          if (this.deferredInstallPrompt) {
+            this.deferredInstallPrompt.prompt();
+            const { outcome } = await this.deferredInstallPrompt.userChoice;
+            if (outcome === "accepted") {
+              btnInstall.classList.add("hidden");
+            }
+            this.deferredInstallPrompt = null;
+          } else if (iosInstallModal) {
+            iosInstallModal.classList.remove("hidden");
+          }
+        });
+      }
+      const closeIosModal = () => {
+        if (iosInstallModal) iosInstallModal.classList.add("hidden");
+      };
+      if (btnCloseIosModal) btnCloseIosModal.addEventListener("click", closeIosModal);
+      if (btnGotItIos) btnGotItIos.addEventListener("click", closeIosModal);
+      if (iosInstallModal) {
+        iosInstallModal.addEventListener("click", (e) => {
+          if (e.target === iosInstallModal) closeIosModal();
+        });
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape" && !iosInstallModal.classList.contains("hidden")) {
+            closeIosModal();
+          }
         });
       }
     }
@@ -3026,6 +3145,22 @@ ${a}
           };
         }
       }
+      const installText = this.appBar.querySelector("#btn-install-text");
+      if (installText) installText.textContent = t("install_btn");
+      const btnInstall = this.appBar.querySelector("#btnInstall");
+      if (btnInstall) btnInstall.setAttribute("aria-label", t("install_btn_aria"));
+      const iosModalTitle = document.getElementById("iosModalTitle");
+      if (iosModalTitle) iosModalTitle.textContent = t("ios_install_title");
+      const iosIntro = document.getElementById("ios-install-intro");
+      if (iosIntro) iosIntro.textContent = t("ios_install_intro");
+      const iosStep1 = document.getElementById("ios-step-1");
+      if (iosStep1) iosStep1.innerHTML = t("ios_step_1");
+      const iosStep2 = document.getElementById("ios-step-2");
+      if (iosStep2) iosStep2.innerHTML = t("ios_step_2");
+      const iosStep3 = document.getElementById("ios-step-3");
+      if (iosStep3) iosStep3.innerHTML = t("ios_step_3");
+      const btnGotItIos = document.getElementById("btnGotItIos");
+      if (btnGotItIos) btnGotItIos.textContent = t("ios_install_got_it");
     }
     /**
      * Screen 1: Library Screen (A5)

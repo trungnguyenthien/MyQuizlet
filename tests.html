@@ -515,6 +515,90 @@ Present, appearing, or found everywhere.`;
         store.deleteSet(testSet.id);
       });
 
+      // Test 16: PWA Standard 1 - Web App Manifest Specification
+      await runTest('PWA Standards 1: Manifest declares correct id ("/MyQuizlet/"), standalone display, and maskable icons', async () => {
+        const resp = await fetch('manifest.webmanifest');
+        const manifest = await resp.json();
+        console.assert(manifest.id === '/MyQuizlet/', `Expected manifest.id '/MyQuizlet/', got '${manifest.id}'`);
+        console.assert(manifest.display === 'standalone', `Expected display 'standalone', got '${manifest.display}'`);
+        console.assert(manifest.scope === './', `Expected scope './', got '${manifest.scope}'`);
+        console.assert(manifest.orientation === 'portrait', `Expected orientation 'portrait', got '${manifest.orientation}'`);
+        const hasMaskable = manifest.icons.some(i => i.purpose && i.purpose.includes('maskable'));
+        console.assert(hasMaskable, 'Manifest must contain at least one maskable icon');
+      });
+
+      // Test 17: PWA Standard 6 - Install Button & iOS Safari Guidance Modal Pattern
+      await runTest('PWA Standards 6: Install button and iOS guidance modal exist in index.html and follow accessibility standards', async () => {
+        const resp = await fetch('index.html');
+        const htmlText = await resp.text();
+        const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+
+        const btnInstall = doc.getElementById('btnInstall');
+        console.assert(Boolean(btnInstall), 'Install button #btnInstall must exist in index.html');
+        console.assert(btnInstall.classList.contains('hidden'), 'Install button must have "hidden" class by default in index.html');
+
+        const iosModal = doc.getElementById('iosInstallModal');
+        console.assert(Boolean(iosModal), 'iOS install modal #iosInstallModal must exist in index.html');
+        console.assert(iosModal.getAttribute('role') === 'dialog', 'iOS modal must have role="dialog"');
+        console.assert(iosModal.getAttribute('aria-modal') === 'true', 'iOS modal must have aria-modal="true"');
+
+        const btnClose = doc.getElementById('btnCloseIosModal');
+        const btnGotIt = doc.getElementById('btnGotItIos');
+        console.assert(Boolean(btnClose), 'Close button #btnCloseIosModal must exist in index.html');
+        console.assert(Boolean(btnGotIt), 'Got it button #btnGotItIos must exist in index.html');
+      });
+
+      // Test 18: PWA Standard 9 - Screen Wake Lock API in Study Controller
+      await runTest('PWA Standards 9: StudyController requests Screen Wake Lock on start and releases on destroy', async () => {
+        let wakeLockRequested = false;
+        let wakeLockReleased = false;
+
+        const originalWakeLock = navigator.wakeLock;
+        Object.defineProperty(navigator, 'wakeLock', {
+          value: {
+            request: async (type) => {
+              if (type === 'screen') wakeLockRequested = true;
+              return {
+                release: async () => {
+                  wakeLockReleased = true;
+                },
+                addEventListener: () => {}
+              };
+            }
+          },
+          configurable: true,
+          writable: true
+        });
+
+        const testSet = {
+          id: 'test-wake-lock-set',
+          title: 'Wake Lock Deck',
+          cards: [{ id: '1', q: 'Q1', a: 'A1' }]
+        };
+        store.saveSet(testSet);
+
+        const dummyContainer = document.createElement('div');
+        const controller = new StudyController({
+          container: dummyContainer,
+          onBack: () => {},
+          onShowSnackbar: () => {}
+        });
+
+        controller.start(testSet.id);
+        console.assert(wakeLockRequested === true, 'StudyController must request Screen Wake Lock on start');
+
+        controller.destroy();
+        console.assert(wakeLockReleased === true, 'StudyController must release Screen Wake Lock on destroy');
+
+        store.deleteSet(testSet.id);
+
+        Object.defineProperty(navigator, 'wakeLock', {
+          value: originalWakeLock,
+          configurable: true,
+          writable: true
+        });
+      });
+
       // Update Summary
       summaryEl.textContent = `Completed ${passed + failed} tests: ${passed} Passed, ${failed} Failed.`;
       summaryEl.className = failed === 0 ? 'summary pass' : 'summary fail';

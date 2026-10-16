@@ -19,6 +19,7 @@ class App {
     this.currentRoute = { path: '', param: '' };
     this.searchQuery = '';
     this.questionSearchQuery = '';
+    this.deferredInstallPrompt = null;
   }
 
   init() {
@@ -38,7 +39,10 @@ class App {
     // 4. Register Service Worker
     this._registerServiceWorker();
 
-    // 5. Initial route dispatch
+    // 5. Initialize PWA Installation Flow (PWA Standard 6)
+    this._initPWAInstallation();
+
+    // 6. Initial route dispatch
     this._handleRouteChange();
   }
 
@@ -72,8 +76,25 @@ class App {
   _registerServiceWorker() {
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       navigator.serviceWorker.register('./sw.js', { scope: './' }).then((registration) => {
-        // Immediately check for updates so users receive new versions without waiting
+        // Immediately check for updates
         registration.update().catch(() => {});
+
+        const promptUpdate = (worker) => {
+          if (!worker) return;
+          ui.showSnackbar(t('toast_update_available'), {
+            actionLabel: t('toast_update_reload_btn'),
+            onAction: () => {
+              worker.postMessage({ action: 'skipWaiting', type: 'SKIP_WAITING' });
+              window.location.reload();
+            },
+            duration: 15000
+          });
+        };
+
+        // If there is already a waiting worker
+        if (registration.waiting && navigator.serviceWorker.controller) {
+          promptUpdate(registration.waiting);
+        }
 
         // Check for updates
         registration.addEventListener('updatefound', () => {
@@ -82,15 +103,7 @@ class App {
 
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // Update available!
-              ui.showSnackbar(t('toast_update_available'), {
-                actionLabel: t('toast_update_reload_btn'),
-                onAction: () => {
-                  newWorker.postMessage({ type: 'SKIP_WAITING' });
-                  window.location.reload();
-                },
-                duration: 10000
-              });
+              promptUpdate(newWorker);
             }
           });
         });
@@ -99,8 +112,87 @@ class App {
       });
 
       // Reload when the waiting worker takes over
+      let refreshing = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
-        window.location.reload();
+        if (!refreshing) {
+          refreshing = true;
+          window.location.reload();
+        }
+      });
+    }
+  }
+
+  _initPWAInstallation() {
+    const btnInstall = document.getElementById('btnInstall');
+    const iosInstallModal = document.getElementById('iosInstallModal');
+    const btnCloseIosModal = document.getElementById('btnCloseIosModal');
+    const btnGotItIos = document.getElementById('btnGotItIos');
+
+    // Check standalone mode (PWA Standard 6.A)
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
+
+    // Detect iOS Safari
+    const isIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    if (isStandalone) {
+      if (btnInstall) btnInstall.classList.add('hidden');
+    } else if (isIOS && btnInstall) {
+      // iOS Safari does not fire beforeinstallprompt; show button to open instructions modal
+      btnInstall.classList.remove('hidden');
+    }
+
+    // 1. Listen for beforeinstallprompt on Chromium (Android / Desktop)
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      this.deferredInstallPrompt = e;
+      if (!isStandalone && btnInstall) {
+        btnInstall.classList.remove('hidden');
+      }
+    });
+
+    // 2. Listen for appinstalled
+    window.addEventListener('appinstalled', () => {
+      this.deferredInstallPrompt = null;
+      if (btnInstall) btnInstall.classList.add('hidden');
+      ui.showSnackbar(t('app_installed_success'));
+    });
+
+    // 3. Handle install button click
+    if (btnInstall) {
+      btnInstall.addEventListener('click', async () => {
+        if (this.deferredInstallPrompt) {
+          this.deferredInstallPrompt.prompt();
+          const { outcome } = await this.deferredInstallPrompt.userChoice;
+          if (outcome === 'accepted') {
+            btnInstall.classList.add('hidden');
+          }
+          this.deferredInstallPrompt = null;
+        } else if (iosInstallModal) {
+          iosInstallModal.classList.remove('hidden');
+        }
+      });
+    }
+
+    // Close iOS modal handlers
+    const closeIosModal = () => {
+      if (iosInstallModal) iosInstallModal.classList.add('hidden');
+    };
+
+    if (btnCloseIosModal) btnCloseIosModal.addEventListener('click', closeIosModal);
+    if (btnGotItIos) btnGotItIos.addEventListener('click', closeIosModal);
+
+    if (iosInstallModal) {
+      iosInstallModal.addEventListener('click', (e) => {
+        if (e.target === iosInstallModal) closeIosModal();
+      });
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && !iosInstallModal.classList.contains('hidden')) {
+          closeIosModal();
+        }
       });
     }
   }
@@ -233,6 +325,25 @@ class App {
         };
       }
     }
+
+    // Update Install Button & iOS Modal Text
+    const installText = this.appBar.querySelector('#btn-install-text');
+    if (installText) installText.textContent = t('install_btn');
+    const btnInstall = this.appBar.querySelector('#btnInstall');
+    if (btnInstall) btnInstall.setAttribute('aria-label', t('install_btn_aria'));
+
+    const iosModalTitle = document.getElementById('iosModalTitle');
+    if (iosModalTitle) iosModalTitle.textContent = t('ios_install_title');
+    const iosIntro = document.getElementById('ios-install-intro');
+    if (iosIntro) iosIntro.textContent = t('ios_install_intro');
+    const iosStep1 = document.getElementById('ios-step-1');
+    if (iosStep1) iosStep1.innerHTML = t('ios_step_1');
+    const iosStep2 = document.getElementById('ios-step-2');
+    if (iosStep2) iosStep2.innerHTML = t('ios_step_2');
+    const iosStep3 = document.getElementById('ios-step-3');
+    if (iosStep3) iosStep3.innerHTML = t('ios_step_3');
+    const btnGotItIos = document.getElementById('btnGotItIos');
+    if (btnGotItIos) btnGotItIos.textContent = t('ios_install_got_it');
   }
 
   /**
