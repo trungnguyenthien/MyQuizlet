@@ -1257,7 +1257,6 @@ class UIManager {
     const dialog = document.createElement('dialog');
     dialog.className = 'modal-dialog review-answer-dialog';
 
-    const qHtml = renderInlineQuestionHTML(card.q);
     const aHtml = renderCardFaceHTML(card, 'a');
     const indexLabel = index != null ? `${t('question_label') || 'Câu hỏi'} ${index + 1}` : '';
 
@@ -1265,8 +1264,10 @@ class UIManager {
       <div class="dialog-content review-answer-modal-content">
         <div class="review-modal-header">
           <div class="review-modal-header-info">
-            ${indexLabel ? `<span class="review-modal-badge">${indexLabel}${total ? ` / ${total}` : ''}</span>` : ''}
-            <h2 class="dialog-title review-modal-q-title">${qHtml}</h2>
+            <div class="review-modal-title-row">
+              <h2 class="dialog-title review-modal-title">${t('answer_label') || 'Câu trả lời'}</h2>
+              ${indexLabel ? `<span class="review-modal-badge">${indexLabel}${total ? ` / ${total}` : ''}</span>` : ''}
+            </div>
           </div>
           <button type="button" class="icon-btn" id="review-modal-x-btn" aria-label="${t('close')}">
             <svg class="icon" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
@@ -1274,7 +1275,6 @@ class UIManager {
         </div>
 
         <div class="review-modal-scroll-body">
-          <div class="review-modal-answer-label">${t('answer_label') || 'Câu trả lời'}:</div>
           <div class="review-modal-answer-body markdown-body">
             ${aHtml}
           </div>

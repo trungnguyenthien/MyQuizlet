@@ -2435,10 +2435,24 @@ button {
   min-width: 0;
 }
 
+.review-modal-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.review-modal-title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--md-sys-color-on-surface);
+}
+
 .review-modal-badge {
   display: inline-flex;
   align-items: center;
-  align-self: flex-start;
   padding: 3px 10px;
   border-radius: var(--radius-full);
   background-color: rgba(63, 81, 181, 0.12);
@@ -2446,15 +2460,6 @@ button {
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.3px;
-}
-
-.review-modal-q-title {
-  margin: 0;
-  font-size: 1.15rem;
-  font-weight: 700;
-  line-height: 1.4;
-  color: var(--md-sys-color-on-surface);
-  word-break: break-word;
 }
 
 .review-modal-scroll-body {

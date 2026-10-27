@@ -637,8 +637,11 @@ Present, appearing, or found everywhere.`;
         console.assert(Boolean(dialog1), 'Review answer dialog should be appended to body');
         console.assert(dialog1.open === true, 'Dialog should be open');
 
-        const qTitle1 = dialog1.querySelector('.review-modal-q-title');
-        console.assert(qTitle1 && qTitle1.textContent.includes('Câu hỏi 1?'), 'Modal title should contain question 1');
+        const title1 = dialog1.querySelector('.review-modal-title');
+        console.assert(Boolean(title1), 'Modal header title should exist');
+
+        // Verify question text is NOT shown in modal
+        console.assert(!dialog1.textContent.includes('Câu hỏi 1?'), 'Modal should not display the question text');
 
         const aBody1 = dialog1.querySelector('.review-modal-answer-body');
         console.assert(aBody1 && aBody1.textContent.includes('Đáp án chi tiết 1'), 'Modal body should contain answer 1');
@@ -655,6 +658,7 @@ Present, appearing, or found everywhere.`;
         items[1].click();
         const dialog2 = document.querySelector('.review-answer-dialog');
         console.assert(Boolean(dialog2), 'Dialog 2 should be appended to body');
+        console.assert(!dialog2.textContent.includes('Câu hỏi 2?'), 'Dialog 2 should not display question 2 text');
         const aBody2 = dialog2.querySelector('.review-modal-answer-body');
         console.assert(aBody2 && aBody2.textContent.includes('Đáp án chi tiết 2'), 'Modal body should contain answer 2');
 
