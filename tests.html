@@ -628,6 +628,11 @@ Present, appearing, or found everywhere.`;
         const items = app.mainContainer.querySelectorAll('.review-question-item');
         console.assert(items.length === 3, `Expected 3 review items, found ${items.length}`);
 
+        // Verify sequence number and eye icon are removed from question item
+        console.assert(items[0].querySelector('.review-q-num') === null, 'Question item should not have sequence number');
+        console.assert(items[0].querySelector('.review-q-action') === null, 'Question item should not have eye icon action');
+        console.assert(items[0].querySelector('svg') === null, 'Question item should not have any svg eye icon');
+
         // Initially no review answer modal dialog in DOM
         console.assert(document.querySelector('.review-answer-dialog') === null, 'No modal dialog initially');
 

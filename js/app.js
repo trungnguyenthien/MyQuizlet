@@ -3712,17 +3712,8 @@ ${a}
           ${filteredCards.map((card, idx) => {
           const qHtml = renderInlineQuestionHTML(card.q);
           return `
-                <div class="review-question-item" data-card-id="${card.id}" data-card-index="${idx}" role="listitem" tabindex="0" aria-label="${t("question_label") || "C\xE2u h\u1ECFi"} ${idx + 1}: ${this._escapeHTML(card.q)}">
-                  <div class="review-q-num">${idx + 1}</div>
-                  <div class="review-q-body">
-                    <div class="review-q-title">${qHtml}</div>
-                  </div>
-                  <div class="review-q-action" aria-hidden="true">
-                    <span class="review-q-view-badge">
-                      <svg class="icon-sm" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
-                      <span>${t("view_answer_btn")}</span>
-                    </span>
-                  </div>
+                <div class="review-question-item" data-card-id="${card.id}" data-card-index="${idx}" role="listitem" tabindex="0" aria-label="${this._escapeHTML(card.q)}">
+                  <div class="review-q-title">${qHtml}</div>
                 </div>
               `;
         }).join("")}
