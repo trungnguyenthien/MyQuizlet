@@ -81,6 +81,7 @@
     import { renderCardFaceHTML } from './js/render.js';
     import { ui } from './js/ui.js';
     import { StudyController } from './js/study.js';
+    import { App } from './js/main.js';
 
     const resultsContainer = document.getElementById('results');
     const summaryEl = document.getElementById('summary');
@@ -597,6 +598,73 @@ Present, appearing, or found everywhere.`;
           configurable: true,
           writable: true
         });
+      });
+
+      // Test 19: Review Screen Question Modal Behavior
+      await runTest('Review Screen: Displays question list, tapping a question opens modal with answer and close button', async () => {
+        const testReviewSet = {
+          id: 'test-review-set-modal',
+          title: 'Review Modal Deck',
+          cards: [
+            { id: 'rev-c1', q: 'Câu hỏi 1?', a: 'Đáp án chi tiết 1' },
+            { id: 'rev-c2', q: 'Câu hỏi 2?', a: 'Đáp án chi tiết 2' },
+            { id: 'rev-c3', q: 'Câu hỏi 3?', a: 'Đáp án chi tiết 3' }
+          ]
+        };
+        store.saveSet(testReviewSet);
+
+        // Render review using App
+        const app = new App();
+        app.mainContainer = document.createElement('main');
+        app.appBar = document.createElement('header');
+        app.appBar.innerHTML = `
+          <button id="app-back-btn"></button>
+          <span id="app-title"></span>
+        `;
+        document.body.appendChild(app.mainContainer);
+
+        app.renderReview(testReviewSet.id);
+
+        const items = app.mainContainer.querySelectorAll('.review-question-item');
+        console.assert(items.length === 3, `Expected 3 review items, found ${items.length}`);
+
+        // Initially no review answer modal dialog in DOM
+        console.assert(document.querySelector('.review-answer-dialog') === null, 'No modal dialog initially');
+
+        // Tap item 1 -> opens modal dialog
+        items[0].click();
+        const dialog1 = document.querySelector('.review-answer-dialog');
+        console.assert(Boolean(dialog1), 'Review answer dialog should be appended to body');
+        console.assert(dialog1.open === true, 'Dialog should be open');
+
+        const qTitle1 = dialog1.querySelector('.review-modal-q-title');
+        console.assert(qTitle1 && qTitle1.textContent.includes('Câu hỏi 1?'), 'Modal title should contain question 1');
+
+        const aBody1 = dialog1.querySelector('.review-modal-answer-body');
+        console.assert(aBody1 && aBody1.textContent.includes('Đáp án chi tiết 1'), 'Modal body should contain answer 1');
+
+        // Verify bottom close button exists
+        const closeBtn = dialog1.querySelector('#review-modal-btn-close');
+        console.assert(Boolean(closeBtn), 'Modal must have bottom close button (#review-modal-btn-close)');
+
+        // Tap bottom close button -> modal closes and is removed
+        closeBtn.click();
+        console.assert(document.querySelector('.review-answer-dialog') === null, 'Dialog should be closed and removed after clicking close button');
+
+        // Tap item 2 -> opens modal with answer 2
+        items[1].click();
+        const dialog2 = document.querySelector('.review-answer-dialog');
+        console.assert(Boolean(dialog2), 'Dialog 2 should be appended to body');
+        const aBody2 = dialog2.querySelector('.review-modal-answer-body');
+        console.assert(aBody2 && aBody2.textContent.includes('Đáp án chi tiết 2'), 'Modal body should contain answer 2');
+
+        // Close dialog 2 via close button
+        dialog2.querySelector('#review-modal-btn-close').click();
+        console.assert(document.querySelector('.review-answer-dialog') === null, 'Dialog 2 should be removed');
+
+        // Cleanup
+        document.body.removeChild(app.mainContainer);
+        store.deleteSet(testReviewSet.id);
       });
 
       // Update Summary

@@ -419,6 +419,15 @@
       lock_badge_tooltip: "B\u1ED9 th\u1EBB \u0111ang kh\xF3a xem \u0111\xE1p \xE1n",
       // Deck actions
       action_study: "H\u1ECDc ngay",
+      action_review: "Review",
+      review_screen_title: "Review b\u1ED9 th\u1EBB",
+      review_search_placeholder: "T\xECm ki\u1EBFm c\xE2u h\u1ECFi review...",
+      review_empty_notice: "B\u1ED9 th\u1EBB ch\u01B0a c\xF3 c\xE2u h\u1ECFi n\xE0o \u0111\u1EC3 review.",
+      review_empty_search: 'Kh\xF4ng t\xECm th\u1EA5y c\xE2u h\u1ECFi n\xE0o kh\u1EDBp v\u1EDBi "{query}".',
+      review_hint: "Ch\u1EA1m v\xE0o c\xE2u h\u1ECFi \u0111\u1EC3 xem \u0111\xE1p \xE1n",
+      question_label: "C\xE2u h\u1ECFi",
+      answer_label: "C\xE2u tr\u1EA3 l\u1EDDi",
+      view_answer_btn: "Xem \u0111\xE1p \xE1n",
       action_rename: "\u0110\u1ED5i t\xEAn",
       action_reimport: "Re-import",
       action_edit_markdown: "S\u1EEDa Markdown",
@@ -600,6 +609,15 @@ let message = "Xin ch\xE0o"
       lock_badge_tooltip: "Answers are hidden for this deck",
       // Deck actions
       action_study: "Study",
+      action_review: "Review",
+      review_screen_title: "Deck Review",
+      review_search_placeholder: "Search review questions...",
+      review_empty_notice: "No questions in this deck to review.",
+      review_empty_search: 'No questions match "{query}".',
+      review_hint: "Tap a question to view its answer",
+      question_label: "Question",
+      answer_label: "Answer",
+      view_answer_btn: "View answer",
       action_rename: "Rename",
       action_reimport: "Re-import",
       action_edit_markdown: "Edit Markdown",
@@ -2271,6 +2289,62 @@ ${a}
       dialog.querySelector("#about-btn-ok").addEventListener("click", cleanup);
       dialog.addEventListener("cancel", cleanup);
     }
+    /**
+     * Show Review Answer Modal
+     * @param {{ card: { id: string, q: string, a: string }, index?: number, total?: number }} options
+     */
+    showReviewAnswerModal({ card, index, total }) {
+      if (!card) return;
+      const dialog = document.createElement("dialog");
+      dialog.className = "modal-dialog review-answer-dialog";
+      const qHtml = renderInlineQuestionHTML(card.q);
+      const aHtml = renderCardFaceHTML(card, "a");
+      const indexLabel = index != null ? `${t("question_label") || "C\xE2u h\u1ECFi"} ${index + 1}` : "";
+      dialog.innerHTML = `
+      <div class="dialog-content review-answer-modal-content">
+        <div class="review-modal-header">
+          <div class="review-modal-header-info">
+            ${indexLabel ? `<span class="review-modal-badge">${indexLabel}${total ? ` / ${total}` : ""}</span>` : ""}
+            <h2 class="dialog-title review-modal-q-title">${qHtml}</h2>
+          </div>
+          <button type="button" class="icon-btn" id="review-modal-x-btn" aria-label="${t("close")}">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+        </div>
+
+        <div class="review-modal-scroll-body">
+          <div class="review-modal-answer-label">${t("answer_label") || "C\xE2u tr\u1EA3 l\u1EDDi"}:</div>
+          <div class="review-modal-answer-body markdown-body">
+            ${aHtml}
+          </div>
+        </div>
+
+        <div class="dialog-actions review-modal-actions">
+          <button type="button" class="btn btn-primary review-modal-btn-close" id="review-modal-btn-close">
+            <span>${t("close")}</span>
+          </button>
+        </div>
+      </div>
+    `;
+      document.body.appendChild(dialog);
+      dialog.showModal();
+      const cleanup = () => {
+        dialog.close();
+        if (dialog.parentNode === document.body) {
+          document.body.removeChild(dialog);
+        }
+      };
+      const xBtn = dialog.querySelector("#review-modal-x-btn");
+      if (xBtn) xBtn.addEventListener("click", cleanup);
+      const closeBtn = dialog.querySelector("#review-modal-btn-close");
+      if (closeBtn) closeBtn.addEventListener("click", cleanup);
+      dialog.addEventListener("cancel", cleanup);
+      dialog.addEventListener("click", (e) => {
+        const rect = dialog.getBoundingClientRect();
+        const isInDialog = rect.top <= e.clientY && e.clientY <= rect.top + rect.height && rect.left <= e.clientX && e.clientX <= rect.left + rect.width;
+        if (!isInDialog) cleanup();
+      });
+    }
   };
   var ui = new UIManager();
 
@@ -2905,6 +2979,8 @@ ${a}
       this.currentRoute = { path: "", param: "" };
       this.searchQuery = "";
       this.questionSearchQuery = "";
+      this.reviewSearchQuery = "";
+      this.expandedReviewCardId = null;
       this.deferredInstallPrompt = null;
     }
     init() {
@@ -2925,6 +3001,8 @@ ${a}
           this.renderLibrary();
         } else if (this.currentRoute.path === "set" && this.currentRoute.param) {
           this.renderSetDetail(this.currentRoute.param);
+        } else if (this.currentRoute.path === "review" && this.currentRoute.param) {
+          this.renderReview(this.currentRoute.param);
         }
       });
       i18n.subscribe(() => {
@@ -3042,6 +3120,9 @@ ${a}
       if (parts[0] === "set" && parts[1]) {
         return { path: "set", param: parts[1] };
       }
+      if (parts[0] === "review" && parts[1]) {
+        return { path: "review", param: parts[1] };
+      }
       if (parts[0] === "study" && parts[1]) {
         return { path: "study", param: parts[1] };
       }
@@ -3065,6 +3146,9 @@ ${a}
         case "set":
           this.renderSetDetail(route.param);
           break;
+        case "review":
+          this.renderReview(route.param);
+          break;
         case "study":
           this.renderStudy(route.param);
           break;
@@ -3083,17 +3167,28 @@ ${a}
         return;
       }
       this.appBar.classList.remove("hidden");
-      const isSubScreen = this.currentRoute.path === "set";
+      const isSubScreen = this.currentRoute.path === "set" || this.currentRoute.path === "review";
       const backBtn = this.appBar.querySelector("#app-back-btn");
       const titleEl = this.appBar.querySelector("#app-title");
       if (backBtn) {
         backBtn.classList.toggle("hidden", !isSubScreen);
         backBtn.onclick = () => {
-          window.location.hash = "#/";
+          if (this.currentRoute.path === "review") {
+            window.location.hash = `#/set/${this.currentRoute.param}`;
+          } else {
+            window.location.hash = "#/";
+          }
         };
       }
       if (titleEl) {
-        titleEl.textContent = isSubScreen ? t("deck_detail_title") : t("app_title");
+        if (this.currentRoute.path === "review") {
+          const set = store.getSet(this.currentRoute.param);
+          titleEl.textContent = set ? `${t("action_review")} \u2014 ${set.title}` : t("action_review");
+        } else if (this.currentRoute.path === "set") {
+          titleEl.textContent = t("deck_detail_title");
+        } else {
+          titleEl.textContent = t("app_title");
+        }
       }
       const menuBtn = this.appBar.querySelector("#app-menu-btn");
       const menuDropdown = this.appBar.querySelector("#app-menu-dropdown");
@@ -3226,10 +3321,16 @@ ${a}
           </div>
 
           <div class="deck-card-actions">
-            <button type="button" class="btn btn-tonal btn-study-card" data-set-id="${set.id}">
-              <svg class="icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-              <span>${t("action_study")}</span>
-            </button>
+            <div class="deck-card-btn-group">
+              <button type="button" class="btn btn-tonal btn-study-card" data-set-id="${set.id}">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <span>${t("action_study")}</span>
+              </button>
+              <button type="button" class="btn btn-tonal btn-review-card" data-set-id="${set.id}" ${set.count === 0 ? "disabled" : ""}>
+                <svg class="icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                <span>${t("action_review")}</span>
+              </button>
+            </div>
 
             <div class="card-menu-container">
               <button type="button" class="icon-btn menu-trigger card-menu-btn" data-set-id="${set.id}" aria-label="${t("menu")}">
@@ -3238,6 +3339,9 @@ ${a}
               <div class="dropdown-menu card-menu-dropdown" id="menu-${set.id}">
                 <button type="button" class="menu-item action-study-item" data-set-id="${set.id}">
                   <span>${t("action_study")}</span>
+                </button>
+                <button type="button" class="menu-item action-review-item" data-set-id="${set.id}">
+                  <span>${t("action_review")}</span>
                 </button>
                 <button type="button" class="menu-item action-detail-item" data-set-id="${set.id}">
                   <span>${t("deck_detail_title")}</span>
@@ -3303,6 +3407,13 @@ ${a}
           e.stopPropagation();
           const id = btn.dataset.setId;
           this.startStudyFlow(id);
+        });
+      });
+      this.mainContainer.querySelectorAll(".btn-review-card, .action-review-item").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const id = btn.dataset.setId;
+          window.location.hash = `#/review/${id}`;
         });
       });
       this.mainContainer.querySelectorAll(".action-detail-item").forEach((btn) => {
@@ -3448,6 +3559,10 @@ ${a}
               <svg class="icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
             </button>
 
+            <button type="button" class="circle-btn circle-btn-tonal" id="detail-review-btn" title="${t("action_review")}" aria-label="${t("action_review")}" ${cards.length === 0 ? "disabled" : ""}>
+              <svg class="icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            </button>
+
             <button type="button" class="circle-btn circle-btn-tonal" id="detail-reimport-btn" title="${t("action_reimport")}" aria-label="${t("action_reimport")}">
               <svg class="icon" viewBox="0 0 24 24"><path d="M17.65 6.35C16.2 4.9 14.21 4 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08c-.82 2.33-3.04 4-5.65 4-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
             </button>
@@ -3524,6 +3639,12 @@ ${a}
       this.mainContainer.querySelector("#detail-study-btn").addEventListener("click", () => {
         this.startStudyFlow(setId);
       });
+      const detailReviewBtn = this.mainContainer.querySelector("#detail-review-btn");
+      if (detailReviewBtn) {
+        detailReviewBtn.addEventListener("click", () => {
+          window.location.hash = `#/review/${setId}`;
+        });
+      }
       const openEditMd = () => {
         this._openEditMarkdown(setId);
       };
@@ -3550,6 +3671,147 @@ ${a}
         qSearch.addEventListener("input", (e) => {
           this.questionSearchQuery = e.target.value;
           this.renderSetDetail(setId);
+        });
+      }
+    }
+    /**
+     * Screen: Review Screen (List of questions; tapping a question opens the answer modal)
+     * @param {string} setId
+     */
+    renderReview(setId) {
+      const set = store.getSet(setId);
+      if (!set) {
+        ui.showSnackbar("B\u1ED9 th\u1EBB kh\xF4ng t\u1ED3n t\u1EA1i / Deck not found");
+        window.location.hash = "#/";
+        return;
+      }
+      const cards = set.cards || [];
+      const term = (this.reviewSearchQuery || "").trim().toLowerCase();
+      const filteredCards = term ? cards.filter((c) => (c.q || "").toLowerCase().includes(term) || (c.a || "").toLowerCase().includes(term)) : cards;
+      let contentHtml = "";
+      if (cards.length === 0) {
+        contentHtml = `
+        <div class="review-empty-state">
+          <p class="empty-deck-notice">${t("review_empty_notice")}</p>
+          <div style="margin-top: var(--space-4); display: flex; justify-content: center; gap: var(--space-3);">
+            <button type="button" class="btn btn-tonal" id="review-back-detail-btn">
+              <span>${t("deck_detail_title")}</span>
+            </button>
+          </div>
+        </div>
+      `;
+      } else if (filteredCards.length === 0) {
+        contentHtml = `
+        <div class="review-empty-state">
+          <p class="empty-deck-notice">${t("review_empty_search", { query: this._escapeHTML(this.reviewSearchQuery) })}</p>
+        </div>
+      `;
+      } else {
+        contentHtml = `
+        <div class="review-question-list" id="review-question-list" role="list" aria-label="${t("review_screen_title")}">
+          ${filteredCards.map((card, idx) => {
+          const qHtml = renderInlineQuestionHTML(card.q);
+          return `
+                <div class="review-question-item" data-card-id="${card.id}" data-card-index="${idx}" role="listitem" tabindex="0" aria-label="${t("question_label") || "C\xE2u h\u1ECFi"} ${idx + 1}: ${this._escapeHTML(card.q)}">
+                  <div class="review-q-num">${idx + 1}</div>
+                  <div class="review-q-body">
+                    <div class="review-q-title">${qHtml}</div>
+                  </div>
+                  <div class="review-q-action" aria-hidden="true">
+                    <span class="review-q-view-badge">
+                      <svg class="icon-sm" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                      <span>${t("view_answer_btn")}</span>
+                    </span>
+                  </div>
+                </div>
+              `;
+        }).join("")}
+        </div>
+      `;
+      }
+      this.mainContainer.innerHTML = `
+      <div class="review-container">
+        <header class="review-header-card">
+          <div class="review-header-top">
+            <h1 class="review-title">${this._escapeHTML(set.title)}</h1>
+            ${cards.length > 0 ? `
+                  <button type="button" class="btn btn-primary btn-sm" id="review-study-btn">
+                    <svg class="icon-sm" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                    <span>${t("action_study")}</span>
+                  </button>
+                ` : ""}
+          </div>
+
+          <div class="review-header-meta">
+            <span class="chip-count">${t("deck_card_count", { count: cards.length })}</span>
+            <span class="review-hint-badge">
+              <svg class="icon-sm" viewBox="0 0 24 24"><path d="M11 17h2v-6h-2v6zm1-15C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zM11 9h2V7h-2v2z"/></svg>
+              ${t("review_hint")}
+            </span>
+          </div>
+
+          ${cards.length > 3 || this.reviewSearchQuery ? `
+                <div class="search-bar-wrapper" style="margin-top: var(--space-4);">
+                  <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                  <input type="search" id="review-search-input" class="search-input" placeholder="${t("review_search_placeholder")}" value="${this._escapeHTML(this.reviewSearchQuery || "")}" />
+                </div>
+              ` : ""}
+        </header>
+
+        ${contentHtml}
+      </div>
+    `;
+      const qList = this.mainContainer.querySelector("#review-question-list");
+      if (qList) {
+        const openCardModal = (item) => {
+          if (!item) return;
+          const cardId = item.dataset.cardId;
+          const card = cards.find((c) => c.id === cardId);
+          const cardIndex = parseInt(item.dataset.cardIndex, 10);
+          if (card) {
+            ui.showReviewAnswerModal({
+              card,
+              index: cardIndex,
+              total: filteredCards.length
+            });
+          }
+        };
+        qList.addEventListener("click", (e) => {
+          const item = e.target.closest(".review-question-item");
+          openCardModal(item);
+        });
+        qList.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            const item = e.target.closest(".review-question-item");
+            if (item) {
+              e.preventDefault();
+              openCardModal(item);
+            }
+          }
+        });
+      }
+      const searchInput = this.mainContainer.querySelector("#review-search-input");
+      if (searchInput) {
+        searchInput.addEventListener("input", (e) => {
+          this.reviewSearchQuery = e.target.value;
+          this.renderReview(setId);
+          const newInput = this.mainContainer.querySelector("#review-search-input");
+          if (newInput) {
+            newInput.focus();
+            newInput.setSelectionRange(newInput.value.length, newInput.value.length);
+          }
+        });
+      }
+      const studyBtn = this.mainContainer.querySelector("#review-study-btn");
+      if (studyBtn) {
+        studyBtn.addEventListener("click", () => {
+          this.startStudyFlow(setId);
+        });
+      }
+      const emptyBackBtn = this.mainContainer.querySelector("#review-back-detail-btn");
+      if (emptyBackBtn) {
+        emptyBackBtn.addEventListener("click", () => {
+          window.location.hash = `#/set/${setId}`;
         });
       }
     }

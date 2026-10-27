@@ -7,7 +7,7 @@
 import { t } from './i18n.js';
 import { parseMarkdownSet } from './parser.js';
 import { serializeSet } from './serializer.js';
-import { renderInlineQuestionHTML } from './render.js';
+import { renderInlineQuestionHTML, renderCardFaceHTML } from './render.js';
 import { store } from './store.js';
 
 class UIManager {
@@ -1245,6 +1245,76 @@ class UIManager {
 
     dialog.querySelector('#about-btn-ok').addEventListener('click', cleanup);
     dialog.addEventListener('cancel', cleanup);
+  }
+
+  /**
+   * Show Review Answer Modal
+   * @param {{ card: { id: string, q: string, a: string }, index?: number, total?: number }} options
+   */
+  showReviewAnswerModal({ card, index, total }) {
+    if (!card) return;
+
+    const dialog = document.createElement('dialog');
+    dialog.className = 'modal-dialog review-answer-dialog';
+
+    const qHtml = renderInlineQuestionHTML(card.q);
+    const aHtml = renderCardFaceHTML(card, 'a');
+    const indexLabel = index != null ? `${t('question_label') || 'Câu hỏi'} ${index + 1}` : '';
+
+    dialog.innerHTML = `
+      <div class="dialog-content review-answer-modal-content">
+        <div class="review-modal-header">
+          <div class="review-modal-header-info">
+            ${indexLabel ? `<span class="review-modal-badge">${indexLabel}${total ? ` / ${total}` : ''}</span>` : ''}
+            <h2 class="dialog-title review-modal-q-title">${qHtml}</h2>
+          </div>
+          <button type="button" class="icon-btn" id="review-modal-x-btn" aria-label="${t('close')}">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+          </button>
+        </div>
+
+        <div class="review-modal-scroll-body">
+          <div class="review-modal-answer-label">${t('answer_label') || 'Câu trả lời'}:</div>
+          <div class="review-modal-answer-body markdown-body">
+            ${aHtml}
+          </div>
+        </div>
+
+        <div class="dialog-actions review-modal-actions">
+          <button type="button" class="btn btn-primary review-modal-btn-close" id="review-modal-btn-close">
+            <span>${t('close')}</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(dialog);
+    dialog.showModal();
+
+    const cleanup = () => {
+      dialog.close();
+      if (dialog.parentNode === document.body) {
+        document.body.removeChild(dialog);
+      }
+    };
+
+    const xBtn = dialog.querySelector('#review-modal-x-btn');
+    if (xBtn) xBtn.addEventListener('click', cleanup);
+
+    const closeBtn = dialog.querySelector('#review-modal-btn-close');
+    if (closeBtn) closeBtn.addEventListener('click', cleanup);
+
+    dialog.addEventListener('cancel', cleanup);
+
+    // Close when tapping outside on backdrop
+    dialog.addEventListener('click', (e) => {
+      const rect = dialog.getBoundingClientRect();
+      const isInDialog = (
+        rect.top <= e.clientY && e.clientY <= rect.top + rect.height &&
+        rect.left <= e.clientX && e.clientX <= rect.left + rect.width
+      );
+      if (!isInDialog) cleanup();
+    });
   }
 }
 

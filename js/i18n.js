@@ -44,6 +44,15 @@ const translations = {
 
     // Deck actions
     action_study: 'Học ngay',
+    action_review: 'Review',
+    review_screen_title: 'Review bộ thẻ',
+    review_search_placeholder: 'Tìm kiếm câu hỏi review...',
+    review_empty_notice: 'Bộ thẻ chưa có câu hỏi nào để review.',
+    review_empty_search: 'Không tìm thấy câu hỏi nào khớp với "{query}".',
+    review_hint: 'Chạm vào câu hỏi để xem đáp án',
+    question_label: 'Câu hỏi',
+    answer_label: 'Câu trả lời',
+    view_answer_btn: 'Xem đáp án',
     action_rename: 'Đổi tên',
     action_reimport: 'Re-import',
     action_edit_markdown: 'Sửa Markdown',
@@ -240,6 +249,15 @@ let message = "Xin chào"
 
     // Deck actions
     action_study: 'Study',
+    action_review: 'Review',
+    review_screen_title: 'Deck Review',
+    review_search_placeholder: 'Search review questions...',
+    review_empty_notice: 'No questions in this deck to review.',
+    review_empty_search: 'No questions match "{query}".',
+    review_hint: 'Tap a question to view its answer',
+    question_label: 'Question',
+    answer_label: 'Answer',
+    view_answer_btn: 'View answer',
     action_rename: 'Rename',
     action_reimport: 'Re-import',
     action_edit_markdown: 'Edit Markdown',
