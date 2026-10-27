@@ -2313,10 +2313,8 @@ ${a}
           </button>
         </div>
 
-        <div class="review-modal-scroll-body">
-          <div class="review-modal-answer-body markdown-body">
-            ${aHtml}
-          </div>
+        <div class="review-modal-scroll-body markdown-body">
+          ${aHtml}
         </div>
 
         <div class="dialog-actions review-modal-actions">

@@ -5,18 +5,18 @@
  * clean activation, and controlled in-app skipWaiting updates.
  */
 
-const CACHE_NAME = 'mq-static-v23';
+const CACHE_NAME = 'mq-static-v24';
 
 const PRECACHE_ASSETS = [
   './',
   './index.html',
-  './index.html?v=19',
+  './index.html?v=20',
   './favicon.ico',
   './favicon.ico?v=4',
   './manifest.webmanifest',
-  './manifest.webmanifest?v=19',
+  './manifest.webmanifest?v=20',
   './css/app.css',
-  './css/app.css?v=19',
+  './css/app.css?v=20',
   './vendor/github.min.css',
   './vendor/marked.min.js',
   './vendor/purify.min.js',
@@ -25,7 +25,7 @@ const PRECACHE_ASSETS = [
   './vendor/highlight-kotlin.min.js',
   './vendor/highlight-dart.min.js',
   './js/app.js',
-  './js/app.js?v=19',
+  './js/app.js?v=20',
   './js/main.js',
   './js/store.js',
   './js/parser.js',

@@ -648,8 +648,11 @@ Present, appearing, or found everywhere.`;
         // Verify question text is NOT shown in modal
         console.assert(!dialog1.textContent.includes('Câu hỏi 1?'), 'Modal should not display the question text');
 
-        const aBody1 = dialog1.querySelector('.review-modal-answer-body');
-        console.assert(aBody1 && aBody1.textContent.includes('Đáp án chi tiết 1'), 'Modal body should contain answer 1');
+        // Verify no extra inner container for answer
+        console.assert(dialog1.querySelector('.review-modal-answer-body') === null, 'Should not have an extra inner container for answer');
+
+        const aBody1 = dialog1.querySelector('.review-modal-scroll-body');
+        console.assert(aBody1 && aBody1.textContent.includes('Đáp án chi tiết 1'), 'Modal scroll body should contain answer 1');
 
         // Verify bottom close button exists
         const closeBtn = dialog1.querySelector('#review-modal-btn-close');
@@ -664,8 +667,9 @@ Present, appearing, or found everywhere.`;
         const dialog2 = document.querySelector('.review-answer-dialog');
         console.assert(Boolean(dialog2), 'Dialog 2 should be appended to body');
         console.assert(!dialog2.textContent.includes('Câu hỏi 2?'), 'Dialog 2 should not display question 2 text');
-        const aBody2 = dialog2.querySelector('.review-modal-answer-body');
-        console.assert(aBody2 && aBody2.textContent.includes('Đáp án chi tiết 2'), 'Modal body should contain answer 2');
+        console.assert(dialog2.querySelector('.review-modal-answer-body') === null, 'Dialog 2 should not have extra inner container');
+        const aBody2 = dialog2.querySelector('.review-modal-scroll-body');
+        console.assert(aBody2 && aBody2.textContent.includes('Đáp án chi tiết 2'), 'Modal scroll body should contain answer 2');
 
         // Close dialog 2 via close button
         dialog2.querySelector('#review-modal-btn-close').click();

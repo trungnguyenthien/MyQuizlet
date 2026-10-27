@@ -2417,40 +2417,25 @@ button {
   flex: 1;
   overflow-y: auto;
   padding: var(--space-5) var(--space-6);
-  min-height: 140px;
-  background-color: var(--md-sys-color-background);
-}
-
-.review-modal-answer-label {
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: var(--md-sys-color-primary);
-  margin-bottom: var(--space-2);
-}
-
-.review-modal-answer-body {
+  min-height: 120px;
   background-color: var(--md-sys-color-surface);
-  border: 1px solid var(--md-sys-color-outline-variant);
-  border-radius: var(--radius-md);
-  padding: var(--space-4) var(--space-5);
   line-height: 1.65;
   font-size: 0.98rem;
   color: var(--md-sys-color-on-surface);
-  box-shadow: var(--elevation-1);
   user-select: text;
   -webkit-user-select: text;
 }
 
-.review-modal-answer-body * {
+.review-modal-scroll-body * {
   user-select: text;
   -webkit-user-select: text;
 }
 
-.review-modal-answer-body pre {
-  margin: var(--space-2) 0;
+.review-modal-scroll-body pre {
+  margin: var(--space-3) 0;
   border-radius: var(--radius-sm);
+  background-color: var(--md-sys-color-background);
+  border: 1px solid var(--md-sys-color-outline-variant);
 }
 
 .review-modal-actions {
