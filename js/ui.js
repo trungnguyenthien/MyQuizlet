@@ -1283,7 +1283,6 @@ class UIManager {
           <button type="button" class="btn btn-tonal review-modal-btn-speech" id="review-modal-btn-speech-vn" aria-label="Speech VN" title="Phát âm tiếng Việt">
             <svg class="icon-sm speech-icon-speaker" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
             <span class="speech-flag" aria-hidden="true">🇻🇳</span>
-            <span class="speech-label-text"><span class="speech-label-prefix">Speech&nbsp;</span>VN</span>
           </button>
           <button type="button" class="btn btn-primary review-modal-btn-close" id="review-modal-btn-close">
             <span>${t('close')}</span>
@@ -1291,7 +1290,6 @@ class UIManager {
           <button type="button" class="btn btn-tonal review-modal-btn-speech" id="review-modal-btn-speech-en" aria-label="Speech EN" title="Speak English">
             <svg class="icon-sm speech-icon-speaker" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
             <span class="speech-flag" aria-hidden="true">🇺🇸</span>
-            <span class="speech-label-text"><span class="speech-label-prefix">Speech&nbsp;</span>EN</span>
           </button>
         </div>
       </div>
@@ -1369,9 +1367,9 @@ class UIManager {
     };
 
     // Text to Speech with auto segment detection and pause handling:
-    // - Dấu phẩy (comma): ngắt 0.2s (200ms)
-    // - Dấu chấm / hết câu (period, !, ?, ;, :): ngắt 0.5s (500ms)
-    // - Dấu nháy "" (quote): ngắt 0.2s (200ms)
+    // - Dấu phẩy (comma): ngắt 0.1s (100ms)
+    // - Dấu chấm / hết câu (period, !, ?, ;, :): ngắt 0.3s (300ms)
+    // - Dấu nháy "" (quote): ngắt 0.1s (100ms)
     const speak = (langCode) => {
       if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
         this.showSnackbar('Trình duyệt không hỗ trợ Speech Synthesis');
@@ -1404,19 +1402,45 @@ class UIManager {
       currentSpeechLang = langCode;
       updateSpeechBtns();
 
-      // Warn early if the device has no voice for this language
-      // (common on Android without the Vietnamese TTS pack installed).
+      // Voice selection: prioritize deeper male voices
       const langPrefix = langCode.split('-')[0].toLowerCase();
+      const isMaleVoice = (v) => {
+        const name = ((v.name || '') + ' ' + (v.voiceURI || '')).toLowerCase();
+        // Positive male voice keywords
+        if (/\b(male|man|guy|boy|nam|david|alex|daniel|george|james|reed|eddy|rocko|tom|oliver|ralph|fred|aaron|vic|minh)\b/i.test(name)) {
+          return true;
+        }
+        // Exclude female voice keywords
+        if (/\b(female|woman|girl|linh|samantha|kathy|zira|victoria|karen|susan|fiona|moira|tessa|flo|sandy|shelley|grandma)\b/i.test(name)) {
+          return false;
+        }
+        return false;
+      };
+
       const findVoice = (localOnly) => {
         try {
           const voices = window.speechSynthesis.getVoices() || [];
           const norm = (v) => (v.lang || '').toLowerCase().replace(/_/g, '-');
           const pool = voices.filter((v) => norm(v).startsWith(langPrefix) && (!localOnly || v.localService === true));
+          
+          // 1. Male voice with exact language match
+          const exactMale = pool.find((v) => norm(v) === langCode.toLowerCase() && isMaleVoice(v));
+          if (exactMale) return exactMale;
+
+          // 2. Any male voice with matching language prefix
+          const anyMale = pool.find((v) => isMaleVoice(v));
+          if (anyMale) return anyMale;
+
+          // 3. Exact language match (avoiding obvious female names)
+          const nonFemale = pool.find((v) => norm(v) === langCode.toLowerCase() && !/\b(female|woman|girl|linh|samantha|kathy|zira)\b/i.test(v.name));
+          if (nonFemale) return nonFemale;
+
           return pool.find((v) => norm(v) === langCode.toLowerCase()) || pool[0] || null;
         } catch (err) {
           return null;
         }
       };
+
       let voiceCount = 0;
       try {
         const all = window.speechSynthesis.getVoices() || [];
@@ -1441,9 +1465,9 @@ class UIManager {
         this.showSnackbar(`Không thể phát âm thanh: ${code || 'unknown'}`);
       };
 
-      // attempt 0: lang only (same as english-practise.html)
-      // attempt 1: explicit matching voice
-      // attempt 2: no lang, no voice (engine default)
+      // attempt 0: preferred male voice + deep pitch 0.82
+      // attempt 1: lang only + deep pitch 0.82
+      // attempt 2: no lang, no voice (engine default) + deep pitch 0.82
       const playSegment = (item, attempt) => {
         if (thisSession !== currentSpeechSession) return;
 
@@ -1455,15 +1479,18 @@ class UIManager {
 
         const utterance = new SpeechSynthesisUtterance(item.text);
         utterance.rate = 0.9; // Slower for clarity, matching english-practise.html
+        utterance.pitch = 0.82; // Hạ cao độ xuống mức trầm ấm (deep male tone)
+
         if (attempt === 0) {
-          utterance.lang = langCode;
-        } else if (attempt === 1) {
           const voice = findVoice(true) || findVoice(false);
-          utterance.lang = langCode;
           if (voice) {
             utterance.voice = voice;
             utterance.lang = voice.lang;
+          } else {
+            utterance.lang = langCode;
           }
+        } else if (attempt === 1) {
+          utterance.lang = langCode;
         }
 
         // Keep reference on window to prevent V8 garbage collection
@@ -1597,9 +1624,9 @@ export const ui = new UIManager();
 
 /**
  * Automatically splits text into speech segments based on:
- * - Dấu phẩy (comma `,`, `，`, `、`, ` - `): 0.2s pause (200ms)
- * - Dấu chấm / ngắt câu (period `.`, `!`, `?`, `;`, `:`, `\n`, `…`): 0.5s pause (500ms)
- * - Dấu nháy `""` (quotes `"..."`, `“...”`): 0.2s pause (200ms) before & after
+ * - Dấu phẩy (comma `,`, `，`, `、`, ` - `): 0.1s pause (100ms)
+ * - Dấu chấm / ngắt câu (period `.`, `!`, `?`, `;`, `:`, `\n`, `…`): 0.3s pause (300ms)
+ * - Dấu nháy `""` (quotes `"..."`, `“...”`): 0.1s pause (100ms) before & after
  * - Protects numeric decimals (3.14), thousands (1,000), times (10:30)
  *
  * @param {string} text
@@ -1659,30 +1686,30 @@ export function parseSpeechSegments(text) {
 
     if (quote) {
       if (!inQuote) {
-        // Opening quote: flush preceding buffer with 0.2s pause (200ms)
-        flushBuffer(200);
+        // Opening quote: flush preceding buffer with 0.1s pause (100ms)
+        flushBuffer(100);
         inQuote = true;
       } else {
-        // Closing quote: flush inside quote buffer with 0.2s pause (200ms)
+        // Closing quote: flush inside quote buffer with 0.1s pause (100ms)
         inQuote = false;
-        flushBuffer(200);
+        flushBuffer(100);
       }
     } else if (period) {
-      // Period/sentence-end: 0.5s pause (500ms)
-      const flushed = flushBuffer(500);
+      // Period/sentence-end: 0.3s pause (300ms)
+      const flushed = flushBuffer(300);
       // If buffer was empty (e.g. right after a closing quote: "quote". Next sentence), upgrade previous pause
       if (!flushed && segments.length > 0) {
-        segments[segments.length - 1].pauseAfter = Math.max(segments[segments.length - 1].pauseAfter, 500);
+        segments[segments.length - 1].pauseAfter = Math.max(segments[segments.length - 1].pauseAfter, 300);
       }
     } else if (comma || dash) {
-      // Comma or dash: 0.2s pause (200ms)
-      flushBuffer(200);
+      // Comma or dash: 0.1s pause (100ms)
+      flushBuffer(100);
     }
   }
 
   const remaining = s.substring(lastIndex);
   currentBuffer += remaining;
-  flushBuffer(500);
+  flushBuffer(300);
 
   return segments;
 }

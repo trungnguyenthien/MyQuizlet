@@ -2322,7 +2322,6 @@ ${a}
           <button type="button" class="btn btn-tonal review-modal-btn-speech" id="review-modal-btn-speech-vn" aria-label="Speech VN" title="Ph\xE1t \xE2m ti\u1EBFng Vi\u1EC7t">
             <svg class="icon-sm speech-icon-speaker" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
             <span class="speech-flag" aria-hidden="true">\u{1F1FB}\u{1F1F3}</span>
-            <span class="speech-label-text"><span class="speech-label-prefix">Speech&nbsp;</span>VN</span>
           </button>
           <button type="button" class="btn btn-primary review-modal-btn-close" id="review-modal-btn-close">
             <span>${t("close")}</span>
@@ -2330,7 +2329,6 @@ ${a}
           <button type="button" class="btn btn-tonal review-modal-btn-speech" id="review-modal-btn-speech-en" aria-label="Speech EN" title="Speak English">
             <svg class="icon-sm speech-icon-speaker" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
             <span class="speech-flag" aria-hidden="true">\u{1F1FA}\u{1F1F8}</span>
-            <span class="speech-label-text"><span class="speech-label-prefix">Speech&nbsp;</span>EN</span>
           </button>
         </div>
       </div>
@@ -2424,11 +2422,27 @@ ${a}
         currentSpeechLang = langCode;
         updateSpeechBtns();
         const langPrefix = langCode.split("-")[0].toLowerCase();
+        const isMaleVoice = (v) => {
+          const name = ((v.name || "") + " " + (v.voiceURI || "")).toLowerCase();
+          if (/\b(male|man|guy|boy|nam|david|alex|daniel|george|james|reed|eddy|rocko|tom|oliver|ralph|fred|aaron|vic|minh)\b/i.test(name)) {
+            return true;
+          }
+          if (/\b(female|woman|girl|linh|samantha|kathy|zira|victoria|karen|susan|fiona|moira|tessa|flo|sandy|shelley|grandma)\b/i.test(name)) {
+            return false;
+          }
+          return false;
+        };
         const findVoice = (localOnly) => {
           try {
             const voices = window.speechSynthesis.getVoices() || [];
             const norm = (v) => (v.lang || "").toLowerCase().replace(/_/g, "-");
             const pool = voices.filter((v) => norm(v).startsWith(langPrefix) && (!localOnly || v.localService === true));
+            const exactMale = pool.find((v) => norm(v) === langCode.toLowerCase() && isMaleVoice(v));
+            if (exactMale) return exactMale;
+            const anyMale = pool.find((v) => isMaleVoice(v));
+            if (anyMale) return anyMale;
+            const nonFemale = pool.find((v) => norm(v) === langCode.toLowerCase() && !/\b(female|woman|girl|linh|samantha|kathy|zira)\b/i.test(v.name));
+            if (nonFemale) return nonFemale;
             return pool.find((v) => norm(v) === langCode.toLowerCase()) || pool[0] || null;
           } catch (err) {
             return null;
@@ -2464,15 +2478,17 @@ ${a}
           }
           const utterance = new SpeechSynthesisUtterance(item.text);
           utterance.rate = 0.9;
+          utterance.pitch = 0.82;
           if (attempt === 0) {
-            utterance.lang = langCode;
-          } else if (attempt === 1) {
             const voice = findVoice(true) || findVoice(false);
-            utterance.lang = langCode;
             if (voice) {
               utterance.voice = voice;
               utterance.lang = voice.lang;
+            } else {
+              utterance.lang = langCode;
             }
+          } else if (attempt === 1) {
+            utterance.lang = langCode;
           }
           window._mqActiveUtterance = utterance;
           let started = false;
@@ -2613,24 +2629,24 @@ ${a}
       const [sep, quote, period, comma, dash] = match;
       if (quote) {
         if (!inQuote) {
-          flushBuffer(200);
+          flushBuffer(100);
           inQuote = true;
         } else {
           inQuote = false;
-          flushBuffer(200);
+          flushBuffer(100);
         }
       } else if (period) {
-        const flushed = flushBuffer(500);
+        const flushed = flushBuffer(300);
         if (!flushed && segments.length > 0) {
-          segments[segments.length - 1].pauseAfter = Math.max(segments[segments.length - 1].pauseAfter, 500);
+          segments[segments.length - 1].pauseAfter = Math.max(segments[segments.length - 1].pauseAfter, 300);
         }
       } else if (comma || dash) {
-        flushBuffer(200);
+        flushBuffer(100);
       }
     }
     const remaining = s.substring(lastIndex);
     currentBuffer += remaining;
-    flushBuffer(500);
+    flushBuffer(300);
     return segments;
   }
   ui.parseSpeechSegments = parseSpeechSegments;

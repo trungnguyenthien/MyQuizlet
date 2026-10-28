@@ -2469,15 +2469,14 @@ button {
 }
 
 .review-modal-btn-speech {
-  flex: 1;
-  max-width: 155px;
+  flex: 0 0 auto;
+  min-width: 54px;
+  height: 40px;
   justify-content: center;
   align-items: center;
   gap: 6px;
-  font-size: 0.86rem;
-  font-weight: 600;
-  white-space: nowrap;
-  padding: 0 10px;
+  padding: 0 12px;
+  border-radius: var(--radius-full);
   transition: all var(--transition-fast);
 }
 
@@ -2489,16 +2488,11 @@ button {
 }
 
 .review-modal-btn-speech .speech-flag {
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-}
-
-.review-modal-btn-speech .speech-label-text {
-  display: inline-flex;
-  align-items: center;
 }
 
 .review-modal-btn-speech.is-speaking {
@@ -2518,8 +2512,8 @@ button {
 }
 
 .review-modal-btn-close {
-  flex: 1.2;
-  max-width: 150px;
+  flex: 1;
+  max-width: 180px;
   min-width: 80px;
   justify-content: center;
   font-weight: 600;
@@ -2536,12 +2530,12 @@ button {
 @media (max-width: 600px) {
   .review-modal-actions {
     padding: var(--space-3);
-    gap: 6px;
+    gap: 8px;
   }
   .review-modal-btn-speech {
-    max-width: none;
-    font-size: 0.8rem;
-    padding: 0 6px;
+    min-width: 48px;
+    height: 38px;
+    padding: 0 10px;
     gap: 4px;
   }
   .review-modal-btn-speech .speech-icon-speaker {
@@ -2549,16 +2543,12 @@ button {
     height: 16px;
   }
   .review-modal-btn-speech .speech-flag {
-    font-size: 1rem;
-  }
-  .review-modal-btn-speech .speech-label-prefix {
-    display: none;
+    font-size: 1.05rem;
   }
   .review-modal-btn-close {
+    flex: 1;
     max-width: none;
-    width: auto;
-    flex: 1.2;
-    padding: 0 8px;
+    padding: 0 12px;
   }
 }
 
