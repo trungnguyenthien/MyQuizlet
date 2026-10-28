@@ -633,6 +633,13 @@ Present, appearing, or found everywhere.`;
         console.assert(items[0].querySelector('.review-q-action') === null, 'Question item should not have eye icon action');
         console.assert(items[0].querySelector('svg') === null, 'Question item should not have any svg eye icon');
 
+        // Verify review study button exists, has icon, and only has icon (no text)
+        const studyBtn = app.mainContainer.querySelector('#review-study-btn');
+        console.assert(Boolean(studyBtn), 'Review screen must have study button');
+        console.assert(Boolean(studyBtn.querySelector('svg')), 'Review study button must have svg icon');
+        console.assert(studyBtn.querySelector('span') === null, 'Review study button must only have icon (no text)');
+        console.assert(studyBtn.textContent.trim() === '', 'Review study button must have empty text content');
+
         // Initially no review answer modal dialog in DOM
         console.assert(document.querySelector('.review-answer-dialog') === null, 'No modal dialog initially');
 
@@ -705,6 +712,26 @@ Present, appearing, or found everywhere.`;
           configurable: true,
           writable: true
         });
+
+        // Test fallback when synthesis-failed occurs
+        let audioSrcPlayed = null;
+        const originalAudio = window.Audio;
+        window.Audio = class MockAudio {
+          constructor() {
+            this._src = '';
+          }
+          get src() { return this._src; }
+          set src(val) { this._src = val; audioSrcPlayed = val; }
+          play() { return Promise.resolve(); }
+          pause() {}
+        };
+
+        // Simulate synthesis-failed on utterance
+        spokenUtterance.onerror({ error: 'synthesis-failed' });
+        console.assert(audioSrcPlayed !== null && audioSrcPlayed.includes('translate.google.com'), 'Should seamlessly fallback to audio TTS when synthesis-failed occurs');
+
+        // Restore Audio
+        window.Audio = originalAudio;
 
         // Tap bottom close button -> modal closes and is removed
         closeBtn.click();

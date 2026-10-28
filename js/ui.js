@@ -1300,6 +1300,7 @@ class UIManager {
     dialog.showModal();
 
     let currentSpeechLang = null;
+    let activeAudioController = null;
     const btnVn = dialog.querySelector('#review-modal-btn-speech-vn');
     const btnEn = dialog.querySelector('#review-modal-btn-speech-en');
 
@@ -1317,6 +1318,10 @@ class UIManager {
         if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
           window.speechSynthesis.cancel();
         }
+      }
+      if (activeAudioController) {
+        activeAudioController.cancel();
+        activeAudioController = null;
       }
       if (typeof window !== 'undefined') {
         window._mqActiveUtterance = null;
@@ -1340,6 +1345,94 @@ class UIManager {
         .replace(/[`#*_~]/g, '')
         .replace(/\s+/g, ' ')
         .trim();
+    };
+
+    const chunkText = (str, maxLen = 180) => {
+      if (!str) return [];
+      if (str.length <= maxLen) return [str];
+      const chunks = [];
+      const sentences = str.match(/[^.!?\n\r]+[.!?\n\r]+|[^.!?\n\r]+$/g) || [str];
+      let current = '';
+      for (const s of sentences) {
+        const t = s.trim();
+        if (!t) continue;
+        if ((current + ' ' + t).trim().length <= maxLen) {
+          current = current ? current + ' ' + t : t;
+        } else {
+          if (current) chunks.push(current);
+          if (t.length <= maxLen) {
+            current = t;
+          } else {
+            const words = t.split(/\s+/);
+            let sub = '';
+            for (const w of words) {
+              if ((sub + ' ' + w).trim().length <= maxLen) {
+                sub = sub ? sub + ' ' + w : w;
+              } else {
+                if (sub) chunks.push(sub);
+                sub = w;
+              }
+            }
+            current = sub;
+          }
+        }
+      }
+      if (current) chunks.push(current);
+      return chunks;
+    };
+
+    const playAudioChunks = (chunks, langCode, onStart, onEnd, onError) => {
+      let index = 0;
+      let isCancelled = false;
+      const langPrefix = (langCode || 'vi').split('-')[0].toLowerCase();
+      const audio = new Audio();
+
+      const playNext = () => {
+        if (isCancelled) return;
+        if (index >= chunks.length) {
+          if (onEnd) onEnd();
+          return;
+        }
+
+        const chunk = chunks[index];
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${langPrefix}&client=tw-ob&q=${encodeURIComponent(chunk)}`;
+        audio.src = url;
+
+        audio.onended = () => {
+          if (isCancelled) return;
+          index++;
+          playNext();
+        };
+
+        audio.onerror = () => {
+          if (isCancelled) return;
+          if (onError) onError();
+        };
+
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+          playPromise
+            .then(() => {
+              if (index === 0 && onStart) onStart();
+            })
+            .catch(() => {
+              if (isCancelled) return;
+              if (onError) onError();
+            });
+        }
+      };
+
+      playNext();
+
+      return {
+        cancel: () => {
+          isCancelled = true;
+          try {
+            audio.pause();
+            audio.src = '';
+          } catch (e) {}
+        }
+      };
     };
 
     const findVoice = (langCode) => {
@@ -1376,26 +1469,14 @@ class UIManager {
     };
 
     const speak = (langCode) => {
-      if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
-        this.showSnackbar('Trình duyệt không hỗ trợ Speech Synthesis');
-        return;
-      }
-
       // If currently speaking this language, cancel / toggle off
-      if (window.speechSynthesis.speaking && currentSpeechLang === langCode) {
+      if (currentSpeechLang === langCode) {
         stopSpeech();
         return;
       }
 
       // If speaking another language or queued, stop prior speech
-      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-        window.speechSynthesis.cancel();
-      }
-
-      // If browser synthesis is paused, resume it
-      if (window.speechSynthesis.paused) {
-        window.speechSynthesis.resume();
-      }
+      stopSpeech();
 
       const text = getAnswerText();
       if (!text) {
@@ -1403,49 +1484,105 @@ class UIManager {
         return;
       }
 
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.volume = 1.0;
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
+      const startAudioFallback = () => {
+        const chunks = chunkText(text, 180);
+        if (!chunks.length) return;
 
-      const matchedVoice = findVoice(langCode);
-      if (matchedVoice) {
-        utterance.voice = matchedVoice;
-        utterance.lang = matchedVoice.lang || langCode;
-      } else {
-        utterance.lang = langCode;
-      }
-
-      utterance.onstart = () => {
         currentSpeechLang = langCode;
         updateSpeechBtns();
+
+        activeAudioController = playAudioChunks(
+          chunks,
+          langCode,
+          () => {
+            currentSpeechLang = langCode;
+            updateSpeechBtns();
+          },
+          () => {
+            currentSpeechLang = null;
+            updateSpeechBtns();
+          },
+          () => {
+            currentSpeechLang = null;
+            updateSpeechBtns();
+            this.showSnackbar('Không thể phát âm thanh trực tuyến');
+          }
+        );
       };
 
-      utterance.onend = () => {
-        if (typeof window !== 'undefined' && window._mqActiveUtterance === utterance) {
-          window._mqActiveUtterance = null;
-        }
-        currentSpeechLang = null;
-        updateSpeechBtns();
-      };
-
-      utterance.onerror = (e) => {
-        if (typeof window !== 'undefined' && window._mqActiveUtterance === utterance) {
-          window._mqActiveUtterance = null;
-        }
-        currentSpeechLang = null;
-        updateSpeechBtns();
-        if (e && e.error && e.error !== 'canceled' && e.error !== 'interrupted') {
-          this.showSnackbar(`Không thể phát âm thanh: ${e.error}`);
-        }
-      };
-
-      // Retain utterance reference on window to prevent V8 garbage collection
-      if (typeof window !== 'undefined') {
-        window._mqActiveUtterance = utterance;
+      // Check if Web Speech API is supported
+      const hasSpeechSynth = typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+      if (!hasSpeechSynth) {
+        startAudioFallback();
+        return;
       }
 
-      window.speechSynthesis.speak(utterance);
+      const matchedVoice = findVoice(langCode);
+      const isLocalVoice = Boolean(matchedVoice && matchedVoice.localService === true);
+      const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+
+      // On Android/mobile, Web Speech API without a pre-installed local voice causes synthesis-failed
+      if (isMobile && !isLocalVoice) {
+        startAudioFallback();
+        return;
+      }
+
+      try {
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.volume = 1.0;
+        utterance.rate = 1.0;
+        utterance.pitch = 1.0;
+
+        if (matchedVoice) {
+          utterance.voice = matchedVoice;
+          utterance.lang = matchedVoice.lang || langCode;
+        } else {
+          utterance.lang = langCode;
+        }
+
+        utterance.onstart = () => {
+          currentSpeechLang = langCode;
+          updateSpeechBtns();
+        };
+
+        utterance.onend = () => {
+          if (typeof window !== 'undefined' && window._mqActiveUtterance === utterance) {
+            window._mqActiveUtterance = null;
+          }
+          currentSpeechLang = null;
+          updateSpeechBtns();
+        };
+
+        utterance.onerror = (e) => {
+          if (typeof window !== 'undefined' && window._mqActiveUtterance === utterance) {
+            window._mqActiveUtterance = null;
+          }
+
+          if (e && (e.error === 'canceled' || e.error === 'interrupted')) {
+            currentSpeechLang = null;
+            updateSpeechBtns();
+            return;
+          }
+
+          // Fallback to Audio TTS if Web Speech API fails (e.g. synthesis-failed on mobile)
+          startAudioFallback();
+        };
+
+        if (typeof window !== 'undefined') {
+          window._mqActiveUtterance = utterance;
+        }
+
+        currentSpeechLang = langCode;
+        updateSpeechBtns();
+
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        startAudioFallback();
+      }
     };
 
     if (btnVn) {

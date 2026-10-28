@@ -923,9 +923,8 @@ class App {
             ${
               cards.length > 0
                 ? `
-                  <button type="button" class="btn btn-primary btn-sm" id="review-study-btn">
-                    <svg class="icon-sm" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                    <span>${t('action_study')}</span>
+                  <button type="button" class="circle-btn circle-btn-primary" id="review-study-btn" title="${t('action_study')}" aria-label="${t('action_study')}">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                   </button>
                 `
                 : ''

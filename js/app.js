@@ -2337,6 +2337,7 @@ ${a}
       document.body.appendChild(dialog);
       dialog.showModal();
       let currentSpeechLang = null;
+      let activeAudioController = null;
       const btnVn = dialog.querySelector("#review-modal-btn-speech-vn");
       const btnEn = dialog.querySelector("#review-modal-btn-speech-en");
       const updateSpeechBtns = () => {
@@ -2352,6 +2353,10 @@ ${a}
           if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
             window.speechSynthesis.cancel();
           }
+        }
+        if (activeAudioController) {
+          activeAudioController.cancel();
+          activeAudioController = null;
         }
         if (typeof window !== "undefined") {
           window._mqActiveUtterance = null;
@@ -2371,6 +2376,84 @@ ${a}
           rawText = (card.a || "").trim();
         }
         return rawText.replace(/[`#*_~]/g, "").replace(/\s+/g, " ").trim();
+      };
+      const chunkText = (str, maxLen = 180) => {
+        if (!str) return [];
+        if (str.length <= maxLen) return [str];
+        const chunks = [];
+        const sentences = str.match(/[^.!?\n\r]+[.!?\n\r]+|[^.!?\n\r]+$/g) || [str];
+        let current = "";
+        for (const s of sentences) {
+          const t2 = s.trim();
+          if (!t2) continue;
+          if ((current + " " + t2).trim().length <= maxLen) {
+            current = current ? current + " " + t2 : t2;
+          } else {
+            if (current) chunks.push(current);
+            if (t2.length <= maxLen) {
+              current = t2;
+            } else {
+              const words = t2.split(/\s+/);
+              let sub = "";
+              for (const w of words) {
+                if ((sub + " " + w).trim().length <= maxLen) {
+                  sub = sub ? sub + " " + w : w;
+                } else {
+                  if (sub) chunks.push(sub);
+                  sub = w;
+                }
+              }
+              current = sub;
+            }
+          }
+        }
+        if (current) chunks.push(current);
+        return chunks;
+      };
+      const playAudioChunks = (chunks, langCode, onStart, onEnd, onError) => {
+        let index2 = 0;
+        let isCancelled = false;
+        const langPrefix = (langCode || "vi").split("-")[0].toLowerCase();
+        const audio = new Audio();
+        const playNext = () => {
+          if (isCancelled) return;
+          if (index2 >= chunks.length) {
+            if (onEnd) onEnd();
+            return;
+          }
+          const chunk = chunks[index2];
+          const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${langPrefix}&client=tw-ob&q=${encodeURIComponent(chunk)}`;
+          audio.src = url;
+          audio.onended = () => {
+            if (isCancelled) return;
+            index2++;
+            playNext();
+          };
+          audio.onerror = () => {
+            if (isCancelled) return;
+            if (onError) onError();
+          };
+          const playPromise = audio.play();
+          if (playPromise !== void 0) {
+            playPromise.then(() => {
+              if (index2 === 0 && onStart) onStart();
+            }).catch(() => {
+              if (isCancelled) return;
+              if (onError) onError();
+            });
+          }
+        };
+        playNext();
+        return {
+          cancel: () => {
+            isCancelled = true;
+            try {
+              audio.pause();
+              audio.src = "";
+            } catch (e) {
+            }
+          }
+        };
       };
       const findVoice = (langCode) => {
         if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
@@ -2397,61 +2480,96 @@ ${a}
         return null;
       };
       const speak = (langCode) => {
-        if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-          this.showSnackbar("Tr\xECnh duy\u1EC7t kh\xF4ng h\u1ED7 tr\u1EE3 Speech Synthesis");
-          return;
-        }
-        if (window.speechSynthesis.speaking && currentSpeechLang === langCode) {
+        if (currentSpeechLang === langCode) {
           stopSpeech();
           return;
         }
-        if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-          window.speechSynthesis.cancel();
-        }
-        if (window.speechSynthesis.paused) {
-          window.speechSynthesis.resume();
-        }
+        stopSpeech();
         const text = getAnswerText();
         if (!text) {
           this.showSnackbar("Kh\xF4ng c\xF3 n\u1ED9i dung c\xE2u tr\u1EA3 l\u1EDDi \u0111\u1EC3 ph\xE1t \xE2m.");
           return;
         }
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.volume = 1;
-        utterance.rate = 1;
-        utterance.pitch = 1;
-        const matchedVoice = findVoice(langCode);
-        if (matchedVoice) {
-          utterance.voice = matchedVoice;
-          utterance.lang = matchedVoice.lang || langCode;
-        } else {
-          utterance.lang = langCode;
-        }
-        utterance.onstart = () => {
+        const startAudioFallback = () => {
+          const chunks = chunkText(text, 180);
+          if (!chunks.length) return;
           currentSpeechLang = langCode;
           updateSpeechBtns();
+          activeAudioController = playAudioChunks(
+            chunks,
+            langCode,
+            () => {
+              currentSpeechLang = langCode;
+              updateSpeechBtns();
+            },
+            () => {
+              currentSpeechLang = null;
+              updateSpeechBtns();
+            },
+            () => {
+              currentSpeechLang = null;
+              updateSpeechBtns();
+              this.showSnackbar("Kh\xF4ng th\u1EC3 ph\xE1t \xE2m thanh tr\u1EF1c tuy\u1EBFn");
+            }
+          );
         };
-        utterance.onend = () => {
-          if (typeof window !== "undefined" && window._mqActiveUtterance === utterance) {
-            window._mqActiveUtterance = null;
-          }
-          currentSpeechLang = null;
-          updateSpeechBtns();
-        };
-        utterance.onerror = (e) => {
-          if (typeof window !== "undefined" && window._mqActiveUtterance === utterance) {
-            window._mqActiveUtterance = null;
-          }
-          currentSpeechLang = null;
-          updateSpeechBtns();
-          if (e && e.error && e.error !== "canceled" && e.error !== "interrupted") {
-            this.showSnackbar(`Kh\xF4ng th\u1EC3 ph\xE1t \xE2m thanh: ${e.error}`);
-          }
-        };
-        if (typeof window !== "undefined") {
-          window._mqActiveUtterance = utterance;
+        const hasSpeechSynth = typeof window !== "undefined" && "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+        if (!hasSpeechSynth) {
+          startAudioFallback();
+          return;
         }
-        window.speechSynthesis.speak(utterance);
+        const matchedVoice = findVoice(langCode);
+        const isLocalVoice = Boolean(matchedVoice && matchedVoice.localService === true);
+        const isMobile = typeof navigator !== "undefined" && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+        if (isMobile && !isLocalVoice) {
+          startAudioFallback();
+          return;
+        }
+        try {
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.volume = 1;
+          utterance.rate = 1;
+          utterance.pitch = 1;
+          if (matchedVoice) {
+            utterance.voice = matchedVoice;
+            utterance.lang = matchedVoice.lang || langCode;
+          } else {
+            utterance.lang = langCode;
+          }
+          utterance.onstart = () => {
+            currentSpeechLang = langCode;
+            updateSpeechBtns();
+          };
+          utterance.onend = () => {
+            if (typeof window !== "undefined" && window._mqActiveUtterance === utterance) {
+              window._mqActiveUtterance = null;
+            }
+            currentSpeechLang = null;
+            updateSpeechBtns();
+          };
+          utterance.onerror = (e) => {
+            if (typeof window !== "undefined" && window._mqActiveUtterance === utterance) {
+              window._mqActiveUtterance = null;
+            }
+            if (e && (e.error === "canceled" || e.error === "interrupted")) {
+              currentSpeechLang = null;
+              updateSpeechBtns();
+              return;
+            }
+            startAudioFallback();
+          };
+          if (typeof window !== "undefined") {
+            window._mqActiveUtterance = utterance;
+          }
+          currentSpeechLang = langCode;
+          updateSpeechBtns();
+          window.speechSynthesis.speak(utterance);
+        } catch (err) {
+          startAudioFallback();
+        }
       };
       if (btnVn) {
         btnVn.addEventListener("click", () => speak("vi-VN"));
@@ -3872,9 +3990,8 @@ ${a}
           <div class="review-header-top">
             <h1 class="review-title">${this._escapeHTML(set.title)}</h1>
             ${cards.length > 0 ? `
-                  <button type="button" class="btn btn-primary btn-sm" id="review-study-btn">
-                    <svg class="icon-sm" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                    <span>${t("action_study")}</span>
+                  <button type="button" class="circle-btn circle-btn-primary" id="review-study-btn" title="${t("action_study")}" aria-label="${t("action_study")}">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                   </button>
                 ` : ""}
           </div>
