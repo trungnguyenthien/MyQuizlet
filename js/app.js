@@ -571,6 +571,8 @@ let message = "Xin ch\xE0o"
       updating_btn: "\u0110ang t\u1EA3i...",
       toast_offline_cannot_update: "Kh\xF4ng th\u1EC3 c\u1EADp nh\u1EADt khi \u0111ang offline",
       toast_update_ready_notice: "\u0110\xE3 c\xF3 b\u1EA3n c\u1EADp nh\u1EADt m\u1EDBi! Nh\u1EA5n C\u1EADp nh\u1EADt \u0111\u1EC3 \xE1p d\u1EE5ng.",
+      toast_update_timeout: "Qu\xE1 th\u1EDDi gian c\u1EADp nh\u1EADt (10 gi\xE2y). Vui l\xF2ng th\u1EED l\u1EA1i sau.",
+      toast_update_failed: "Ki\u1EC3m tra c\u1EADp nh\u1EADt th\u1EA5t b\u1EA1i. Vui l\xF2ng th\u1EED l\u1EA1i.",
       ios_install_title: "C\xE0i \u0111\u1EB7t tr\xEAn iOS",
       ios_install_intro: "\u0110\u1EC3 c\xE0i \u0111\u1EB7t \u1EE9ng d\u1EE5ng l\xEAn iPhone ho\u1EB7c iPad:",
       ios_step_1: '1. Nh\u1EA5n n\xFAt <strong>Chia s\u1EBB (Share)</strong> <span aria-hidden="true">\u238B</span> \u1EDF thanh c\xF4ng c\u1EE5 d\u01B0\u1EDBi \u0111\xE1y Safari.',
@@ -776,6 +778,8 @@ let greeting = "Hello"
       updating_btn: "Updating...",
       toast_offline_cannot_update: "Cannot update while offline",
       toast_update_ready_notice: "New update available! Tap Update to apply.",
+      toast_update_timeout: "Update timed out (10 seconds). Please try again.",
+      toast_update_failed: "Update check failed. Please try again.",
       ios_install_title: "Install on iOS",
       ios_install_intro: "To install this app on iPhone or iPad:",
       ios_step_1: '1. Tap the <strong>Share</strong> button <span aria-hidden="true">\u238B</span> in the Safari toolbar.',
@@ -3428,7 +3432,13 @@ ${a}
           }
           btnUpdateApp.classList.add("is-updating");
           btnUpdateApp.disabled = true;
-          try {
+          let watchdogTimer = null;
+          const timeoutPromise = new Promise((_, reject) => {
+            watchdogTimer = setTimeout(() => {
+              reject(new Error("UPDATE_TIMEOUT"));
+            }, 1e4);
+          });
+          const performUpdate = async () => {
             if (this.swRegistration) {
               await this.swRegistration.update().catch(() => {
               });
@@ -3449,9 +3459,21 @@ ${a}
             const targetUrl = window.location.pathname + window.location.hash;
             const sep = targetUrl.includes("?") ? "&" : "?";
             window.location.href = targetUrl + sep + "forceUpdate=" + Date.now();
+          };
+          try {
+            await Promise.race([performUpdate(), timeoutPromise]);
           } catch (err) {
-            console.error("[MyQuizlet] Force update error:", err);
-            window.location.reload();
+            if (err && err.message === "UPDATE_TIMEOUT") {
+              console.warn("[MyQuizlet] Update operation timed out after 10s");
+              ui.showSnackbar(t("toast_update_timeout") || "Qu\xE1 th\u1EDDi gian c\u1EADp nh\u1EADt (10 gi\xE2y). Vui l\xF2ng th\u1EED l\u1EA1i sau.");
+            } else {
+              console.error("[MyQuizlet] Force update error:", err);
+              ui.showSnackbar(t("toast_update_failed") || "Ki\u1EC3m tra c\u1EADp nh\u1EADt th\u1EA5t b\u1EA1i.");
+            }
+          } finally {
+            if (watchdogTimer) clearTimeout(watchdogTimer);
+            btnUpdateApp.classList.remove("is-updating");
+            btnUpdateApp.disabled = false;
           }
         });
       }
@@ -3635,8 +3657,7 @@ ${a}
       }
       if (titleEl) {
         if (this.currentRoute.path === "review") {
-          const set = store.getSet(this.currentRoute.param);
-          titleEl.textContent = set ? `${t("action_review")} \u2014 ${set.title}` : t("action_review");
+          titleEl.textContent = t("action_review");
         } else if (this.currentRoute.path === "set") {
           titleEl.textContent = t("deck_detail_title");
         } else {
@@ -4152,8 +4173,6 @@ ${a}
         return;
       }
       const cards = set.cards || [];
-      const term = (this.reviewSearchQuery || "").trim().toLowerCase();
-      const filteredCards = term ? cards.filter((c) => (c.q || "").toLowerCase().includes(term) || (c.a || "").toLowerCase().includes(term)) : cards;
       let contentHtml = "";
       if (cards.length === 0) {
         contentHtml = `
@@ -4166,16 +4185,10 @@ ${a}
           </div>
         </div>
       `;
-      } else if (filteredCards.length === 0) {
-        contentHtml = `
-        <div class="review-empty-state">
-          <p class="empty-deck-notice">${t("review_empty_search", { query: this._escapeHTML(this.reviewSearchQuery) })}</p>
-        </div>
-      `;
       } else {
         contentHtml = `
         <div class="review-question-list" id="review-question-list" role="list" aria-label="${t("review_screen_title")}">
-          ${filteredCards.map((card, idx) => {
+          ${cards.map((card, idx) => {
           const qHtml = renderInlineQuestionHTML(card.q);
           return `
                 <div class="review-question-item" data-card-id="${card.id}" data-card-index="${idx}" role="listitem" tabindex="0" aria-label="${this._escapeHTML(card.q)}">
@@ -4205,13 +4218,6 @@ ${a}
               ${t("review_hint")}
             </span>
           </div>
-
-          ${cards.length > 3 || this.reviewSearchQuery ? `
-                <div class="search-bar-wrapper" style="margin-top: var(--space-4);">
-                  <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                  <input type="search" id="review-search-input" class="search-input" placeholder="${t("review_search_placeholder")}" value="${this._escapeHTML(this.reviewSearchQuery || "")}" />
-                </div>
-              ` : ""}
         </header>
 
         ${contentHtml}
@@ -4228,7 +4234,7 @@ ${a}
             ui.showReviewAnswerModal({
               card,
               index: cardIndex,
-              total: filteredCards.length
+              total: cards.length
             });
           }
         };
@@ -4243,18 +4249,6 @@ ${a}
               e.preventDefault();
               openCardModal(item);
             }
-          }
-        });
-      }
-      const searchInput = this.mainContainer.querySelector("#review-search-input");
-      if (searchInput) {
-        searchInput.addEventListener("input", (e) => {
-          this.reviewSearchQuery = e.target.value;
-          this.renderReview(setId);
-          const newInput = this.mainContainer.querySelector("#review-search-input");
-          if (newInput) {
-            newInput.focus();
-            newInput.setSelectionRange(newInput.value.length, newInput.value.length);
           }
         });
       }
