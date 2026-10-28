@@ -793,7 +793,8 @@ Present, appearing, or found everywhere.`;
 
         const btnUpdate = doc.getElementById('btnUpdateApp');
         console.assert(Boolean(btnUpdate), 'Update button #btnUpdateApp must exist in index.html (PWA Standard 6.D)');
-        console.assert(btnUpdate.classList.contains('hidden'), 'Update button must have "hidden" class by default');
+        const btnInstall = doc.getElementById('btnInstall');
+        console.assert(Boolean(btnInstall), 'Install button #btnInstall must exist in index.html (PWA Standard 6)');
 
         // Check app.css for overscroll-behavior-y and Safe Area Top App Bar
         const cssResp = await fetch('css/app.css');

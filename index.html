@@ -9,7 +9,7 @@
   <!-- PWA Theme & Manifest -->
   <meta name="theme-color" content="#3F51B5" />
   <meta name="color-scheme" content="light" />
-  <link rel="manifest" href="manifest.webmanifest?v=33" />
+  <link rel="manifest" href="manifest.webmanifest?v=34" />
   <link rel="icon" type="image/x-icon" href="favicon.ico?v=4" />
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=4" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=4" />
@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="vendor/github.min.css" />
 
   <!-- App Stylesheet -->
-  <link rel="stylesheet" href="css/app.css?v=33" />
+  <link rel="stylesheet" href="css/app.css?v=34" />
 </head>
 <body>
   <!-- Global App Bar -->
@@ -38,15 +38,15 @@
 
     <div class="app-bar-right">
       <!-- PWA Force Update Button (PWA Standard 6.D) -->
-      <button id="btnUpdateApp" type="button" class="btn btn-tonal btn-sm hidden" aria-label="Cập nhật ứng dụng">
+      <button id="btnUpdateApp" type="button" class="btn btn-tonal btn-sm" aria-label="Cập nhật ứng dụng" title="Cập nhật phiên bản mới nhất">
         <svg class="update-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
         </svg>
         <span id="btn-update-text">Cập nhật</span>
       </button>
 
-      <!-- PWA Install Button (Top App Bar - hidden by default) -->
-      <button id="btnInstall" type="button" class="btn btn-tonal btn-sm hidden" aria-label="Cài đặt ứng dụng">
+      <!-- PWA Install Button (Top App Bar - shown when not standalone) -->
+      <button id="btnInstall" type="button" class="btn btn-tonal btn-sm hidden" aria-label="Cài đặt ứng dụng" title="Cài đặt MyQuizlet">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
           <polyline points="7 10 12 15 17 10"/>
@@ -123,6 +123,6 @@
   <script src="vendor/highlight-dart.min.js"></script>
 
   <!-- Application Script (Supports both file:// and http://) -->
-  <script src="js/app.js?v=33"></script>
+  <script src="js/app.js?v=34"></script>
 </body>
 </html>

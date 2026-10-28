@@ -576,7 +576,17 @@ let message = "Xin ch\xE0o"
       ios_step_1: '1. Nh\u1EA5n n\xFAt <strong>Chia s\u1EBB (Share)</strong> <span aria-hidden="true">\u238B</span> \u1EDF thanh c\xF4ng c\u1EE5 d\u01B0\u1EDBi \u0111\xE1y Safari.',
       ios_step_2: '2. Cu\u1ED9n xu\u1ED1ng v\xE0 ch\u1ECDn <strong>Th\xEAm v\xE0o M\xE0n h\xECnh ch\xEDnh (Add to Home Screen)</strong> <span aria-hidden="true">\u2295</span>.',
       ios_step_3: "3. Nh\u1EA5n <strong>Th\xEAm (Add)</strong> \u1EDF g\xF3c tr\xEAn b\xEAn ph\u1EA3i \u0111\u1EC3 ho\xE0n t\u1EA5t.",
-      ios_install_got_it: "\u0110\xE3 hi\u1EC3u"
+      ios_install_got_it: "\u0110\xE3 hi\u1EC3u",
+      install_android_title: "C\xE0i \u0111\u1EB7t tr\xEAn Android",
+      install_android_intro: "\u0110\u1EC3 c\xE0i \u0111\u1EB7t \u1EE9ng d\u1EE5ng l\xEAn thi\u1EBFt b\u1ECB Android:",
+      install_android_step1: "1. Nh\u1EA5n bi\u1EC3u t\u01B0\u1EE3ng menu <strong>3 ch\u1EA5m (\u22EE)</strong> \u1EDF g\xF3c tr\xEAn tr\xECnh duy\u1EC7t.",
+      install_android_step2: "2. Ch\u1ECDn <strong>C\xE0i \u0111\u1EB7t \u1EE9ng d\u1EE5ng</strong> ho\u1EB7c <strong>Th\xEAm v\xE0o M\xE0n h\xECnh ch\xEDnh</strong>.",
+      install_android_step3: "3. Nh\u1EA5n <strong>C\xE0i \u0111\u1EB7t</strong> \u0111\u1EC3 ho\xE0n t\u1EA5t.",
+      install_desktop_title: "C\xE0i \u0111\u1EB7t tr\xEAn M\xE1y t\xEDnh",
+      install_desktop_intro: "\u0110\u1EC3 c\xE0i \u0111\u1EB7t \u1EE9ng d\u1EE5ng v\u1EC1 m\xE1y t\xEDnh v\xE0 ch\u1EA1y \u0111\u1ED9c l\u1EADp:",
+      install_desktop_step1: '1. Tr\xEAn Chrome / Edge: Nh\u1EA5n bi\u1EC3u t\u01B0\u1EE3ng <strong>C\xE0i \u0111\u1EB7t (\u229E)</strong> tr\xEAn thanh \u0111\u1ECBa ch\u1EC9, ho\u1EB7c Menu \u22EE > "C\xE0i \u0111\u1EB7t MyQuizlet".',
+      install_desktop_step2: "2. Tr\xEAn Safari macOS: Ch\u1ECDn menu <strong>T\u1EC7p (File) > Th\xEAm v\xE0o Dock...</strong>",
+      install_desktop_step3: "3. \u1EE8ng d\u1EE5ng s\u1EBD ho\u1EA1t \u0111\u1ED9ng nh\u01B0 m\u1ED9t ph\u1EA7n m\u1EC1m \u0111\u1ED9c l\u1EADp kh\xF4ng c\u1EA7n m\u1EDF tr\xECnh duy\u1EC7t."
     },
     en: {
       // App & Navigation
@@ -771,7 +781,17 @@ let greeting = "Hello"
       ios_step_1: '1. Tap the <strong>Share</strong> button <span aria-hidden="true">\u238B</span> in the Safari toolbar.',
       ios_step_2: '2. Scroll down and tap <strong>Add to Home Screen</strong> <span aria-hidden="true">\u2295</span>.',
       ios_step_3: "3. Tap <strong>Add</strong> in the top-right corner to complete.",
-      ios_install_got_it: "Got it"
+      ios_install_got_it: "Got it",
+      install_android_title: "Install on Android",
+      install_android_intro: "To install this app on your Android device:",
+      install_android_step1: "1. Tap the <strong>three dots menu (\u22EE)</strong> in your browser.",
+      install_android_step2: "2. Select <strong>Install app</strong> or <strong>Add to Home screen</strong>.",
+      install_android_step3: "3. Tap <strong>Install</strong> to complete.",
+      install_desktop_title: "Install on Desktop",
+      install_desktop_intro: "To install this app on your computer as a desktop app:",
+      install_desktop_step1: '1. On Chrome / Edge: Click the <strong>Install icon (\u229E)</strong> in the address bar, or Menu \u22EE > "Install MyQuizlet".',
+      install_desktop_step2: "2. On Safari macOS: Select <strong>File > Add to Dock...</strong>",
+      install_desktop_step3: "3. The app will launch as an independent desktop application."
     }
   };
   var I18n = class {
@@ -3377,28 +3397,70 @@ ${a}
       });
     }
     _registerServiceWorker() {
-      if ("serviceWorker" in navigator && location.protocol !== "file:") {
-        const btnUpdateApp = document.getElementById("btnUpdateApp");
-        const btnUpdateText = document.getElementById("btn-update-text");
-        const setUpdateReadyState = (worker) => {
-          if (btnUpdateApp) {
-            btnUpdateApp.classList.remove("hidden");
-            btnUpdateApp.classList.add("is-ready");
-            if (btnUpdateText) {
-              btnUpdateText.textContent = t("update_ready_btn") || "B\u1EA3n m\u1EDBi";
-            }
+      const btnUpdateApp = document.getElementById("btnUpdateApp");
+      const btnUpdateText = document.getElementById("btn-update-text");
+      const setUpdateReadyState = (worker) => {
+        if (btnUpdateApp) {
+          btnUpdateApp.classList.remove("hidden");
+          btnUpdateApp.classList.add("is-ready");
+          if (btnUpdateText) {
+            btnUpdateText.textContent = t("update_ready_btn") || "B\u1EA3n m\u1EDBi";
           }
-          ui.showSnackbar(t("toast_update_ready_notice") || t("toast_update_available"), {
-            actionLabel: t("toast_update_reload_btn"),
-            onAction: () => {
-              if (worker) {
-                worker.postMessage({ action: "skipWaiting", type: "SKIP_WAITING" });
+        }
+        ui.showSnackbar(t("toast_update_ready_notice") || t("toast_update_available"), {
+          actionLabel: t("toast_update_reload_btn"),
+          onAction: () => {
+            if (worker) {
+              worker.postMessage({ action: "skipWaiting", type: "SKIP_WAITING" });
+            }
+            window.location.reload();
+          },
+          duration: 15e3
+        });
+      };
+      if (btnUpdateApp) {
+        btnUpdateApp.addEventListener("click", async () => {
+          if (!navigator.onLine) {
+            ui.showSnackbar(t("toast_offline_cannot_update") || "Kh\xF4ng th\u1EC3 c\u1EADp nh\u1EADt khi \u0111ang offline");
+            return;
+          }
+          if (location.protocol === "file:") {
+            ui.showSnackbar("\u1EE8ng d\u1EE5ng \u0111ang ch\u1EA1y qua file://. Vui l\xF2ng m\u1EDF qua web/localhost \u0111\u1EC3 c\u1EADp nh\u1EADt.");
+            return;
+          }
+          btnUpdateApp.classList.add("is-updating");
+          btnUpdateApp.disabled = true;
+          if (btnUpdateText) {
+            btnUpdateText.textContent = t("updating_btn") || "\u0110ang t\u1EA3i...";
+          }
+          try {
+            if (this.swRegistration) {
+              await this.swRegistration.update().catch(() => {
+              });
+              if (this.swRegistration.waiting) {
+                this.swRegistration.waiting.postMessage({ action: "skipWaiting", type: "SKIP_WAITING" });
               }
-              window.location.reload();
-            },
-            duration: 15e3
-          });
-        };
+            }
+            if ("caches" in window) {
+              const keys = await caches.keys();
+              await Promise.all(keys.map((k) => caches.delete(k)));
+            }
+            if ("serviceWorker" in navigator) {
+              const registrations = await navigator.serviceWorker.getRegistrations();
+              for (const r of registrations) {
+                await r.unregister();
+              }
+            }
+            const targetUrl = window.location.pathname + window.location.hash;
+            const sep = targetUrl.includes("?") ? "&" : "?";
+            window.location.href = targetUrl + sep + "forceUpdate=" + Date.now();
+          } catch (err) {
+            console.error("[MyQuizlet] Force update error:", err);
+            window.location.reload();
+          }
+        });
+      }
+      if ("serviceWorker" in navigator && location.protocol !== "file:") {
         navigator.serviceWorker.register("./sw.js", { scope: "./" }).then((registration) => {
           this.swRegistration = registration;
           registration.update().catch(() => {
@@ -3425,42 +3487,6 @@ ${a}
             window.location.reload();
           }
         });
-        if (btnUpdateApp) {
-          btnUpdateApp.addEventListener("click", async () => {
-            if (!navigator.onLine) {
-              ui.showSnackbar(t("toast_offline_cannot_update") || "Kh\xF4ng th\u1EC3 c\u1EADp nh\u1EADt khi \u0111ang offline");
-              return;
-            }
-            btnUpdateApp.classList.add("is-updating");
-            btnUpdateApp.disabled = true;
-            if (btnUpdateText) {
-              btnUpdateText.textContent = t("updating_btn") || "\u0110ang t\u1EA3i...";
-            }
-            try {
-              if (this.swRegistration) {
-                await this.swRegistration.update().catch(() => {
-                });
-                if (this.swRegistration.waiting) {
-                  this.swRegistration.waiting.postMessage({ action: "skipWaiting", type: "SKIP_WAITING" });
-                }
-              }
-              if ("caches" in window) {
-                const keys = await caches.keys();
-                await Promise.all(keys.map((k) => caches.delete(k)));
-              }
-              const registrations = await navigator.serviceWorker.getRegistrations();
-              for (const r of registrations) {
-                await r.unregister();
-              }
-              const targetUrl = window.location.pathname + window.location.hash;
-              const sep = targetUrl.includes("?") ? "&" : "?";
-              window.location.href = targetUrl + sep + "forceUpdate=" + Date.now();
-            } catch (err) {
-              console.error("[MyQuizlet] Force update error:", err);
-              window.location.reload();
-            }
-          });
-        }
       }
     }
     _initPWAInstallation() {
@@ -3470,10 +3496,11 @@ ${a}
       const btnGotItIos = document.getElementById("btnGotItIos");
       const isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+      const isAndroid = /Android/i.test(navigator.userAgent);
       if (isStandalone) {
         if (btnInstall) btnInstall.classList.add("hidden");
-      } else if (isIOS && btnInstall) {
-        btnInstall.classList.remove("hidden");
+      } else {
+        if (btnInstall) btnInstall.classList.remove("hidden");
       }
       window.addEventListener("beforeinstallprompt", (e) => {
         e.preventDefault();
@@ -3497,6 +3524,30 @@ ${a}
             }
             this.deferredInstallPrompt = null;
           } else if (iosInstallModal) {
+            const modalTitle = document.getElementById("iosModalTitle");
+            const modalIntro = document.getElementById("ios-install-intro");
+            const step1 = document.getElementById("ios-step-1");
+            const step2 = document.getElementById("ios-step-2");
+            const step3 = document.getElementById("ios-step-3");
+            if (isIOS) {
+              if (modalTitle) modalTitle.textContent = t("ios_install_title");
+              if (modalIntro) modalIntro.textContent = t("ios_install_intro");
+              if (step1) step1.innerHTML = t("ios_step_1");
+              if (step2) step2.innerHTML = t("ios_step_2");
+              if (step3) step3.innerHTML = t("ios_step_3");
+            } else if (isAndroid) {
+              if (modalTitle) modalTitle.textContent = t("install_android_title") || "C\xE0i \u0111\u1EB7t tr\xEAn Android";
+              if (modalIntro) modalIntro.textContent = t("install_android_intro") || "\u0110\u1EC3 c\xE0i \u0111\u1EB7t \u1EE9ng d\u1EE5ng l\xEAn thi\u1EBFt b\u1ECB:";
+              if (step1) step1.innerHTML = t("install_android_step1");
+              if (step2) step2.innerHTML = t("install_android_step2");
+              if (step3) step3.innerHTML = t("install_android_step3");
+            } else {
+              if (modalTitle) modalTitle.textContent = t("install_desktop_title") || "C\xE0i \u0111\u1EB7t tr\xEAn M\xE1y t\xEDnh";
+              if (modalIntro) modalIntro.textContent = t("install_desktop_intro") || "\u0110\u1EC3 c\xE0i \u0111\u1EB7t \u1EE9ng d\u1EE5ng v\u1EC1 m\xE1y t\xEDnh v\xE0 ch\u1EA1y \u0111\u1ED9c l\u1EADp:";
+              if (step1) step1.innerHTML = t("install_desktop_step1");
+              if (step2) step2.innerHTML = t("install_desktop_step2");
+              if (step3) step3.innerHTML = t("install_desktop_step3");
+            }
             iosInstallModal.classList.remove("hidden");
           }
         });

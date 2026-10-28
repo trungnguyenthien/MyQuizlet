@@ -78,30 +78,85 @@ class App {
   }
 
   _registerServiceWorker() {
-    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-      const btnUpdateApp = document.getElementById('btnUpdateApp');
-      const btnUpdateText = document.getElementById('btn-update-text');
+    const btnUpdateApp = document.getElementById('btnUpdateApp');
+    const btnUpdateText = document.getElementById('btn-update-text');
 
-      const setUpdateReadyState = (worker) => {
-        if (btnUpdateApp) {
-          btnUpdateApp.classList.remove('hidden');
-          btnUpdateApp.classList.add('is-ready');
-          if (btnUpdateText) {
-            btnUpdateText.textContent = t('update_ready_btn') || 'Bản mới';
-          }
+    const setUpdateReadyState = (worker) => {
+      if (btnUpdateApp) {
+        btnUpdateApp.classList.remove('hidden');
+        btnUpdateApp.classList.add('is-ready');
+        if (btnUpdateText) {
+          btnUpdateText.textContent = t('update_ready_btn') || 'Bản mới';
         }
-        ui.showSnackbar(t('toast_update_ready_notice') || t('toast_update_available'), {
-          actionLabel: t('toast_update_reload_btn'),
-          onAction: () => {
-            if (worker) {
-              worker.postMessage({ action: 'skipWaiting', type: 'SKIP_WAITING' });
-            }
-            window.location.reload();
-          },
-          duration: 15000
-        });
-      };
+      }
+      ui.showSnackbar(t('toast_update_ready_notice') || t('toast_update_available'), {
+        actionLabel: t('toast_update_reload_btn'),
+        onAction: () => {
+          if (worker) {
+            worker.postMessage({ action: 'skipWaiting', type: 'SKIP_WAITING' });
+          }
+          window.location.reload();
+        },
+        duration: 15000
+      });
+    };
 
+    // Handle Force Update Button click (PWA Standard 6.D)
+    if (btnUpdateApp) {
+      btnUpdateApp.addEventListener('click', async () => {
+        // 1. Check network status
+        if (!navigator.onLine) {
+          ui.showSnackbar(t('toast_offline_cannot_update') || 'Không thể cập nhật khi đang offline');
+          return;
+        }
+
+        if (location.protocol === 'file:') {
+          ui.showSnackbar('Ứng dụng đang chạy qua file://. Vui lòng mở qua web/localhost để cập nhật.');
+          return;
+        }
+
+        // 2. Set updating UI state (spinner, disable, change label)
+        btnUpdateApp.classList.add('is-updating');
+        btnUpdateApp.disabled = true;
+        if (btnUpdateText) {
+          btnUpdateText.textContent = t('updating_btn') || 'Đang tải...';
+        }
+
+        try {
+          // 3. Trigger registration update
+          if (this.swRegistration) {
+            await this.swRegistration.update().catch(() => {});
+            if (this.swRegistration.waiting) {
+              this.swRegistration.waiting.postMessage({ action: 'skipWaiting', type: 'SKIP_WAITING' });
+            }
+          }
+
+          // 4. Clear all caches
+          if ('caches' in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map((k) => caches.delete(k)));
+          }
+
+          // 5. Unregister old service workers to guarantee fresh fetch
+          if ('serviceWorker' in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const r of registrations) {
+              await r.unregister();
+            }
+          }
+
+          // 6. Force reload with cache-bust timestamp
+          const targetUrl = window.location.pathname + window.location.hash;
+          const sep = targetUrl.includes('?') ? '&' : '?';
+          window.location.href = targetUrl + sep + 'forceUpdate=' + Date.now();
+        } catch (err) {
+          console.error('[MyQuizlet] Force update error:', err);
+          window.location.reload();
+        }
+      });
+    }
+
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       navigator.serviceWorker.register('./sw.js', { scope: './' }).then((registration) => {
         this.swRegistration = registration;
 
@@ -136,54 +191,6 @@ class App {
           window.location.reload();
         }
       });
-
-      // Handle Force Update Button click (PWA Standard 6.D)
-      if (btnUpdateApp) {
-        btnUpdateApp.addEventListener('click', async () => {
-          // 1. Check network status
-          if (!navigator.onLine) {
-            ui.showSnackbar(t('toast_offline_cannot_update') || 'Không thể cập nhật khi đang offline');
-            return;
-          }
-
-          // 2. Set updating UI state (spinner, disable, change label)
-          btnUpdateApp.classList.add('is-updating');
-          btnUpdateApp.disabled = true;
-          if (btnUpdateText) {
-            btnUpdateText.textContent = t('updating_btn') || 'Đang tải...';
-          }
-
-          try {
-            // 3. Trigger registration update
-            if (this.swRegistration) {
-              await this.swRegistration.update().catch(() => {});
-              if (this.swRegistration.waiting) {
-                this.swRegistration.waiting.postMessage({ action: 'skipWaiting', type: 'SKIP_WAITING' });
-              }
-            }
-
-            // 4. Clear all caches
-            if ('caches' in window) {
-              const keys = await caches.keys();
-              await Promise.all(keys.map((k) => caches.delete(k)));
-            }
-
-            // 5. Unregister old service workers to guarantee fresh fetch
-            const registrations = await navigator.serviceWorker.getRegistrations();
-            for (const r of registrations) {
-              await r.unregister();
-            }
-
-            // 6. Force reload with cache-bust timestamp
-            const targetUrl = window.location.pathname + window.location.hash;
-            const sep = targetUrl.includes('?') ? '&' : '?';
-            window.location.href = targetUrl + sep + 'forceUpdate=' + Date.now();
-          } catch (err) {
-            console.error('[MyQuizlet] Force update error:', err);
-            window.location.reload();
-          }
-        });
-      }
     }
   }
 
@@ -203,11 +210,15 @@ class App {
       /iPad|iPhone|iPod/.test(navigator.userAgent) ||
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
+    // Detect Android
+    const isAndroid = /Android/i.test(navigator.userAgent);
+
     if (isStandalone) {
       if (btnInstall) btnInstall.classList.add('hidden');
-    } else if (isIOS && btnInstall) {
-      // iOS Safari does not fire beforeinstallprompt; show button to open instructions modal
-      btnInstall.classList.remove('hidden');
+    } else {
+      // In any web browser where the app is not yet installed standalone,
+      // show the Install button so users can install or view install guidance.
+      if (btnInstall) btnInstall.classList.remove('hidden');
     }
 
     // 1. Listen for beforeinstallprompt on Chromium (Android / Desktop)
@@ -237,12 +248,40 @@ class App {
           }
           this.deferredInstallPrompt = null;
         } else if (iosInstallModal) {
+          // Adapt modal text based on platform
+          const modalTitle = document.getElementById('iosModalTitle');
+          const modalIntro = document.getElementById('ios-install-intro');
+          const step1 = document.getElementById('ios-step-1');
+          const step2 = document.getElementById('ios-step-2');
+          const step3 = document.getElementById('ios-step-3');
+
+          if (isIOS) {
+            if (modalTitle) modalTitle.textContent = t('ios_install_title');
+            if (modalIntro) modalIntro.textContent = t('ios_install_intro');
+            if (step1) step1.innerHTML = t('ios_step_1');
+            if (step2) step2.innerHTML = t('ios_step_2');
+            if (step3) step3.innerHTML = t('ios_step_3');
+          } else if (isAndroid) {
+            if (modalTitle) modalTitle.textContent = t('install_android_title') || 'Cài đặt trên Android';
+            if (modalIntro) modalIntro.textContent = t('install_android_intro') || 'Để cài đặt ứng dụng lên thiết bị:';
+            if (step1) step1.innerHTML = t('install_android_step1');
+            if (step2) step2.innerHTML = t('install_android_step2');
+            if (step3) step3.innerHTML = t('install_android_step3');
+          } else {
+            // Desktop (Chrome/Edge/Safari macOS)
+            if (modalTitle) modalTitle.textContent = t('install_desktop_title') || 'Cài đặt trên Máy tính';
+            if (modalIntro) modalIntro.textContent = t('install_desktop_intro') || 'Để cài đặt ứng dụng về máy tính và chạy độc lập:';
+            if (step1) step1.innerHTML = t('install_desktop_step1');
+            if (step2) step2.innerHTML = t('install_desktop_step2');
+            if (step3) step3.innerHTML = t('install_desktop_step3');
+          }
+
           iosInstallModal.classList.remove('hidden');
         }
       });
     }
 
-    // Close iOS modal handlers
+    // Close modal handlers
     const closeIosModal = () => {
       if (iosInstallModal) iosInstallModal.classList.add('hidden');
     };

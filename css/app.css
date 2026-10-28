@@ -432,9 +432,11 @@ button {
   gap: var(--space-1);
 }
 
-/* PWA Force Update Button (PWA Standard 6.D) */
-#btnUpdateApp {
+/* PWA Force Update Button (PWA Standard 6.D) & Install Button */
+#btnUpdateApp,
+#btnInstall {
   transition: all 0.2s ease;
+  white-space: nowrap;
 }
 
 #btnUpdateApp.is-ready {
@@ -2568,6 +2570,18 @@ button {
 }
 
 @media (max-width: 600px) {
+  #btnUpdateApp #btn-update-text,
+  #btnInstall #btn-install-text {
+    display: none;
+  }
+  #btnUpdateApp,
+  #btnInstall {
+    padding: 0 8px;
+    min-width: 36px;
+    height: 36px;
+    justify-content: center;
+  }
+
   .review-modal-actions {
     padding: var(--space-3);
     gap: 8px;

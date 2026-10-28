@@ -213,7 +213,17 @@ let message = "Xin chào"
     ios_step_1: '1. Nhấn nút <strong>Chia sẻ (Share)</strong> <span aria-hidden="true">⎋</span> ở thanh công cụ dưới đáy Safari.',
     ios_step_2: '2. Cuộn xuống và chọn <strong>Thêm vào Màn hình chính (Add to Home Screen)</strong> <span aria-hidden="true">⊕</span>.',
     ios_step_3: '3. Nhấn <strong>Thêm (Add)</strong> ở góc trên bên phải để hoàn tất.',
-    ios_install_got_it: 'Đã hiểu'
+    ios_install_got_it: 'Đã hiểu',
+    install_android_title: 'Cài đặt trên Android',
+    install_android_intro: 'Để cài đặt ứng dụng lên thiết bị Android:',
+    install_android_step1: '1. Nhấn biểu tượng menu <strong>3 chấm (⋮)</strong> ở góc trên trình duyệt.',
+    install_android_step2: '2. Chọn <strong>Cài đặt ứng dụng</strong> hoặc <strong>Thêm vào Màn hình chính</strong>.',
+    install_android_step3: '3. Nhấn <strong>Cài đặt</strong> để hoàn tất.',
+    install_desktop_title: 'Cài đặt trên Máy tính',
+    install_desktop_intro: 'Để cài đặt ứng dụng về máy tính và chạy độc lập:',
+    install_desktop_step1: '1. Trên Chrome / Edge: Nhấn biểu tượng <strong>Cài đặt (⊞)</strong> trên thanh địa chỉ, hoặc Menu ⋮ > "Cài đặt MyQuizlet".',
+    install_desktop_step2: '2. Trên Safari macOS: Chọn menu <strong>Tệp (File) > Thêm vào Dock...</strong>',
+    install_desktop_step3: '3. Ứng dụng sẽ hoạt động như một phần mềm độc lập không cần mở trình duyệt.'
   },
 
   en: {
@@ -423,7 +433,17 @@ let greeting = "Hello"
     ios_step_1: '1. Tap the <strong>Share</strong> button <span aria-hidden="true">⎋</span> in the Safari toolbar.',
     ios_step_2: '2. Scroll down and tap <strong>Add to Home Screen</strong> <span aria-hidden="true">⊕</span>.',
     ios_step_3: '3. Tap <strong>Add</strong> in the top-right corner to complete.',
-    ios_install_got_it: 'Got it'
+    ios_install_got_it: 'Got it',
+    install_android_title: 'Install on Android',
+    install_android_intro: 'To install this app on your Android device:',
+    install_android_step1: '1. Tap the <strong>three dots menu (⋮)</strong> in your browser.',
+    install_android_step2: '2. Select <strong>Install app</strong> or <strong>Add to Home screen</strong>.',
+    install_android_step3: '3. Tap <strong>Install</strong> to complete.',
+    install_desktop_title: 'Install on Desktop',
+    install_desktop_intro: 'To install this app on your computer as a desktop app:',
+    install_desktop_step1: '1. On Chrome / Edge: Click the <strong>Install icon (⊞)</strong> in the address bar, or Menu ⋮ > "Install MyQuizlet".',
+    install_desktop_step2: '2. On Safari macOS: Select <strong>File > Add to Dock...</strong>',
+    install_desktop_step3: '3. The app will launch as an independent desktop application.'
   }
 };
 
