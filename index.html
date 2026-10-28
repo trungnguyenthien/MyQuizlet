@@ -1,128 +1,284 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>MyQuizlet — Bộ Thẻ Ghi Nhớ Markdown</title>
-  <meta name="description" content="Ứng dụng flashcard Markdown thuần, hoạt động offline 100%, tô màu code phong cách GitHub." />
-  
-  <!-- PWA Theme & Manifest -->
-  <meta name="theme-color" content="#3F51B5" />
-  <meta name="color-scheme" content="light" />
-  <link rel="manifest" href="manifest.webmanifest?v=34" />
-  <link rel="icon" type="image/x-icon" href="favicon.ico?v=4" />
-  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png?v=4" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png?v=4" />
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>MyQuizlet — Bộ Thẻ Ghi Nhớ Markdown</title>
+    <meta
+      name="description"
+      content="Ứng dụng flashcard Markdown thuần, hoạt động offline 100%, tô màu code phong cách GitHub."
+    />
 
-  <!-- iOS Safari Specific -->
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="MyQuizlet" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=4" />
+    <!-- PWA Theme & Manifest -->
+    <meta name="theme-color" content="#3F51B5" />
+    <meta name="color-scheme" content="light" />
+    <link rel="manifest" href="manifest.webmanifest?v=34" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico?v=4" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="icons/favicon-32.png?v=4"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="icons/icon-192.png?v=4"
+    />
 
-  <!-- Code Syntax Highlighting Theme (GitHub Light) -->
-  <link rel="stylesheet" href="vendor/github.min.css" />
+    <!-- iOS Safari Specific -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="MyQuizlet" />
+    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=4" />
 
-  <!-- App Stylesheet -->
-  <link rel="stylesheet" href="css/app.css?v=34" />
-</head>
-<body>
-  <!-- Global App Bar -->
-  <header id="app-bar" class="app-bar" role="banner">
-    <div class="app-bar-left">
-      <button type="button" class="icon-btn hidden" id="app-back-btn" aria-label="Quay lại">
-        <svg class="icon" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
-      </button>
-      <span class="app-bar-title" id="app-title">MyQuizlet</span>
-    </div>
+    <!-- Code Syntax Highlighting Theme (GitHub Light) -->
+    <link rel="stylesheet" href="vendor/github.min.css" />
 
-    <div class="app-bar-right">
-      <!-- PWA Force Update Button (PWA Standard 6.D) -->
-      <button id="btnUpdateApp" type="button" class="btn btn-tonal btn-sm" aria-label="Cập nhật ứng dụng" title="Cập nhật phiên bản mới nhất">
-        <svg class="update-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
-        </svg>
-        <span id="btn-update-text">Cập nhật</span>
-      </button>
-
-      <!-- PWA Install Button (Top App Bar - shown when not standalone) -->
-      <button id="btnInstall" type="button" class="btn btn-tonal btn-sm hidden" aria-label="Cài đặt ứng dụng" title="Cài đặt MyQuizlet">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="7 10 12 15 17 10"/>
-          <line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
-        <span id="btn-install-text">Cài đặt</span>
-      </button>
-
-      <div class="menu-anchor">
-        <button type="button" class="icon-btn menu-trigger" id="app-menu-btn" aria-label="Menu tác vụ" onclick="document.getElementById('app-menu-dropdown').classList.toggle('is-open'); event.stopPropagation();">
-          <svg class="icon" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
-        </button>
-        <div class="dropdown-menu" id="app-menu-dropdown">
-          <button type="button" class="menu-item" id="menu-opt-lang">
-            <svg class="menu-icon" viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
-            <span id="menu-lang-text">Ngôn ngữ (Language): <strong>Tiếng Việt</strong></span>
-          </button>
-          <button type="button" class="menu-item" id="menu-opt-storage">
-            <svg class="menu-icon" viewBox="0 0 24 24"><path d="M2 20h20v-4H2v4zm2-3h2v2H4v-2zM2 4v4h20V4H2zm4 3H4V5h2v2zm-4 7h20v-4H2v4zm2-3h2v2H4v-2z"/></svg>
-            <span id="menu-storage-text">Dung lượng lưu trữ</span>
-          </button>
-          <button type="button" class="menu-item" id="menu-opt-help">
-            <svg class="menu-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"/></svg>
-            <span id="menu-help-text">Hướng dẫn Markdown</span>
-          </button>
-          <button type="button" class="menu-item" id="menu-opt-about">
-            <svg class="menu-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-            <span id="menu-about-text">Giới thiệu</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main View Container -->
-  <main id="main-content" class="main-content" role="main"></main>
-
-  <!-- Snackbar Notification Container -->
-  <div id="snackbar-container" class="snackbar-container" aria-live="polite"></div>
-
-  <!-- iOS Safari PWA Installation Guidance Modal -->
-  <div id="iosInstallModal" class="dialog-backdrop modal-dialog-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="iosModalTitle">
-    <div class="dialog-panel modal-dialog" style="max-width: 420px;">
-      <div class="dialog-header-with-close" style="padding: 16px 20px 0 20px;">
-        <h2 id="iosModalTitle" class="dialog-title" style="margin: 0; font-size: 1.25rem;">Cài đặt trên iOS</h2>
-        <button id="btnCloseIosModal" type="button" class="icon-btn" aria-label="Đóng">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    <!-- App Stylesheet -->
+    <link rel="stylesheet" href="css/app.css?v=34" />
+  </head>
+  <body>
+    <!-- Global App Bar -->
+    <header id="app-bar" class="app-bar" role="banner">
+      <div class="app-bar-left">
+        <button
+          type="button"
+          class="icon-btn hidden"
+          id="app-back-btn"
+          aria-label="Quay lại"
+        >
+          <svg class="icon" viewBox="0 0 24 24">
+            <path
+              d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"
+            />
           </svg>
         </button>
+        <span class="app-bar-title" id="app-title">MyQuizlet</span>
       </div>
-      <div class="dialog-body" style="padding: 16px 20px; text-align: center;">
-        <p id="ios-install-intro" style="font-size: 0.9375rem; margin-bottom: 16px; color: var(--md-sys-color-on-surface);">
-          Để cài đặt ứng dụng lên iPhone hoặc iPad:
-        </p>
-        <div style="display: flex; flex-direction: column; gap: 12px; text-align: left; background: var(--md-sys-color-surface-variant); padding: 16px; border-radius: 12px; font-size: 0.9rem; line-height: 1.5;">
-          <div id="ios-step-1">1. Nhấn nút <strong>Chia sẻ (Share)</strong> <span aria-hidden="true">⎋</span> ở thanh công cụ dưới đáy Safari.</div>
-          <div id="ios-step-2">2. Cuộn xuống và chọn <strong>Thêm vào Màn hình chính (Add to Home Screen)</strong> <span aria-hidden="true">⊕</span>.</div>
-          <div id="ios-step-3">3. Nhấn <strong>Thêm (Add)</strong> ở góc trên bên phải để hoàn tất.</div>
+
+      <div class="app-bar-right">
+        <!-- PWA Force Update Button (PWA Standard 6.D) -->
+        <button
+          id="btnUpdateApp"
+          type="button"
+          class="icon-btn"
+          aria-label="Cập nhật ứng dụng"
+          title="Cập nhật phiên bản mới nhất"
+        >
+          <svg
+            class="update-icon"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67" />
+          </svg>
+        </button>
+
+        <!-- PWA Install Button (Top App Bar - shown when not standalone) -->
+        <button
+          id="btnInstall"
+          type="button"
+          class="icon-btn hidden"
+          aria-label="Cài đặt ứng dụng"
+          title="Cài đặt MyQuizlet"
+        >
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+        </button>
+
+        <div class="menu-anchor">
+          <button
+            type="button"
+            class="icon-btn menu-trigger"
+            id="app-menu-btn"
+            aria-label="Menu tác vụ"
+            onclick="
+              document
+                .getElementById('app-menu-dropdown')
+                .classList.toggle('is-open');
+              event.stopPropagation();
+            "
+          >
+            <svg class="icon" viewBox="0 0 24 24">
+              <path
+                d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
+              />
+            </svg>
+          </button>
+          <div class="dropdown-menu" id="app-menu-dropdown">
+            <button type="button" class="menu-item" id="menu-opt-lang">
+              <svg class="menu-icon" viewBox="0 0 24 24">
+                <path
+                  d="M12.87 15.07l-2.54-2.51.03-.03c1.74-1.94 2.98-4.17 3.71-6.53H17V4h-7V2H8v2H1v1.99h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"
+                />
+              </svg>
+              <span id="menu-lang-text"
+                >Ngôn ngữ (Language): <strong>Tiếng Việt</strong></span
+              >
+            </button>
+            <button type="button" class="menu-item" id="menu-opt-storage">
+              <svg class="menu-icon" viewBox="0 0 24 24">
+                <path
+                  d="M2 20h20v-4H2v4zm2-3h2v2H4v-2zM2 4v4h20V4H2zm4 3H4V5h2v2zm-4 7h20v-4H2v4zm2-3h2v2H4v-2z"
+                />
+              </svg>
+              <span id="menu-storage-text">Dung lượng lưu trữ</span>
+            </button>
+            <button type="button" class="menu-item" id="menu-opt-help">
+              <svg class="menu-icon" viewBox="0 0 24 24">
+                <path
+                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 16h-2v-2h2v2zm1.07-7.75l-.9.92C12.45 11.9 12 12.5 12 14h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H7c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.04-.42 1.99-1.07 2.75z"
+                />
+              </svg>
+              <span id="menu-help-text">Hướng dẫn Markdown</span>
+            </button>
+            <button type="button" class="menu-item" id="menu-opt-about">
+              <svg class="menu-icon" viewBox="0 0 24 24">
+                <path
+                  d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"
+                />
+              </svg>
+              <span id="menu-about-text">Giới thiệu</span>
+            </button>
+          </div>
         </div>
       </div>
-      <div class="dialog-footer" style="display: flex; justify-content: flex-end; padding: 0 20px 16px 20px;">
-        <button id="btnGotItIos" type="button" class="btn btn-primary">Đã hiểu</button>
+    </header>
+
+    <!-- Main View Container -->
+    <main id="main-content" class="main-content" role="main"></main>
+
+    <!-- Snackbar Notification Container -->
+    <div
+      id="snackbar-container"
+      class="snackbar-container"
+      aria-live="polite"
+    ></div>
+
+    <!-- iOS Safari PWA Installation Guidance Modal -->
+    <div
+      id="iosInstallModal"
+      class="dialog-backdrop modal-dialog-backdrop hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="iosModalTitle"
+    >
+      <div class="dialog-panel modal-dialog" style="max-width: 420px">
+        <div class="dialog-header-with-close" style="padding: 16px 20px 0 20px">
+          <h2
+            id="iosModalTitle"
+            class="dialog-title"
+            style="margin: 0; font-size: 1.25rem"
+          >
+            Cài đặt trên iOS
+          </h2>
+          <button
+            id="btnCloseIosModal"
+            type="button"
+            class="icon-btn"
+            aria-label="Đóng"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </button>
+        </div>
+        <div class="dialog-body" style="padding: 16px 20px; text-align: center">
+          <p
+            id="ios-install-intro"
+            style="
+              font-size: 0.9375rem;
+              margin-bottom: 16px;
+              color: var(--md-sys-color-on-surface);
+            "
+          >
+            Để cài đặt ứng dụng lên iPhone hoặc iPad:
+          </p>
+          <div
+            style="
+              display: flex;
+              flex-direction: column;
+              gap: 12px;
+              text-align: left;
+              background: var(--md-sys-color-surface-variant);
+              padding: 16px;
+              border-radius: 12px;
+              font-size: 0.9rem;
+              line-height: 1.5;
+            "
+          >
+            <div id="ios-step-1">
+              1. Nhấn nút <strong>Chia sẻ (Share)</strong>
+              <span aria-hidden="true">⎋</span> ở thanh công cụ dưới đáy Safari.
+            </div>
+            <div id="ios-step-2">
+              2. Cuộn xuống và chọn
+              <strong>Thêm vào Màn hình chính (Add to Home Screen)</strong>
+              <span aria-hidden="true">⊕</span>.
+            </div>
+            <div id="ios-step-3">
+              3. Nhấn <strong>Thêm (Add)</strong> ở góc trên bên phải để hoàn
+              tất.
+            </div>
+          </div>
+        </div>
+        <div
+          class="dialog-footer"
+          style="
+            display: flex;
+            justify-content: flex-end;
+            padding: 0 20px 16px 20px;
+          "
+        >
+          <button id="btnGotItIos" type="button" class="btn btn-primary">
+            Đã hiểu
+          </button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Local Vendored Libraries (Precached for 100% Offline Mode) -->
-  <script src="vendor/marked.min.js"></script>
-  <script src="vendor/purify.min.js"></script>
-  <script src="vendor/highlight.min.js"></script>
-  <script src="vendor/highlight-swift.min.js"></script>
-  <script src="vendor/highlight-kotlin.min.js"></script>
-  <script src="vendor/highlight-dart.min.js"></script>
+    <!-- Local Vendored Libraries (Precached for 100% Offline Mode) -->
+    <script src="vendor/marked.min.js"></script>
+    <script src="vendor/purify.min.js"></script>
+    <script src="vendor/highlight.min.js"></script>
+    <script src="vendor/highlight-swift.min.js"></script>
+    <script src="vendor/highlight-kotlin.min.js"></script>
+    <script src="vendor/highlight-dart.min.js"></script>
 
-  <!-- Application Script (Supports both file:// and http://) -->
-  <script src="js/app.js?v=34"></script>
-</body>
+    <!-- Application Script (Supports both file:// and http://) -->
+    <script src="js/app.js?v=34"></script>
+  </body>
 </html>

@@ -3398,14 +3398,12 @@ ${a}
     }
     _registerServiceWorker() {
       const btnUpdateApp = document.getElementById("btnUpdateApp");
-      const btnUpdateText = document.getElementById("btn-update-text");
       const setUpdateReadyState = (worker) => {
         if (btnUpdateApp) {
           btnUpdateApp.classList.remove("hidden");
           btnUpdateApp.classList.add("is-ready");
-          if (btnUpdateText) {
-            btnUpdateText.textContent = t("update_ready_btn") || "B\u1EA3n m\u1EDBi";
-          }
+          btnUpdateApp.setAttribute("title", t("toast_update_ready_notice") || "B\u1EA3n m\u1EDBi");
+          btnUpdateApp.setAttribute("aria-label", t("toast_update_ready_notice") || "B\u1EA3n m\u1EDBi");
         }
         ui.showSnackbar(t("toast_update_ready_notice") || t("toast_update_available"), {
           actionLabel: t("toast_update_reload_btn"),
@@ -3430,9 +3428,6 @@ ${a}
           }
           btnUpdateApp.classList.add("is-updating");
           btnUpdateApp.disabled = true;
-          if (btnUpdateText) {
-            btnUpdateText.textContent = t("updating_btn") || "\u0110ang t\u1EA3i...";
-          }
           try {
             if (this.swRegistration) {
               await this.swRegistration.update().catch(() => {
@@ -3499,7 +3494,8 @@ ${a}
       const isAndroid = /Android/i.test(navigator.userAgent);
       if (isStandalone) {
         if (btnInstall) btnInstall.classList.add("hidden");
-      } else {
+      } else if (isIOS && btnInstall) {
+        btnInstall.classList.remove("hidden");
         if (btnInstall) btnInstall.classList.remove("hidden");
       }
       window.addEventListener("beforeinstallprompt", (e) => {
@@ -3553,7 +3549,6 @@ ${a}
         });
       }
       const closeIosModal = () => {
-        if (iosInstallModal) iosInstallModal.classList.add("hidden");
       };
       if (btnCloseIosModal) btnCloseIosModal.addEventListener("click", closeIosModal);
       if (btnGotItIos) btnGotItIos.addEventListener("click", closeIosModal);
@@ -3703,11 +3698,18 @@ ${a}
       if (updateText && !btnUpdateApp?.classList.contains("is-updating")) {
         updateText.textContent = btnUpdateApp?.classList.contains("is-ready") ? t("update_ready_btn") : t("update_app_btn");
       }
-      if (btnUpdateApp) btnUpdateApp.setAttribute("aria-label", t("update_app_btn"));
+      if (btnUpdateApp) {
+        const updateLabel = btnUpdateApp.classList.contains("is-ready") ? t("update_ready_btn") : t("update_app_btn");
+        btnUpdateApp.setAttribute("aria-label", updateLabel);
+        btnUpdateApp.setAttribute("title", updateLabel);
+      }
       const installText = this.appBar.querySelector("#btn-install-text");
       if (installText) installText.textContent = t("install_btn");
       const btnInstall = this.appBar.querySelector("#btnInstall");
-      if (btnInstall) btnInstall.setAttribute("aria-label", t("install_btn_aria"));
+      if (btnInstall) {
+        btnInstall.setAttribute("aria-label", t("install_btn_aria"));
+        btnInstall.setAttribute("title", t("install_btn"));
+      }
       const iosModalTitle = document.getElementById("iosModalTitle");
       if (iosModalTitle) iosModalTitle.textContent = t("ios_install_title");
       const iosIntro = document.getElementById("ios-install-intro");

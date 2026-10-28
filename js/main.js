@@ -79,15 +79,13 @@ class App {
 
   _registerServiceWorker() {
     const btnUpdateApp = document.getElementById('btnUpdateApp');
-    const btnUpdateText = document.getElementById('btn-update-text');
 
     const setUpdateReadyState = (worker) => {
       if (btnUpdateApp) {
         btnUpdateApp.classList.remove('hidden');
         btnUpdateApp.classList.add('is-ready');
-        if (btnUpdateText) {
-          btnUpdateText.textContent = t('update_ready_btn') || 'Bản mới';
-        }
+        btnUpdateApp.setAttribute('title', t('toast_update_ready_notice') || 'Bản mới');
+        btnUpdateApp.setAttribute('aria-label', t('toast_update_ready_notice') || 'Bản mới');
       }
       ui.showSnackbar(t('toast_update_ready_notice') || t('toast_update_available'), {
         actionLabel: t('toast_update_reload_btn'),
@@ -115,13 +113,9 @@ class App {
           return;
         }
 
-        // 2. Set updating UI state (spinner, disable, change label)
         btnUpdateApp.classList.add('is-updating');
         btnUpdateApp.disabled = true;
         if (btnUpdateText) {
-          btnUpdateText.textContent = t('updating_btn') || 'Đang tải...';
-        }
-
         try {
           // 3. Trigger registration update
           if (this.swRegistration) {
@@ -129,7 +123,7 @@ class App {
             if (this.swRegistration.waiting) {
               this.swRegistration.waiting.postMessage({ action: 'skipWaiting', type: 'SKIP_WAITING' });
             }
-          }
+            window.location.reload();
 
           // 4. Clear all caches
           if ('caches' in window) {
@@ -194,7 +188,7 @@ class App {
     }
   }
 
-  _initPWAInstallation() {
+      // Handle Force Update Button click (PWA Standard 6.D)
     const btnInstall = document.getElementById('btnInstall');
     const iosInstallModal = document.getElementById('iosInstallModal');
     const btnCloseIosModal = document.getElementById('btnCloseIosModal');
@@ -215,9 +209,9 @@ class App {
 
     if (isStandalone) {
       if (btnInstall) btnInstall.classList.add('hidden');
-    } else {
-      // In any web browser where the app is not yet installed standalone,
-      // show the Install button so users can install or view install guidance.
+    } else if (isIOS && btnInstall) {
+      // iOS Safari does not fire beforeinstallprompt; show button to open instructions modal
+      btnInstall.classList.remove('hidden');
       if (btnInstall) btnInstall.classList.remove('hidden');
     }
 
@@ -281,9 +275,9 @@ class App {
       });
     }
 
+    // Close iOS modal handlers
     // Close modal handlers
     const closeIosModal = () => {
-      if (iosInstallModal) iosInstallModal.classList.add('hidden');
     };
 
     if (btnCloseIosModal) btnCloseIosModal.addEventListener('click', closeIosModal);
@@ -454,11 +448,18 @@ class App {
       updateText.textContent = btnUpdateApp?.classList.contains('is-ready') ? t('update_ready_btn') : t('update_app_btn');
     }
     if (btnUpdateApp) btnUpdateApp.setAttribute('aria-label', t('update_app_btn'));
+      const updateLabel = btnUpdateApp.classList.contains('is-ready') ? t('update_ready_btn') : t('update_app_btn');
+      btnUpdateApp.setAttribute('aria-label', updateLabel);
+      btnUpdateApp.setAttribute('title', updateLabel);
+    }
 
     const installText = this.appBar.querySelector('#btn-install-text');
     if (installText) installText.textContent = t('install_btn');
     const btnInstall = this.appBar.querySelector('#btnInstall');
     if (btnInstall) btnInstall.setAttribute('aria-label', t('install_btn_aria'));
+      btnInstall.setAttribute('aria-label', t('install_btn_aria'));
+      btnInstall.setAttribute('title', t('install_btn'));
+    }
 
     const iosModalTitle = document.getElementById('iosModalTitle');
     if (iosModalTitle) iosModalTitle.textContent = t('ios_install_title');
