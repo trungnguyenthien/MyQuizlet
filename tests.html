@@ -654,9 +654,49 @@ Present, appearing, or found everywhere.`;
         const aBody1 = dialog1.querySelector('.review-modal-scroll-body');
         console.assert(aBody1 && aBody1.textContent.includes('Đáp án chi tiết 1'), 'Modal scroll body should contain answer 1');
 
-        // Verify bottom close button exists
+        // Verify Speech VN, Close, and Speech EN buttons exist in action row
+        const btnVn = dialog1.querySelector('#review-modal-btn-speech-vn');
         const closeBtn = dialog1.querySelector('#review-modal-btn-close');
-        console.assert(Boolean(closeBtn), 'Modal must have bottom close button (#review-modal-btn-close)');
+        const btnEn = dialog1.querySelector('#review-modal-btn-speech-en');
+
+        console.assert(Boolean(btnVn), 'Modal must have Speech VN button on left');
+        console.assert(Boolean(closeBtn), 'Modal must have Close button in center');
+        console.assert(Boolean(btnEn), 'Modal must have Speech EN button on right');
+
+        // Test Speech Synthesis invocation
+        let spokenUtterance = null;
+        let cancelCalled = false;
+        const originalSpeechSynth = window.speechSynthesis;
+        const mockSynth = {
+          speaking: false,
+          cancel: () => { cancelCalled = true; },
+          speak: (utt) => { spokenUtterance = utt; },
+          getVoices: () => []
+        };
+        Object.defineProperty(window, 'speechSynthesis', {
+          value: mockSynth,
+          configurable: true,
+          writable: true
+        });
+
+        // Click Speech VN
+        btnVn.click();
+        console.assert(spokenUtterance !== null, 'Speech VN should trigger speechSynthesis.speak');
+        console.assert(spokenUtterance.lang === 'vi-VN', `Expected lang vi-VN, got ${spokenUtterance && spokenUtterance.lang}`);
+        console.assert(spokenUtterance.text.includes('Đáp án chi tiết 1'), 'Spoken text must contain answer text');
+
+        // Click Speech EN
+        spokenUtterance = null;
+        btnEn.click();
+        console.assert(spokenUtterance !== null, 'Speech EN should trigger speechSynthesis.speak');
+        console.assert(spokenUtterance.lang === 'en-US', `Expected lang en-US, got ${spokenUtterance && spokenUtterance.lang}`);
+
+        // Restore SpeechSynthesis
+        Object.defineProperty(window, 'speechSynthesis', {
+          value: originalSpeechSynth,
+          configurable: true,
+          writable: true
+        });
 
         // Tap bottom close button -> modal closes and is removed
         closeBtn.click();

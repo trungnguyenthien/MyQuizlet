@@ -2318,15 +2318,93 @@ ${a}
         </div>
 
         <div class="dialog-actions review-modal-actions">
+          <button type="button" class="btn btn-tonal review-modal-btn-speech" id="review-modal-btn-speech-vn" aria-label="Speech VN">
+            <svg class="icon-sm" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            <span>Speech VN</span>
+          </button>
           <button type="button" class="btn btn-primary review-modal-btn-close" id="review-modal-btn-close">
             <span>${t("close")}</span>
+          </button>
+          <button type="button" class="btn btn-tonal review-modal-btn-speech" id="review-modal-btn-speech-en" aria-label="Speech EN">
+            <svg class="icon-sm" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            <span>Speech EN</span>
           </button>
         </div>
       </div>
     `;
       document.body.appendChild(dialog);
       dialog.showModal();
+      let currentSpeechLang = null;
+      const btnVn = dialog.querySelector("#review-modal-btn-speech-vn");
+      const btnEn = dialog.querySelector("#review-modal-btn-speech-en");
+      const updateSpeechBtns = () => {
+        if (btnVn) {
+          btnVn.classList.toggle("is-speaking", currentSpeechLang === "vi-VN");
+        }
+        if (btnEn) {
+          btnEn.classList.toggle("is-speaking", currentSpeechLang === "en-US");
+        }
+      };
+      const stopSpeech = () => {
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        }
+        currentSpeechLang = null;
+        updateSpeechBtns();
+      };
+      const getAnswerText = () => {
+        const scrollBody = dialog.querySelector(".review-modal-scroll-body");
+        if (scrollBody) {
+          const text = (scrollBody.textContent || scrollBody.innerText || "").trim();
+          if (text) return text;
+        }
+        return (card.a || "").trim();
+      };
+      const speak = (langCode) => {
+        if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+          this.showSnackbar("Tr\xECnh duy\u1EC7t kh\xF4ng h\u1ED7 tr\u1EE3 Speech Synthesis");
+          return;
+        }
+        if (window.speechSynthesis.speaking && currentSpeechLang === langCode) {
+          stopSpeech();
+          return;
+        }
+        window.speechSynthesis.cancel();
+        const text = getAnswerText();
+        if (!text) return;
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = langCode;
+        try {
+          const voices = window.speechSynthesis.getVoices();
+          if (voices && voices.length > 0) {
+            const prefix = langCode.split("-")[0].toLowerCase();
+            const voice = voices.find((v) => v.lang.toLowerCase() === langCode.toLowerCase()) || voices.find((v) => v.lang.toLowerCase().startsWith(prefix));
+            if (voice) utterance.voice = voice;
+          }
+        } catch (err) {
+        }
+        utterance.onstart = () => {
+          currentSpeechLang = langCode;
+          updateSpeechBtns();
+        };
+        utterance.onend = () => {
+          currentSpeechLang = null;
+          updateSpeechBtns();
+        };
+        utterance.onerror = () => {
+          currentSpeechLang = null;
+          updateSpeechBtns();
+        };
+        window.speechSynthesis.speak(utterance);
+      };
+      if (btnVn) {
+        btnVn.addEventListener("click", () => speak("vi-VN"));
+      }
+      if (btnEn) {
+        btnEn.addEventListener("click", () => speak("en-US"));
+      }
       const cleanup = () => {
+        stopSpeech();
         dialog.close();
         if (dialog.parentNode === document.body) {
           document.body.removeChild(dialog);
