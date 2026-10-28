@@ -702,16 +702,16 @@ Present, appearing, or found everywhere.`;
         console.assert(spokenUtterance.lang === 'vi-VN', `Expected lang vi-VN, got ${spokenUtterance && spokenUtterance.lang}`);
         console.assert(spokenUtterance.text.includes('Đáp án chi tiết 1'), 'Spoken text must contain answer text');
 
-        console.assert(spokenUtterance.rate === 0.9, `Expected rate 0.9, got ${spokenUtterance && spokenUtterance.rate}`);
-        console.assert(spokenUtterance.pitch === 0.82, `Expected deep pitch 0.82, got ${spokenUtterance && spokenUtterance.pitch}`);
+        console.assert(spokenUtterance.rate === 0.88, `Expected rate 0.88, got ${spokenUtterance && spokenUtterance.rate}`);
+        console.assert(spokenUtterance.pitch === 0.75, `Expected deep pitch 0.75, got ${spokenUtterance && spokenUtterance.pitch}`);
 
         // Click Speech EN
         spokenUtterance = null;
         btnEn.click();
         console.assert(spokenUtterance !== null, 'Speech EN should trigger speechSynthesis.speak');
         console.assert(spokenUtterance.lang === 'en-US', `Expected lang en-US, got ${spokenUtterance && spokenUtterance.lang}`);
-        console.assert(spokenUtterance.rate === 0.9, `Expected rate 0.9, got ${spokenUtterance && spokenUtterance.rate}`);
-        console.assert(spokenUtterance.pitch === 0.82, `Expected deep pitch 0.82, got ${spokenUtterance && spokenUtterance.pitch}`);
+        console.assert(spokenUtterance.rate === 0.88, `Expected rate 0.88, got ${spokenUtterance && spokenUtterance.rate}`);
+        console.assert(spokenUtterance.pitch === 0.75, `Expected deep pitch 0.75, got ${spokenUtterance && spokenUtterance.pitch}`);
 
         // Restore SpeechSynthesis
         Object.defineProperty(window, 'speechSynthesis', {

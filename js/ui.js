@@ -1402,40 +1402,92 @@ class UIManager {
       currentSpeechLang = langCode;
       updateSpeechBtns();
 
-      // Voice selection: prioritize deeper male voices
+      // Voice selection: prioritize deeper, mature, natural male voices
       const langPrefix = langCode.split('-')[0].toLowerCase();
-      const isMaleVoice = (v) => {
+
+      // Score voice according to deep male voice quality
+      const getVoiceScore = (v) => {
         const name = ((v.name || '') + ' ' + (v.voiceURI || '')).toLowerCase();
-        // Positive male voice keywords
-        if (/\b(male|man|guy|boy|nam|david|alex|daniel|george|james|reed|eddy|rocko|tom|oliver|ralph|fred|aaron|vic|minh)\b/i.test(name)) {
-          return true;
+        const normLang = (v.lang || '').toLowerCase().replace(/_/g, '-');
+
+        // 1. Must match target language family
+        if (!normLang.startsWith(langPrefix)) {
+          return -9999;
         }
-        // Exclude female voice keywords
-        if (/\b(female|woman|girl|linh|samantha|kathy|zira|victoria|karen|susan|fiona|moira|tessa|flo|sandy|shelley|grandma)\b/i.test(name)) {
-          return false;
+
+        // 2. Reject obvious female voices
+        if (/\b(female|woman|girl|samantha|kathy|zira|victoria|karen|susan|fiona|moira|tessa|sandy|shelley|grandma|jenny|aria|sonia|helena|catherine|clara)\b/i.test(name)) {
+          return -5000;
         }
-        return false;
+
+        // 3. Reject cartoon/novelty/high-pitched/child voices
+        if (/\b(bad news|bahh|bells|boing|bubbles|cellos|wobble|jester|junior|organ|superstar|trinoids|whisper|zarvox|albert|eddy|flo|grandpa)\b/i.test(name)) {
+          return -3000;
+        }
+
+        let score = 0;
+
+        // Exact language match (e.g. en-US or vi-VN)
+        if (normLang === langCode.toLowerCase()) {
+          score += 100;
+        } else {
+          score += 50;
+        }
+
+        // High priority: Premium / Natural / Neural / Enhanced male voices
+        if (/\b(natural|neural|online|enhanced|premium)\b/i.test(name)) {
+          score += 300;
+        }
+
+        // High priority: Renowned deep & warm baritone male voices
+        // English: Daniel (classic deep BBC baritone), Guy, Ryan, Christopher, George, David, Oliver, James, Alex, Reed, Arthur
+        // Vietnamese: Nam, Minh, An, Quang, Vic (Google vi-VN male engine)
+        if (/\b(daniel|guy|ryan|christopher|george|david|oliver|james|alex|reed|arthur|nam|minh|an|quang|vic)\b/i.test(name)) {
+          score += 500;
+        }
+
+        // Explicit male keyword
+        if (/\b(male|man|deep|bass)\b/i.test(name)) {
+          score += 250;
+        }
+
+        // Local service bonus (smooth offline playback without network lag)
+        if (v.localService === true) {
+          score += 20;
+        }
+
+        return score;
       };
 
       const findVoice = (localOnly) => {
         try {
           const voices = window.speechSynthesis.getVoices() || [];
-          const norm = (v) => (v.lang || '').toLowerCase().replace(/_/g, '-');
-          const pool = voices.filter((v) => norm(v).startsWith(langPrefix) && (!localOnly || v.localService === true));
-          
-          // 1. Male voice with exact language match
-          const exactMale = pool.find((v) => norm(v) === langCode.toLowerCase() && isMaleVoice(v));
-          if (exactMale) return exactMale;
+          if (!voices || voices.length === 0) return null;
 
-          // 2. Any male voice with matching language prefix
-          const anyMale = pool.find((v) => isMaleVoice(v));
-          if (anyMale) return anyMale;
+          const candidates = voices.filter((v) => !localOnly || v.localService === true);
+          let bestVoice = null;
+          let bestScore = -1000;
 
-          // 3. Exact language match (avoiding obvious female names)
-          const nonFemale = pool.find((v) => norm(v) === langCode.toLowerCase() && !/\b(female|woman|girl|linh|samantha|kathy|zira)\b/i.test(v.name));
-          if (nonFemale) return nonFemale;
+          for (const v of candidates) {
+            const sc = getVoiceScore(v);
+            if (sc > bestScore) {
+              bestScore = sc;
+              bestVoice = v;
+            }
+          }
 
-          return pool.find((v) => norm(v) === langCode.toLowerCase()) || pool[0] || null;
+          if (bestVoice && bestScore > 0) {
+            return bestVoice;
+          }
+
+          // Fallback if no positive male voice found: match language prefix without female name if possible
+          const fallbackPool = candidates.filter((v) => {
+            const normLang = (v.lang || '').toLowerCase().replace(/_/g, '-');
+            return normLang.startsWith(langPrefix);
+          });
+
+          const nonFemale = fallbackPool.find((v) => !/\b(female|woman|girl|linh|samantha|kathy|zira)\b/i.test(v.name));
+          return nonFemale || fallbackPool[0] || null;
         } catch (err) {
           return null;
         }
@@ -1465,9 +1517,9 @@ class UIManager {
         this.showSnackbar(`Không thể phát âm thanh: ${code || 'unknown'}`);
       };
 
-      // attempt 0: preferred male voice + deep pitch 0.82
-      // attempt 1: lang only + deep pitch 0.82
-      // attempt 2: no lang, no voice (engine default) + deep pitch 0.82
+      // attempt 0: preferred deep male voice + deep pitch 0.75
+      // attempt 1: lang only + deep pitch 0.75
+      // attempt 2: no lang, no voice (engine default) + deep pitch 0.75
       const playSegment = (item, attempt) => {
         if (thisSession !== currentSpeechSession) return;
 
@@ -1478,8 +1530,8 @@ class UIManager {
         } catch (e) {}
 
         const utterance = new SpeechSynthesisUtterance(item.text);
-        utterance.rate = 0.9; // Slower for clarity, matching english-practise.html
-        utterance.pitch = 0.82; // Hạ cao độ xuống mức trầm ấm (deep male tone)
+        utterance.rate = 0.88; // Slower, deliberate pacing for clear and dignified delivery
+        utterance.pitch = 0.75; // Cao độ nam trầm ấm (deep male baritone tone)
 
         if (attempt === 0) {
           const voice = findVoice(true) || findVoice(false);

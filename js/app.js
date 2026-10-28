@@ -2422,28 +2422,61 @@ ${a}
         currentSpeechLang = langCode;
         updateSpeechBtns();
         const langPrefix = langCode.split("-")[0].toLowerCase();
-        const isMaleVoice = (v) => {
+        const getVoiceScore = (v) => {
           const name = ((v.name || "") + " " + (v.voiceURI || "")).toLowerCase();
-          if (/\b(male|man|guy|boy|nam|david|alex|daniel|george|james|reed|eddy|rocko|tom|oliver|ralph|fred|aaron|vic|minh)\b/i.test(name)) {
-            return true;
+          const normLang = (v.lang || "").toLowerCase().replace(/_/g, "-");
+          if (!normLang.startsWith(langPrefix)) {
+            return -9999;
           }
-          if (/\b(female|woman|girl|linh|samantha|kathy|zira|victoria|karen|susan|fiona|moira|tessa|flo|sandy|shelley|grandma)\b/i.test(name)) {
-            return false;
+          if (/\b(female|woman|girl|samantha|kathy|zira|victoria|karen|susan|fiona|moira|tessa|sandy|shelley|grandma|jenny|aria|sonia|helena|catherine|clara)\b/i.test(name)) {
+            return -5e3;
           }
-          return false;
+          if (/\b(bad news|bahh|bells|boing|bubbles|cellos|wobble|jester|junior|organ|superstar|trinoids|whisper|zarvox|albert|eddy|flo|grandpa)\b/i.test(name)) {
+            return -3e3;
+          }
+          let score = 0;
+          if (normLang === langCode.toLowerCase()) {
+            score += 100;
+          } else {
+            score += 50;
+          }
+          if (/\b(natural|neural|online|enhanced|premium)\b/i.test(name)) {
+            score += 300;
+          }
+          if (/\b(daniel|guy|ryan|christopher|george|david|oliver|james|alex|reed|arthur|nam|minh|an|quang|vic)\b/i.test(name)) {
+            score += 500;
+          }
+          if (/\b(male|man|deep|bass)\b/i.test(name)) {
+            score += 250;
+          }
+          if (v.localService === true) {
+            score += 20;
+          }
+          return score;
         };
         const findVoice = (localOnly) => {
           try {
             const voices = window.speechSynthesis.getVoices() || [];
-            const norm = (v) => (v.lang || "").toLowerCase().replace(/_/g, "-");
-            const pool = voices.filter((v) => norm(v).startsWith(langPrefix) && (!localOnly || v.localService === true));
-            const exactMale = pool.find((v) => norm(v) === langCode.toLowerCase() && isMaleVoice(v));
-            if (exactMale) return exactMale;
-            const anyMale = pool.find((v) => isMaleVoice(v));
-            if (anyMale) return anyMale;
-            const nonFemale = pool.find((v) => norm(v) === langCode.toLowerCase() && !/\b(female|woman|girl|linh|samantha|kathy|zira)\b/i.test(v.name));
-            if (nonFemale) return nonFemale;
-            return pool.find((v) => norm(v) === langCode.toLowerCase()) || pool[0] || null;
+            if (!voices || voices.length === 0) return null;
+            const candidates = voices.filter((v) => !localOnly || v.localService === true);
+            let bestVoice = null;
+            let bestScore = -1e3;
+            for (const v of candidates) {
+              const sc = getVoiceScore(v);
+              if (sc > bestScore) {
+                bestScore = sc;
+                bestVoice = v;
+              }
+            }
+            if (bestVoice && bestScore > 0) {
+              return bestVoice;
+            }
+            const fallbackPool = candidates.filter((v) => {
+              const normLang = (v.lang || "").toLowerCase().replace(/_/g, "-");
+              return normLang.startsWith(langPrefix);
+            });
+            const nonFemale = fallbackPool.find((v) => !/\b(female|woman|girl|linh|samantha|kathy|zira)\b/i.test(v.name));
+            return nonFemale || fallbackPool[0] || null;
           } catch (err) {
             return null;
           }
@@ -2477,8 +2510,8 @@ ${a}
           } catch (e) {
           }
           const utterance = new SpeechSynthesisUtterance(item.text);
-          utterance.rate = 0.9;
-          utterance.pitch = 0.82;
+          utterance.rate = 0.88;
+          utterance.pitch = 0.75;
           if (attempt === 0) {
             const voice = findVoice(true) || findVoice(false);
             if (voice) {
