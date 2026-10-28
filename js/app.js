@@ -2317,6 +2317,7 @@ ${a}
           ${aHtml}
         </div>
 
+        <div class="review-speech-status" id="review-speech-status" role="status" aria-live="polite"></div>
         <div class="dialog-actions review-modal-actions">
           <button type="button" class="btn btn-tonal review-modal-btn-speech" id="review-modal-btn-speech-vn" aria-label="Speech VN" title="Ph\xE1t \xE2m ti\u1EBFng Vi\u1EC7t">
             <svg class="icon-sm speech-icon-speaker" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
@@ -2349,6 +2350,13 @@ ${a}
         if (btnEn) {
           btnEn.classList.toggle("is-speaking", currentSpeechLang === "en-US");
         }
+      };
+      const statusEl = dialog.querySelector("#review-speech-status");
+      const setStatus = (msg, isError = false) => {
+        if (!statusEl) return;
+        statusEl.textContent = msg || "";
+        statusEl.classList.toggle("is-error", Boolean(isError));
+        statusEl.classList.toggle("is-visible", Boolean(msg));
       };
       const stopSpeech = () => {
         currentSpeechSession++;
@@ -2398,17 +2406,18 @@ ${a}
         }
         if (currentSpeechLang === langCode) {
           stopSpeech();
+          setStatus("");
           return;
         }
         stopSpeech();
         const text = getAnswerText();
         if (!text) {
-          this.showSnackbar("Kh\xF4ng c\xF3 n\u1ED9i dung c\xE2u tr\u1EA3 l\u1EDDi \u0111\u1EC3 ph\xE1t \xE2m.");
+          setStatus("Kh\xF4ng c\xF3 n\u1ED9i dung c\xE2u tr\u1EA3 l\u1EDDi \u0111\u1EC3 ph\xE1t \xE2m.", true);
           return;
         }
         const segments = parseSpeechSegments(text);
         if (segments.length === 0) {
-          this.showSnackbar("Kh\xF4ng c\xF3 n\u1ED9i dung c\xE2u tr\u1EA3 l\u1EDDi \u0111\u1EC3 ph\xE1t \xE2m.");
+          setStatus("Kh\xF4ng c\xF3 n\u1ED9i dung c\xE2u tr\u1EA3 l\u1EDDi \u0111\u1EC3 ph\xE1t \xE2m.", true);
           return;
         }
         const thisSession = ++currentSpeechSession;
@@ -2425,10 +2434,14 @@ ${a}
             return null;
           }
         };
+        let voiceCount = 0;
         try {
           const all = window.speechSynthesis.getVoices() || [];
+          voiceCount = all.length;
           if (all.length > 0 && !findVoice(false)) {
-            this.showSnackbar(langPrefix === "vi" ? "Thi\u1EBFt b\u1ECB ch\u01B0a c\xF3 gi\u1ECDng \u0111\u1ECDc ti\u1EBFng Vi\u1EC7t. H\xE3y c\xE0i trong C\xE0i \u0111\u1EB7t > Text-to-speech." : "Thi\u1EBFt b\u1ECB ch\u01B0a c\xF3 gi\u1ECDng \u0111\u1ECDc cho ng\xF4n ng\u1EEF n\xE0y.");
+            setStatus(langPrefix === "vi" ? "Thi\u1EBFt b\u1ECB ch\u01B0a c\xF3 gi\u1ECDng \u0111\u1ECDc ti\u1EBFng Vi\u1EC7t. H\xE3y c\xE0i trong C\xE0i \u0111\u1EB7t > Text-to-speech." : "Thi\u1EBFt b\u1ECB ch\u01B0a c\xF3 gi\u1ECDng \u0111\u1ECDc cho ng\xF4n ng\u1EEF n\xE0y.", true);
+          } else {
+            setStatus(`\u0110ang chu\u1EA9n b\u1ECB \u0111\u1ECDc\u2026 (${voiceCount} gi\u1ECDng)`);
           }
         } catch (err) {
         }
@@ -2438,6 +2451,7 @@ ${a}
           if (reportedError) return;
           reportedError = true;
           stopSpeech();
+          setStatus(`Kh\xF4ng th\u1EC3 ph\xE1t \xE2m thanh: ${code || "unknown"} (${voiceCount} gi\u1ECDng)`, true);
           this.showSnackbar(`Kh\xF4ng th\u1EC3 ph\xE1t \xE2m thanh: ${code || "unknown"}`);
         };
         const playSegment = (item, attempt) => {
@@ -2475,6 +2489,7 @@ ${a}
             clearWatchdog();
             if (thisSession !== currentSpeechSession) return;
             if (attempt < 2) {
+              setStatus(`Th\u1EED l\u1EA1i (c\xE1ch ${attempt + 2}/3) do: ${code || "unknown"}`);
               try {
                 window.speechSynthesis.cancel();
               } catch (e) {
@@ -2487,18 +2502,24 @@ ${a}
           utterance.onstart = () => {
             started = true;
             clearWatchdog();
+            setStatus(`\u0110ang ph\xE1t (c\xE1ch ${attempt + 1}/3)\u2026`);
           };
           utterance.onend = () => {
             if (settled) return;
+            if (thisSession !== currentSpeechSession) return;
+            if (!started) {
+              retryOrFail("ended-without-audio");
+              return;
+            }
             settled = true;
             clearWatchdog();
-            if (thisSession !== currentSpeechSession) return;
             if (window._mqActiveUtterance === utterance) {
               window._mqActiveUtterance = null;
             }
             currentIndex++;
             if (currentIndex >= segments.length) {
               stopSpeech();
+              setStatus("\u0110\xE3 \u0111\u1ECDc xong.");
               return;
             }
             const pause = item.pauseAfter || 0;

@@ -1278,6 +1278,7 @@ class UIManager {
           ${aHtml}
         </div>
 
+        <div class="review-speech-status" id="review-speech-status" role="status" aria-live="polite"></div>
         <div class="dialog-actions review-modal-actions">
           <button type="button" class="btn btn-tonal review-modal-btn-speech" id="review-modal-btn-speech-vn" aria-label="Speech VN" title="Phát âm tiếng Việt">
             <svg class="icon-sm speech-icon-speaker" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
@@ -1313,6 +1314,14 @@ class UIManager {
       if (btnEn) {
         btnEn.classList.toggle('is-speaking', currentSpeechLang === 'en-US');
       }
+    };
+
+    const statusEl = dialog.querySelector('#review-speech-status');
+    const setStatus = (msg, isError = false) => {
+      if (!statusEl) return;
+      statusEl.textContent = msg || '';
+      statusEl.classList.toggle('is-error', Boolean(isError));
+      statusEl.classList.toggle('is-visible', Boolean(msg));
     };
 
     const stopSpeech = () => {
@@ -1372,6 +1381,7 @@ class UIManager {
       // If currently speaking this language, toggle off
       if (currentSpeechLang === langCode) {
         stopSpeech();
+        setStatus('');
         return;
       }
 
@@ -1380,13 +1390,13 @@ class UIManager {
 
       const text = getAnswerText();
       if (!text) {
-        this.showSnackbar('Không có nội dung câu trả lời để phát âm.');
+        setStatus('Không có nội dung câu trả lời để phát âm.', true);
         return;
       }
 
       const segments = parseSpeechSegments(text);
       if (segments.length === 0) {
-        this.showSnackbar('Không có nội dung câu trả lời để phát âm.');
+        setStatus('Không có nội dung câu trả lời để phát âm.', true);
         return;
       }
 
@@ -1407,12 +1417,16 @@ class UIManager {
           return null;
         }
       };
+      let voiceCount = 0;
       try {
         const all = window.speechSynthesis.getVoices() || [];
+        voiceCount = all.length;
         if (all.length > 0 && !findVoice(false)) {
-          this.showSnackbar(langPrefix === 'vi'
+          setStatus(langPrefix === 'vi'
             ? 'Thiết bị chưa có giọng đọc tiếng Việt. Hãy cài trong Cài đặt > Text-to-speech.'
-            : 'Thiết bị chưa có giọng đọc cho ngôn ngữ này.');
+            : 'Thiết bị chưa có giọng đọc cho ngôn ngữ này.', true);
+        } else {
+          setStatus(`Đang chuẩn bị đọc… (${voiceCount} giọng)`);
         }
       } catch (err) {}
 
@@ -1423,6 +1437,7 @@ class UIManager {
         if (reportedError) return;
         reportedError = true;
         stopSpeech();
+        setStatus(`Không thể phát âm thanh: ${code || 'unknown'} (${voiceCount} giọng)`, true);
         this.showSnackbar(`Không thể phát âm thanh: ${code || 'unknown'}`);
       };
 
@@ -1469,6 +1484,7 @@ class UIManager {
           clearWatchdog();
           if (thisSession !== currentSpeechSession) return;
           if (attempt < 2) {
+            setStatus(`Thử lại (cách ${attempt + 2}/3) do: ${code || 'unknown'}`);
             try { window.speechSynthesis.cancel(); } catch (e) {}
             speechTimer = setTimeout(() => playSegment(item, attempt + 1), 80);
           } else {
@@ -1479,19 +1495,26 @@ class UIManager {
         utterance.onstart = () => {
           started = true;
           clearWatchdog();
+          setStatus(`Đang phát (cách ${attempt + 1}/3)…`);
         };
 
         utterance.onend = () => {
           if (settled) return;
+          if (thisSession !== currentSpeechSession) return;
+          if (!started) {
+            // Ended without ever producing audio: silent failure
+            retryOrFail('ended-without-audio');
+            return;
+          }
           settled = true;
           clearWatchdog();
-          if (thisSession !== currentSpeechSession) return;
           if (window._mqActiveUtterance === utterance) {
             window._mqActiveUtterance = null;
           }
           currentIndex++;
           if (currentIndex >= segments.length) {
             stopSpeech();
+            setStatus('Đã đọc xong.');
             return;
           }
           const pause = item.pauseAfter || 0;

@@ -2438,6 +2438,25 @@ button {
   border: 1px solid var(--md-sys-color-outline-variant);
 }
 
+.review-speech-status {
+  display: none;
+  padding: 6px var(--space-4);
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--md-sys-color-on-surface-variant);
+  word-break: break-word;
+}
+
+.review-speech-status.is-visible {
+  display: block;
+}
+
+.review-speech-status.is-error {
+  color: var(--md-sys-color-error, #B3261E);
+  font-weight: 500;
+}
+
 .review-modal-actions {
   display: flex;
   justify-content: space-between;
