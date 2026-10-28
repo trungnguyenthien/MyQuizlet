@@ -79,7 +79,7 @@
     import { serializeSet, slugify } from './js/serializer.js';
     import { store } from './js/store.js';
     import { renderCardFaceHTML } from './js/render.js';
-    import { ui } from './js/ui.js';
+    import { ui, parseSpeechSegments } from './js/ui.js';
     import { StudyController } from './js/study.js';
     import { App } from './js/main.js';
 
@@ -700,11 +700,14 @@ Present, appearing, or found everywhere.`;
         console.assert(spokenUtterance.lang === 'vi-VN', `Expected lang vi-VN, got ${spokenUtterance && spokenUtterance.lang}`);
         console.assert(spokenUtterance.text.includes('Đáp án chi tiết 1'), 'Spoken text must contain answer text');
 
+        console.assert(spokenUtterance.rate === 0.9, `Expected rate 0.9, got ${spokenUtterance && spokenUtterance.rate}`);
+
         // Click Speech EN
         spokenUtterance = null;
         btnEn.click();
         console.assert(spokenUtterance !== null, 'Speech EN should trigger speechSynthesis.speak');
         console.assert(spokenUtterance.lang === 'en-US', `Expected lang en-US, got ${spokenUtterance && spokenUtterance.lang}`);
+        console.assert(spokenUtterance.rate === 0.9, `Expected rate 0.9, got ${spokenUtterance && spokenUtterance.rate}`);
 
         // Restore SpeechSynthesis
         Object.defineProperty(window, 'speechSynthesis', {
@@ -712,26 +715,6 @@ Present, appearing, or found everywhere.`;
           configurable: true,
           writable: true
         });
-
-        // Test fallback when synthesis-failed occurs
-        let audioSrcPlayed = null;
-        const originalAudio = window.Audio;
-        window.Audio = class MockAudio {
-          constructor() {
-            this._src = '';
-          }
-          get src() { return this._src; }
-          set src(val) { this._src = val; audioSrcPlayed = val; }
-          play() { return Promise.resolve(); }
-          pause() {}
-        };
-
-        // Simulate synthesis-failed on utterance
-        spokenUtterance.onerror({ error: 'synthesis-failed' });
-        console.assert(audioSrcPlayed !== null && audioSrcPlayed.includes('translate.google.com'), 'Should seamlessly fallback to audio TTS when synthesis-failed occurs');
-
-        // Restore Audio
-        window.Audio = originalAudio;
 
         // Tap bottom close button -> modal closes and is removed
         closeBtn.click();
@@ -753,6 +736,41 @@ Present, appearing, or found everywhere.`;
         // Cleanup
         document.body.removeChild(app.mainContainer);
         store.deleteSet(testReviewSet.id);
+      });
+
+      // 20. Speech Segmentation and Pauses (Comma 0.2s, Period 0.5s, Quotes 0.2s)
+      await runTest('Review Answer Modal: Speech Segmentation and Natural Pauses', async () => {
+        // Test 1: Comma separation (0.2s / 200ms) and period (0.5s / 500ms)
+        const commaText = 'Cô ấy mỉm cười, vẫy tay chào.';
+        const commaSegs = parseSpeechSegments(commaText);
+        console.assert(commaSegs.length === 2, `Expected 2 segments for comma text, got ${commaSegs.length}`);
+        console.assert(commaSegs[0].text === 'Cô ấy mỉm cười', `Expected 'Cô ấy mỉm cười', got '${commaSegs[0].text}'`);
+        console.assert(commaSegs[0].pauseAfter === 200, `Expected 200ms pause after comma, got ${commaSegs[0].pauseAfter}`);
+        console.assert(commaSegs[1].text === 'vẫy tay chào', `Expected 'vẫy tay chào', got '${commaSegs[1].text}'`);
+        console.assert(commaSegs[1].pauseAfter === 500, `Expected 500ms pause after period, got ${commaSegs[1].pauseAfter}`);
+
+        // Test 2: Double quotes "" separation (0.2s / 200ms pause)
+        const quoteText = 'Trước khi đi, anh ấy nói: "Tôi sẽ quay lại sớm", rồi mỉm cười.';
+        const quoteSegs = parseSpeechSegments(quoteText);
+        console.assert(quoteSegs.length >= 4, `Expected at least 4 segments for quote text, got ${quoteSegs.length}`);
+        console.assert(quoteSegs[0].text === 'Trước khi đi', `Expected segment 0 'Trước khi đi', got '${quoteSegs[0].text}'`);
+        console.assert(quoteSegs[0].pauseAfter === 200, `Expected 200ms for comma, got ${quoteSegs[0].pauseAfter}`);
+        
+        const quoteSeg = quoteSegs.find(s => s.text === 'Tôi sẽ quay lại sớm');
+        console.assert(Boolean(quoteSeg), 'Quoted content must be an isolated segment');
+        console.assert(quoteSeg.pauseAfter === 200, `Quoted segment should pause 200ms, got ${quoteSeg && quoteSeg.pauseAfter}`);
+
+        // Test 3: Standalone quoted word
+        const wordQuote = 'Từ "algorithm" có nghĩa là thuật toán.';
+        const wordSegs = parseSpeechSegments(wordQuote);
+        console.assert(wordSegs.some(s => s.text === 'algorithm' && s.pauseAfter === 200), 'Quoted word "algorithm" must be separated with 200ms pause');
+
+        // Test 4: Decimal and thousands number protection
+        const numText = 'Pi là 3.14, dân số là 1,000 người.';
+        const numSegs = parseSpeechSegments(numText);
+        console.assert(numSegs.length === 2, `Expected 2 segments, got ${numSegs.length}`);
+        console.assert(numSegs[0].text.includes('3.14'), 'Decimal point in 3.14 must not be split');
+        console.assert(numSegs[1].text.includes('1,000'), 'Thousands comma in 1,000 must not be split');
       });
 
       // Update Summary

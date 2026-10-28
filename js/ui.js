@@ -1300,7 +1300,8 @@ class UIManager {
     dialog.showModal();
 
     let currentSpeechLang = null;
-    let activeAudioController = null;
+    let speechTimer = null;
+    let currentSpeechSession = 0;
     const btnVn = dialog.querySelector('#review-modal-btn-speech-vn');
     const btnEn = dialog.querySelector('#review-modal-btn-speech-en');
 
@@ -1314,14 +1315,15 @@ class UIManager {
     };
 
     const stopSpeech = () => {
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
-          window.speechSynthesis.cancel();
-        }
+      currentSpeechSession++;
+      if (speechTimer) {
+        clearTimeout(speechTimer);
+        speechTimer = null;
       }
-      if (activeAudioController) {
-        activeAudioController.cancel();
-        activeAudioController = null;
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        try {
+          window.speechSynthesis.cancel();
+        } catch (e) {}
       }
       if (typeof window !== 'undefined') {
         window._mqActiveUtterance = null;
@@ -1335,147 +1337,35 @@ class UIManager {
       let rawText = '';
       if (scrollBody) {
         const clone = scrollBody.cloneNode(true);
-        clone.querySelectorAll('button, svg, .copy-code-btn').forEach((el) => el.remove());
+        clone.querySelectorAll('button, svg, .copy-code-btn, script, style').forEach((el) => el.remove());
+        clone.querySelectorAll('p, div, li, h1, h2, h3, h4, h5, h6, tr, br').forEach((el) => {
+          el.insertAdjacentText('afterend', '\n');
+        });
         rawText = (clone.textContent || clone.innerText || '').trim();
       }
       if (!rawText) {
         rawText = (card.a || '').trim();
       }
-      return rawText
-        .replace(/[`#*_~]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim();
+      return rawText;
     };
 
-    const chunkText = (str, maxLen = 180) => {
-      if (!str) return [];
-      if (str.length <= maxLen) return [str];
-      const chunks = [];
-      const sentences = str.match(/[^.!?\n\r]+[.!?\n\r]+|[^.!?\n\r]+$/g) || [str];
-      let current = '';
-      for (const s of sentences) {
-        const t = s.trim();
-        if (!t) continue;
-        if ((current + ' ' + t).trim().length <= maxLen) {
-          current = current ? current + ' ' + t : t;
-        } else {
-          if (current) chunks.push(current);
-          if (t.length <= maxLen) {
-            current = t;
-          } else {
-            const words = t.split(/\s+/);
-            let sub = '';
-            for (const w of words) {
-              if ((sub + ' ' + w).trim().length <= maxLen) {
-                sub = sub ? sub + ' ' + w : w;
-              } else {
-                if (sub) chunks.push(sub);
-                sub = w;
-              }
-            }
-            current = sub;
-          }
-        }
-      }
-      if (current) chunks.push(current);
-      return chunks;
-    };
-
-    const playAudioChunks = (chunks, langCode, onStart, onEnd, onError) => {
-      let index = 0;
-      let isCancelled = false;
-      const langPrefix = (langCode || 'vi').split('-')[0].toLowerCase();
-      const audio = new Audio();
-
-      const playNext = () => {
-        if (isCancelled) return;
-        if (index >= chunks.length) {
-          if (onEnd) onEnd();
-          return;
-        }
-
-        const chunk = chunks[index];
-        const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${langPrefix}&client=tw-ob&q=${encodeURIComponent(chunk)}`;
-        audio.src = url;
-
-        audio.onended = () => {
-          if (isCancelled) return;
-          index++;
-          playNext();
-        };
-
-        audio.onerror = () => {
-          if (isCancelled) return;
-          if (onError) onError();
-        };
-
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              if (index === 0 && onStart) onStart();
-            })
-            .catch(() => {
-              if (isCancelled) return;
-              if (onError) onError();
-            });
-        }
-      };
-
-      playNext();
-
-      return {
-        cancel: () => {
-          isCancelled = true;
-          try {
-            audio.pause();
-            audio.src = '';
-          } catch (e) {}
-        }
-      };
-    };
-
-    const findVoice = (langCode) => {
-      if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
-      let voices = [];
-      try {
-        voices = window.speechSynthesis.getVoices() || [];
-      } catch (e) {
-        return null;
-      }
-      if (!voices || voices.length === 0) return null;
-
-      const targetLang = (langCode || '').toLowerCase().replace(/_/g, '-');
-      const targetPrefix = targetLang.split('-')[0];
-
-      // 1. Exact match (e.g. 'vi-vn', 'en-us')
-      let matched = voices.find((v) => (v.lang || '').toLowerCase().replace(/_/g, '-') === targetLang);
-      if (matched) return matched;
-
-      // 2. Starts with target prefix (e.g. 'vi' or 'en')
-      matched = voices.find((v) => (v.lang || '').toLowerCase().replace(/_/g, '-').startsWith(targetPrefix));
-      if (matched) return matched;
-
-      // 3. Name heuristic (macOS 'Linh', Samantha, etc.)
-      if (targetPrefix === 'vi') {
-        matched = voices.find((v) => /vietnam|vietnamese|linh|an\b/i.test(v.name));
-        if (matched) return matched;
-      } else if (targetPrefix === 'en') {
-        matched = voices.find((v) => /english|samantha|alex|fred|kathy|daniel/i.test(v.name));
-        if (matched) return matched;
-      }
-
-      return null;
-    };
-
+    // Text to Speech with auto segment detection and pause handling:
+    // - Dấu phẩy (comma): ngắt 0.2s (200ms)
+    // - Dấu chấm / hết câu (period, !, ?, ;, :): ngắt 0.5s (500ms)
+    // - Dấu nháy "" (quote): ngắt 0.2s (200ms)
     const speak = (langCode) => {
-      // If currently speaking this language, cancel / toggle off
+      if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+        this.showSnackbar('Trình duyệt không hỗ trợ Speech Synthesis');
+        return;
+      }
+
+      // If currently speaking this language, toggle off
       if (currentSpeechLang === langCode) {
         stopSpeech();
         return;
       }
 
-      // If speaking another language or queued, stop prior speech
+      // Cancel ongoing synthesis speech before speaking
       stopSpeech();
 
       const text = getAnswerText();
@@ -1484,105 +1374,104 @@ class UIManager {
         return;
       }
 
-      const startAudioFallback = () => {
-        const chunks = chunkText(text, 180);
-        if (!chunks.length) return;
-
-        currentSpeechLang = langCode;
-        updateSpeechBtns();
-
-        activeAudioController = playAudioChunks(
-          chunks,
-          langCode,
-          () => {
-            currentSpeechLang = langCode;
-            updateSpeechBtns();
-          },
-          () => {
-            currentSpeechLang = null;
-            updateSpeechBtns();
-          },
-          () => {
-            currentSpeechLang = null;
-            updateSpeechBtns();
-            this.showSnackbar('Không thể phát âm thanh trực tuyến');
-          }
-        );
-      };
-
-      // Check if Web Speech API is supported
-      const hasSpeechSynth = typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
-      if (!hasSpeechSynth) {
-        startAudioFallback();
+      const segments = parseSpeechSegments(text);
+      if (segments.length === 0) {
+        this.showSnackbar('Không có nội dung câu trả lời để phát âm.');
         return;
       }
 
-      const matchedVoice = findVoice(langCode);
-      const isLocalVoice = Boolean(matchedVoice && matchedVoice.localService === true);
-      const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+      const thisSession = ++currentSpeechSession;
+      currentSpeechLang = langCode;
+      updateSpeechBtns();
 
-      // On Android/mobile, Web Speech API without a pre-installed local voice causes synthesis-failed
-      if (isMobile && !isLocalVoice) {
-        startAudioFallback();
-        return;
-      }
+      let currentIndex = 0;
 
-      try {
-        if (window.speechSynthesis.paused) {
-          window.speechSynthesis.resume();
+      const playNextSegment = () => {
+        if (thisSession !== currentSpeechSession) return;
+        if (currentIndex >= segments.length) {
+          stopSpeech();
+          return;
         }
 
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.volume = 1.0;
-        utterance.rate = 1.0;
-        utterance.pitch = 1.0;
+        const item = segments[currentIndex];
+        currentIndex++;
 
-        if (matchedVoice) {
-          utterance.voice = matchedVoice;
-          utterance.lang = matchedVoice.lang || langCode;
-        } else {
-          utterance.lang = langCode;
+        try {
+          if (window.speechSynthesis.paused) {
+            window.speechSynthesis.resume();
+          }
+        } catch (e) {}
+
+        const utterance = new SpeechSynthesisUtterance(item.text);
+        utterance.lang = langCode;
+        utterance.rate = 0.9; // Slower for clarity, matching english-practise.html
+
+        // Only assign voice if a local desktop voice matches (e.g. macOS Linh).
+        // On Android/mobile, leaving voice unset allows Android/iOS to use the native language engine safely.
+        try {
+          const voices = window.speechSynthesis.getVoices();
+          if (voices && voices.length > 0) {
+            const targetLang = (langCode || '').toLowerCase().replace(/_/g, '-');
+            const targetPrefix = targetLang.split('-')[0];
+            const matchedVoice = voices.find((v) => (v.lang || '').toLowerCase().replace(/_/g, '-') === targetLang && v.localService === true) ||
+                                 voices.find((v) => (v.lang || '').toLowerCase().replace(/_/g, '-').startsWith(targetPrefix) && v.localService === true);
+            if (matchedVoice) {
+              utterance.voice = matchedVoice;
+              utterance.lang = matchedVoice.lang;
+            }
+          }
+        } catch (err) {
+          // Fall back to default language tag
         }
 
-        utterance.onstart = () => {
-          currentSpeechLang = langCode;
-          updateSpeechBtns();
-        };
-
-        utterance.onend = () => {
-          if (typeof window !== 'undefined' && window._mqActiveUtterance === utterance) {
-            window._mqActiveUtterance = null;
-          }
-          currentSpeechLang = null;
-          updateSpeechBtns();
-        };
-
-        utterance.onerror = (e) => {
-          if (typeof window !== 'undefined' && window._mqActiveUtterance === utterance) {
-            window._mqActiveUtterance = null;
-          }
-
-          if (e && (e.error === 'canceled' || e.error === 'interrupted')) {
-            currentSpeechLang = null;
-            updateSpeechBtns();
-            return;
-          }
-
-          // Fallback to Audio TTS if Web Speech API fails (e.g. synthesis-failed on mobile)
-          startAudioFallback();
-        };
-
+        // Keep reference on window to prevent V8 garbage collection
         if (typeof window !== 'undefined') {
           window._mqActiveUtterance = utterance;
         }
 
-        currentSpeechLang = langCode;
-        updateSpeechBtns();
+        utterance.onend = () => {
+          if (thisSession !== currentSpeechSession) return;
+          if (typeof window !== 'undefined' && window._mqActiveUtterance === utterance) {
+            window._mqActiveUtterance = null;
+          }
+          if (currentIndex >= segments.length) {
+            stopSpeech();
+            return;
+          }
+          const pause = item.pauseAfter || 0;
+          if (pause > 0) {
+            speechTimer = setTimeout(() => {
+              playNextSegment();
+            }, pause);
+          } else {
+            playNextSegment();
+          }
+        };
+
+        utterance.onerror = (e) => {
+          if (thisSession !== currentSpeechSession) return;
+          if (typeof window !== 'undefined' && window._mqActiveUtterance === utterance) {
+            window._mqActiveUtterance = null;
+          }
+          // If stopped/canceled, exit
+          if (e && (e.error === 'canceled' || e.error === 'interrupted')) {
+            return;
+          }
+          // On other error, proceed to next chunk after brief pause
+          if (currentIndex < segments.length) {
+            const pause = item.pauseAfter || 0;
+            speechTimer = setTimeout(() => {
+              playNextSegment();
+            }, Math.min(pause, 200));
+          } else {
+            stopSpeech();
+          }
+        };
 
         window.speechSynthesis.speak(utterance);
-      } catch (err) {
-        startAudioFallback();
-      }
+      };
+
+      playNextSegment();
     };
 
     if (btnVn) {
@@ -1622,6 +1511,100 @@ class UIManager {
 }
 
 export const ui = new UIManager();
+
+/**
+ * Automatically splits text into speech segments based on:
+ * - Dấu phẩy (comma `,`, `，`, `、`, ` - `): 0.2s pause (200ms)
+ * - Dấu chấm / ngắt câu (period `.`, `!`, `?`, `;`, `:`, `\n`, `…`): 0.5s pause (500ms)
+ * - Dấu nháy `""` (quotes `"..."`, `“...”`): 0.2s pause (200ms) before & after
+ * - Protects numeric decimals (3.14), thousands (1,000), times (10:30)
+ *
+ * @param {string} text
+ * @returns {Array<{ text: string, pauseAfter: number }>}
+ */
+export function parseSpeechSegments(text) {
+  if (!text) return [];
+
+  // Remove markdown images: ![alt](url) -> ""
+  let s = text.replace(/!\[([^\]]*)\]\([^)]*\)/g, '');
+  // Markdown links: [text](url) -> text
+  s = s.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
+  // Clean markdown list bullets and numbering at start of lines
+  s = s.replace(/^[\s*+-]+\s+/gm, '');
+  s = s.replace(/^\s*\d+\.\s+/gm, '');
+
+  // Normalize quotes: curly double quotes, guillemets -> "
+  s = s.replace(/[\u201C\u201D\u00AB\u00BB\u201E\u201F]/g, '"');
+
+  // Protect numbers, decimals, times from being split by punctuation
+  s = s.replace(/(\d+)\.([0-9]+)/g, '$1___DOT___$2');
+  s = s.replace(/(\d+),([0-9]+)/g, '$1___COMMA___$2');
+  s = s.replace(/(\d+):([0-9]+)/g, '$1___COLON___$2');
+
+  // Regex to split tokens by quote boundaries, periods/sentence-enders, and commas
+  const pattern = /(")|([.!?;\n\u2026:]+)|([,，、]+)|(\s+-\s+)/g;
+  let lastIndex = 0;
+  let inQuote = false;
+  const segments = [];
+  let currentBuffer = '';
+
+  function flushBuffer(pauseAfter = 0) {
+    let clean = currentBuffer
+      .replace(/___DOT___/g, '.')
+      .replace(/___COMMA___/g, ',')
+      .replace(/___COLON___/g, ':')
+      .replace(/["“”]/g, '')
+      .replace(/[`#*_~>]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    if (clean) {
+      segments.push({ text: clean, pauseAfter });
+      currentBuffer = '';
+      return true;
+    }
+    currentBuffer = '';
+    return false;
+  }
+
+  let match;
+  while ((match = pattern.exec(s)) !== null) {
+    const textChunk = s.substring(lastIndex, match.index);
+    currentBuffer += textChunk;
+    lastIndex = pattern.lastIndex;
+
+    const [sep, quote, period, comma, dash] = match;
+
+    if (quote) {
+      if (!inQuote) {
+        // Opening quote: flush preceding buffer with 0.2s pause (200ms)
+        flushBuffer(200);
+        inQuote = true;
+      } else {
+        // Closing quote: flush inside quote buffer with 0.2s pause (200ms)
+        inQuote = false;
+        flushBuffer(200);
+      }
+    } else if (period) {
+      // Period/sentence-end: 0.5s pause (500ms)
+      const flushed = flushBuffer(500);
+      // If buffer was empty (e.g. right after a closing quote: "quote". Next sentence), upgrade previous pause
+      if (!flushed && segments.length > 0) {
+        segments[segments.length - 1].pauseAfter = Math.max(segments[segments.length - 1].pauseAfter, 500);
+      }
+    } else if (comma || dash) {
+      // Comma or dash: 0.2s pause (200ms)
+      flushBuffer(200);
+    }
+  }
+
+  const remaining = s.substring(lastIndex);
+  currentBuffer += remaining;
+  flushBuffer(500);
+
+  return segments;
+}
+
+ui.parseSpeechSegments = parseSpeechSegments;
 
 // Preload voices cache for Web Speech API
 if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
