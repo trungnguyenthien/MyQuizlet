@@ -79,25 +79,38 @@ class App {
 
   _registerServiceWorker() {
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      const btnUpdateApp = document.getElementById('btnUpdateApp');
+      const btnUpdateText = document.getElementById('btn-update-text');
+
+      const setUpdateReadyState = (worker) => {
+        if (btnUpdateApp) {
+          btnUpdateApp.classList.remove('hidden');
+          btnUpdateApp.classList.add('is-ready');
+          if (btnUpdateText) {
+            btnUpdateText.textContent = t('update_ready_btn') || 'Bản mới';
+          }
+        }
+        ui.showSnackbar(t('toast_update_ready_notice') || t('toast_update_available'), {
+          actionLabel: t('toast_update_reload_btn'),
+          onAction: () => {
+            if (worker) {
+              worker.postMessage({ action: 'skipWaiting', type: 'SKIP_WAITING' });
+            }
+            window.location.reload();
+          },
+          duration: 15000
+        });
+      };
+
       navigator.serviceWorker.register('./sw.js', { scope: './' }).then((registration) => {
+        this.swRegistration = registration;
+
         // Immediately check for updates
         registration.update().catch(() => {});
 
-        const promptUpdate = (worker) => {
-          if (!worker) return;
-          ui.showSnackbar(t('toast_update_available'), {
-            actionLabel: t('toast_update_reload_btn'),
-            onAction: () => {
-              worker.postMessage({ action: 'skipWaiting', type: 'SKIP_WAITING' });
-              window.location.reload();
-            },
-            duration: 15000
-          });
-        };
-
         // If there is already a waiting worker
         if (registration.waiting && navigator.serviceWorker.controller) {
-          promptUpdate(registration.waiting);
+          setUpdateReadyState(registration.waiting);
         }
 
         // Check for updates
@@ -107,7 +120,7 @@ class App {
 
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              promptUpdate(newWorker);
+              setUpdateReadyState(newWorker);
             }
           });
         });
@@ -123,6 +136,54 @@ class App {
           window.location.reload();
         }
       });
+
+      // Handle Force Update Button click (PWA Standard 6.D)
+      if (btnUpdateApp) {
+        btnUpdateApp.addEventListener('click', async () => {
+          // 1. Check network status
+          if (!navigator.onLine) {
+            ui.showSnackbar(t('toast_offline_cannot_update') || 'Không thể cập nhật khi đang offline');
+            return;
+          }
+
+          // 2. Set updating UI state (spinner, disable, change label)
+          btnUpdateApp.classList.add('is-updating');
+          btnUpdateApp.disabled = true;
+          if (btnUpdateText) {
+            btnUpdateText.textContent = t('updating_btn') || 'Đang tải...';
+          }
+
+          try {
+            // 3. Trigger registration update
+            if (this.swRegistration) {
+              await this.swRegistration.update().catch(() => {});
+              if (this.swRegistration.waiting) {
+                this.swRegistration.waiting.postMessage({ action: 'skipWaiting', type: 'SKIP_WAITING' });
+              }
+            }
+
+            // 4. Clear all caches
+            if ('caches' in window) {
+              const keys = await caches.keys();
+              await Promise.all(keys.map((k) => caches.delete(k)));
+            }
+
+            // 5. Unregister old service workers to guarantee fresh fetch
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const r of registrations) {
+              await r.unregister();
+            }
+
+            // 6. Force reload with cache-bust timestamp
+            const targetUrl = window.location.pathname + window.location.hash;
+            const sep = targetUrl.includes('?') ? '&' : '?';
+            window.location.href = targetUrl + sep + 'forceUpdate=' + Date.now();
+          } catch (err) {
+            console.error('[MyQuizlet] Force update error:', err);
+            window.location.reload();
+          }
+        });
+      }
     }
   }
 
@@ -347,7 +408,14 @@ class App {
       }
     }
 
-    // Update Install Button & iOS Modal Text
+    // Update Update Button, Install Button & iOS Modal Text
+    const updateText = this.appBar.querySelector('#btn-update-text');
+    const btnUpdateApp = this.appBar.querySelector('#btnUpdateApp');
+    if (updateText && !btnUpdateApp?.classList.contains('is-updating')) {
+      updateText.textContent = btnUpdateApp?.classList.contains('is-ready') ? t('update_ready_btn') : t('update_app_btn');
+    }
+    if (btnUpdateApp) btnUpdateApp.setAttribute('aria-label', t('update_app_btn'));
+
     const installText = this.appBar.querySelector('#btn-install-text');
     if (installText) installText.textContent = t('install_btn');
     const btnInstall = this.appBar.querySelector('#btnInstall');

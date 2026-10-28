@@ -777,6 +777,31 @@ Present, appearing, or found everywhere.`;
         console.assert(numSegs[1].text.includes('1,000'), 'Thousands comma in 1,000 must not be split');
       });
 
+      // 21. PWA Standards Compliance (Manifest ID, Force Update button, overscroll-behavior-y, Safe Area Insets)
+      await runTest('PWA Standards Full Compliance: Manifest ID, Safe Area Top App Bar, overscroll-behavior-y, and Force Update button', async () => {
+        // Check manifest.webmanifest
+        const manifestResp = await fetch('manifest.webmanifest');
+        const manifest = await manifestResp.json();
+        console.assert(manifest.id === '/MyQuizlet/', `Manifest id must be '/MyQuizlet/', got '${manifest.id}'`);
+        console.assert(manifest.scope === './', `Manifest scope must be './', got '${manifest.scope}'`);
+        console.assert(manifest.display === 'standalone', 'Manifest display must be standalone');
+
+        // Check index.html elements
+        const htmlResp = await fetch('index.html');
+        const htmlText = await htmlResp.text();
+        const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+
+        const btnUpdate = doc.getElementById('btnUpdateApp');
+        console.assert(Boolean(btnUpdate), 'Update button #btnUpdateApp must exist in index.html (PWA Standard 6.D)');
+        console.assert(btnUpdate.classList.contains('hidden'), 'Update button must have "hidden" class by default');
+
+        // Check app.css for overscroll-behavior-y and Safe Area Top App Bar
+        const cssResp = await fetch('css/app.css');
+        const cssText = await cssResp.text();
+        console.assert(cssText.includes('overscroll-behavior-y: none'), 'css/app.css must disable pull-to-refresh with overscroll-behavior-y: none (PWA Standard 6.D)');
+        console.assert(cssText.includes('height: calc(56px + var(--sat))'), 'css/app.css must size top app bar with safe area inset height (PWA Standard 2)');
+      });
+
       // Update Summary
       summaryEl.textContent = `Completed ${passed + failed} tests: ${passed} Passed, ${failed} Failed.`;
       summaryEl.className = failed === 0 ? 'summary pass' : 'summary fail';

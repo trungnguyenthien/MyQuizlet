@@ -566,6 +566,11 @@ let message = "Xin ch\xE0o"
       install_btn: "C\xE0i \u0111\u1EB7t",
       install_btn_aria: "C\xE0i \u0111\u1EB7t \u1EE9ng d\u1EE5ng",
       app_installed_success: "C\xE0i \u0111\u1EB7t \u1EE9ng d\u1EE5ng th\xE0nh c\xF4ng!",
+      update_app_btn: "C\u1EADp nh\u1EADt",
+      update_ready_btn: "B\u1EA3n m\u1EDBi",
+      updating_btn: "\u0110ang t\u1EA3i...",
+      toast_offline_cannot_update: "Kh\xF4ng th\u1EC3 c\u1EADp nh\u1EADt khi \u0111ang offline",
+      toast_update_ready_notice: "\u0110\xE3 c\xF3 b\u1EA3n c\u1EADp nh\u1EADt m\u1EDBi! Nh\u1EA5n C\u1EADp nh\u1EADt \u0111\u1EC3 \xE1p d\u1EE5ng.",
       ios_install_title: "C\xE0i \u0111\u1EB7t tr\xEAn iOS",
       ios_install_intro: "\u0110\u1EC3 c\xE0i \u0111\u1EB7t \u1EE9ng d\u1EE5ng l\xEAn iPhone ho\u1EB7c iPad:",
       ios_step_1: '1. Nh\u1EA5n n\xFAt <strong>Chia s\u1EBB (Share)</strong> <span aria-hidden="true">\u238B</span> \u1EDF thanh c\xF4ng c\u1EE5 d\u01B0\u1EDBi \u0111\xE1y Safari.',
@@ -756,6 +761,11 @@ let greeting = "Hello"
       install_btn: "Install",
       install_btn_aria: "Install application",
       app_installed_success: "App installed successfully!",
+      update_app_btn: "Update",
+      update_ready_btn: "Update Ready",
+      updating_btn: "Updating...",
+      toast_offline_cannot_update: "Cannot update while offline",
+      toast_update_ready_notice: "New update available! Tap Update to apply.",
       ios_install_title: "Install on iOS",
       ios_install_intro: "To install this app on iPhone or iPad:",
       ios_step_1: '1. Tap the <strong>Share</strong> button <span aria-hidden="true">\u238B</span> in the Safari toolbar.',
@@ -3368,29 +3378,40 @@ ${a}
     }
     _registerServiceWorker() {
       if ("serviceWorker" in navigator && location.protocol !== "file:") {
+        const btnUpdateApp = document.getElementById("btnUpdateApp");
+        const btnUpdateText = document.getElementById("btn-update-text");
+        const setUpdateReadyState = (worker) => {
+          if (btnUpdateApp) {
+            btnUpdateApp.classList.remove("hidden");
+            btnUpdateApp.classList.add("is-ready");
+            if (btnUpdateText) {
+              btnUpdateText.textContent = t("update_ready_btn") || "B\u1EA3n m\u1EDBi";
+            }
+          }
+          ui.showSnackbar(t("toast_update_ready_notice") || t("toast_update_available"), {
+            actionLabel: t("toast_update_reload_btn"),
+            onAction: () => {
+              if (worker) {
+                worker.postMessage({ action: "skipWaiting", type: "SKIP_WAITING" });
+              }
+              window.location.reload();
+            },
+            duration: 15e3
+          });
+        };
         navigator.serviceWorker.register("./sw.js", { scope: "./" }).then((registration) => {
+          this.swRegistration = registration;
           registration.update().catch(() => {
           });
-          const promptUpdate = (worker) => {
-            if (!worker) return;
-            ui.showSnackbar(t("toast_update_available"), {
-              actionLabel: t("toast_update_reload_btn"),
-              onAction: () => {
-                worker.postMessage({ action: "skipWaiting", type: "SKIP_WAITING" });
-                window.location.reload();
-              },
-              duration: 15e3
-            });
-          };
           if (registration.waiting && navigator.serviceWorker.controller) {
-            promptUpdate(registration.waiting);
+            setUpdateReadyState(registration.waiting);
           }
           registration.addEventListener("updatefound", () => {
             const newWorker = registration.installing;
             if (!newWorker) return;
             newWorker.addEventListener("statechange", () => {
               if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-                promptUpdate(newWorker);
+                setUpdateReadyState(newWorker);
               }
             });
           });
@@ -3404,6 +3425,42 @@ ${a}
             window.location.reload();
           }
         });
+        if (btnUpdateApp) {
+          btnUpdateApp.addEventListener("click", async () => {
+            if (!navigator.onLine) {
+              ui.showSnackbar(t("toast_offline_cannot_update") || "Kh\xF4ng th\u1EC3 c\u1EADp nh\u1EADt khi \u0111ang offline");
+              return;
+            }
+            btnUpdateApp.classList.add("is-updating");
+            btnUpdateApp.disabled = true;
+            if (btnUpdateText) {
+              btnUpdateText.textContent = t("updating_btn") || "\u0110ang t\u1EA3i...";
+            }
+            try {
+              if (this.swRegistration) {
+                await this.swRegistration.update().catch(() => {
+                });
+                if (this.swRegistration.waiting) {
+                  this.swRegistration.waiting.postMessage({ action: "skipWaiting", type: "SKIP_WAITING" });
+                }
+              }
+              if ("caches" in window) {
+                const keys = await caches.keys();
+                await Promise.all(keys.map((k) => caches.delete(k)));
+              }
+              const registrations = await navigator.serviceWorker.getRegistrations();
+              for (const r of registrations) {
+                await r.unregister();
+              }
+              const targetUrl = window.location.pathname + window.location.hash;
+              const sep = targetUrl.includes("?") ? "&" : "?";
+              window.location.href = targetUrl + sep + "forceUpdate=" + Date.now();
+            } catch (err) {
+              console.error("[MyQuizlet] Force update error:", err);
+              window.location.reload();
+            }
+          });
+        }
       }
     }
     _initPWAInstallation() {
@@ -3590,6 +3647,12 @@ ${a}
           };
         }
       }
+      const updateText = this.appBar.querySelector("#btn-update-text");
+      const btnUpdateApp = this.appBar.querySelector("#btnUpdateApp");
+      if (updateText && !btnUpdateApp?.classList.contains("is-updating")) {
+        updateText.textContent = btnUpdateApp?.classList.contains("is-ready") ? t("update_ready_btn") : t("update_app_btn");
+      }
+      if (btnUpdateApp) btnUpdateApp.setAttribute("aria-label", t("update_app_btn"));
       const installText = this.appBar.querySelector("#btn-install-text");
       if (installText) installText.textContent = t("install_btn");
       const btnInstall = this.appBar.querySelector("#btnInstall");

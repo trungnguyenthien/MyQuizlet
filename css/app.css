@@ -103,14 +103,15 @@ html, body {
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overscroll-behavior-y: none; /* Vô hiệu hóa pull-to-refresh và hiệu ứng nảy rubber-band (PWA Standard 6.D) */
 }
 
 body {
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
-  padding-top: var(--sat);
-  padding-bottom: var(--sab);
+  padding-top: 0;
+  padding-bottom: 0;
   padding-left: var(--sal);
   padding-right: var(--sar);
 }
@@ -397,10 +398,12 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 56px;
-  padding: 0 calc(var(--space-3) + var(--sar)) 0 calc(var(--space-3) + var(--sal));
+  height: calc(56px + var(--sat));
+  padding: var(--sat) calc(var(--space-3) + var(--sar)) 0 calc(var(--space-3) + var(--sal));
   background-color: var(--md-sys-color-surface);
   border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  border-top: none;
+  box-shadow: none;
   position: sticky;
   top: 0;
   z-index: 30;
@@ -427,6 +430,41 @@ button {
   display: flex;
   align-items: center;
   gap: var(--space-1);
+}
+
+/* PWA Force Update Button (PWA Standard 6.D) */
+#btnUpdateApp {
+  transition: all 0.2s ease;
+}
+
+#btnUpdateApp.is-ready {
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  border: 1px solid var(--md-sys-color-primary);
+  animation: pulseUpdate 2s infinite;
+}
+
+#btnUpdateApp.is-updating {
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+#btnUpdateApp.is-updating .update-icon {
+  animation: spinUpdate 1s linear infinite;
+}
+
+@keyframes spinUpdate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulseUpdate {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(63, 81, 181, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(63, 81, 181, 0);
+  }
 }
 
 /* Main Content Area */
@@ -932,10 +970,12 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 56px;
-  padding: 0 var(--space-3);
+  height: calc(56px + var(--sat));
+  padding: var(--sat) calc(var(--space-3) + var(--sar)) 0 calc(var(--space-3) + var(--sal));
   background-color: var(--md-sys-color-surface);
   border-bottom: 1px solid var(--md-sys-color-outline-variant);
+  border-top: none;
+  box-shadow: none;
   flex-shrink: 0;
 }
 
