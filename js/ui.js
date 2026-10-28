@@ -1279,16 +1279,18 @@ class UIManager {
         </div>
 
         <div class="dialog-actions review-modal-actions">
-          <button type="button" class="btn btn-tonal review-modal-btn-speech" id="review-modal-btn-speech-vn" aria-label="Speech VN">
-            <svg class="icon-sm" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-            <span>Speech VN</span>
+          <button type="button" class="btn btn-tonal review-modal-btn-speech" id="review-modal-btn-speech-vn" aria-label="Speech VN" title="Phát âm tiếng Việt">
+            <svg class="icon-sm speech-icon-speaker" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            <span class="speech-flag" aria-hidden="true">🇻🇳</span>
+            <span class="speech-label-text"><span class="speech-label-prefix">Speech&nbsp;</span>VN</span>
           </button>
           <button type="button" class="btn btn-primary review-modal-btn-close" id="review-modal-btn-close">
             <span>${t('close')}</span>
           </button>
-          <button type="button" class="btn btn-tonal review-modal-btn-speech" id="review-modal-btn-speech-en" aria-label="Speech EN">
-            <svg class="icon-sm" viewBox="0 0 24 24"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
-            <span>Speech EN</span>
+          <button type="button" class="btn btn-tonal review-modal-btn-speech" id="review-modal-btn-speech-en" aria-label="Speech EN" title="Speak English">
+            <svg class="icon-sm speech-icon-speaker" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+            <span class="speech-flag" aria-hidden="true">🇺🇸</span>
+            <span class="speech-label-text"><span class="speech-label-prefix">Speech&nbsp;</span>EN</span>
           </button>
         </div>
       </div>
@@ -1312,7 +1314,12 @@ class UIManager {
 
     const stopSpeech = () => {
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
+        if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+          window.speechSynthesis.cancel();
+        }
+      }
+      if (typeof window !== 'undefined') {
+        window._mqActiveUtterance = null;
       }
       currentSpeechLang = null;
       updateSpeechBtns();
@@ -1320,11 +1327,52 @@ class UIManager {
 
     const getAnswerText = () => {
       const scrollBody = dialog.querySelector('.review-modal-scroll-body');
+      let rawText = '';
       if (scrollBody) {
-        const text = (scrollBody.textContent || scrollBody.innerText || '').trim();
-        if (text) return text;
+        const clone = scrollBody.cloneNode(true);
+        clone.querySelectorAll('button, svg, .copy-code-btn').forEach((el) => el.remove());
+        rawText = (clone.textContent || clone.innerText || '').trim();
       }
-      return (card.a || '').trim();
+      if (!rawText) {
+        rawText = (card.a || '').trim();
+      }
+      return rawText
+        .replace(/[`#*_~]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
+
+    const findVoice = (langCode) => {
+      if (typeof window === 'undefined' || !('speechSynthesis' in window)) return null;
+      let voices = [];
+      try {
+        voices = window.speechSynthesis.getVoices() || [];
+      } catch (e) {
+        return null;
+      }
+      if (!voices || voices.length === 0) return null;
+
+      const targetLang = (langCode || '').toLowerCase().replace(/_/g, '-');
+      const targetPrefix = targetLang.split('-')[0];
+
+      // 1. Exact match (e.g. 'vi-vn', 'en-us')
+      let matched = voices.find((v) => (v.lang || '').toLowerCase().replace(/_/g, '-') === targetLang);
+      if (matched) return matched;
+
+      // 2. Starts with target prefix (e.g. 'vi' or 'en')
+      matched = voices.find((v) => (v.lang || '').toLowerCase().replace(/_/g, '-').startsWith(targetPrefix));
+      if (matched) return matched;
+
+      // 3. Name heuristic (macOS 'Linh', Samantha, etc.)
+      if (targetPrefix === 'vi') {
+        matched = voices.find((v) => /vietnam|vietnamese|linh|an\b/i.test(v.name));
+        if (matched) return matched;
+      } else if (targetPrefix === 'en') {
+        matched = voices.find((v) => /english|samantha|alex|fred|kathy|daniel/i.test(v.name));
+        if (matched) return matched;
+      }
+
+      return null;
     };
 
     const speak = (langCode) => {
@@ -1339,25 +1387,33 @@ class UIManager {
         return;
       }
 
-      window.speechSynthesis.cancel();
+      // If speaking another language or queued, stop prior speech
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        window.speechSynthesis.cancel();
+      }
+
+      // If browser synthesis is paused, resume it
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
 
       const text = getAnswerText();
-      if (!text) return;
+      if (!text) {
+        this.showSnackbar('Không có nội dung câu trả lời để phát âm.');
+        return;
+      }
 
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = langCode;
+      utterance.volume = 1.0;
+      utterance.rate = 1.0;
+      utterance.pitch = 1.0;
 
-      // Pick matching voice if available
-      try {
-        const voices = window.speechSynthesis.getVoices();
-        if (voices && voices.length > 0) {
-          const prefix = langCode.split('-')[0].toLowerCase();
-          const voice = voices.find((v) => v.lang.toLowerCase() === langCode.toLowerCase()) ||
-            voices.find((v) => v.lang.toLowerCase().startsWith(prefix));
-          if (voice) utterance.voice = voice;
-        }
-      } catch (err) {
-        // Fall back to default browser voice selection
+      const matchedVoice = findVoice(langCode);
+      if (matchedVoice) {
+        utterance.voice = matchedVoice;
+        utterance.lang = matchedVoice.lang || langCode;
+      } else {
+        utterance.lang = langCode;
       }
 
       utterance.onstart = () => {
@@ -1366,14 +1422,28 @@ class UIManager {
       };
 
       utterance.onend = () => {
+        if (typeof window !== 'undefined' && window._mqActiveUtterance === utterance) {
+          window._mqActiveUtterance = null;
+        }
         currentSpeechLang = null;
         updateSpeechBtns();
       };
 
-      utterance.onerror = () => {
+      utterance.onerror = (e) => {
+        if (typeof window !== 'undefined' && window._mqActiveUtterance === utterance) {
+          window._mqActiveUtterance = null;
+        }
         currentSpeechLang = null;
         updateSpeechBtns();
+        if (e && e.error && e.error !== 'canceled' && e.error !== 'interrupted') {
+          this.showSnackbar(`Không thể phát âm thanh: ${e.error}`);
+        }
       };
+
+      // Retain utterance reference on window to prevent V8 garbage collection
+      if (typeof window !== 'undefined') {
+        window._mqActiveUtterance = utterance;
+      }
 
       window.speechSynthesis.speak(utterance);
     };
@@ -1415,3 +1485,17 @@ class UIManager {
 }
 
 export const ui = new UIManager();
+
+// Preload voices cache for Web Speech API
+if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+  try {
+    window.speechSynthesis.getVoices();
+    if ('onvoiceschanged' in window.speechSynthesis) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        try { window.speechSynthesis.getVoices(); } catch (e) {}
+      };
+    }
+  } catch (e) {
+    // ignore
+  }
+}

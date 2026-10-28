@@ -663,6 +663,14 @@ Present, appearing, or found everywhere.`;
         console.assert(Boolean(closeBtn), 'Modal must have Close button in center');
         console.assert(Boolean(btnEn), 'Modal must have Speech EN button on right');
 
+        // Verify speaker icon and flag for VN
+        console.assert(Boolean(btnVn.querySelector('.speech-icon-speaker')), 'Speech VN button must have speaker icon');
+        console.assert(btnVn.querySelector('.speech-flag') && btnVn.querySelector('.speech-flag').textContent.includes('🇻🇳'), 'Speech VN button must have Vietnamese flag 🇻🇳');
+
+        // Verify speaker icon and flag for EN
+        console.assert(Boolean(btnEn.querySelector('.speech-icon-speaker')), 'Speech EN button must have speaker icon');
+        console.assert(btnEn.querySelector('.speech-flag') && btnEn.querySelector('.speech-flag').textContent.includes('🇺🇸'), 'Speech EN button must have US flag 🇺🇸');
+
         // Test Speech Synthesis invocation
         let spokenUtterance = null;
         let cancelCalled = false;
