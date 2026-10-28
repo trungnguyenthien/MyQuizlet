@@ -2338,6 +2338,7 @@ ${a}
       dialog.showModal();
       let currentSpeechLang = null;
       let speechTimer = null;
+      let speechWatchdog = null;
       let currentSpeechSession = 0;
       const btnVn = dialog.querySelector("#review-modal-btn-speech-vn");
       const btnEn = dialog.querySelector("#review-modal-btn-speech-en");
@@ -2355,9 +2356,16 @@ ${a}
           clearTimeout(speechTimer);
           speechTimer = null;
         }
+        if (speechWatchdog) {
+          clearTimeout(speechWatchdog);
+          speechWatchdog = null;
+        }
         if (typeof window !== "undefined" && "speechSynthesis" in window) {
           try {
-            window.speechSynthesis.cancel();
+            const synth = window.speechSynthesis;
+            if (synth.speaking || synth.pending) {
+              synth.cancel();
+            }
           } catch (e) {
           }
         }
@@ -2406,15 +2414,34 @@ ${a}
         const thisSession = ++currentSpeechSession;
         currentSpeechLang = langCode;
         updateSpeechBtns();
-        let currentIndex = 0;
-        const playNextSegment = () => {
-          if (thisSession !== currentSpeechSession) return;
-          if (currentIndex >= segments.length) {
-            stopSpeech();
-            return;
+        const langPrefix = langCode.split("-")[0].toLowerCase();
+        const findVoice = (localOnly) => {
+          try {
+            const voices = window.speechSynthesis.getVoices() || [];
+            const norm = (v) => (v.lang || "").toLowerCase().replace(/_/g, "-");
+            const pool = voices.filter((v) => norm(v).startsWith(langPrefix) && (!localOnly || v.localService === true));
+            return pool.find((v) => norm(v) === langCode.toLowerCase()) || pool[0] || null;
+          } catch (err) {
+            return null;
           }
-          const item = segments[currentIndex];
-          currentIndex++;
+        };
+        try {
+          const all = window.speechSynthesis.getVoices() || [];
+          if (all.length > 0 && !findVoice(false)) {
+            this.showSnackbar(langPrefix === "vi" ? "Thi\u1EBFt b\u1ECB ch\u01B0a c\xF3 gi\u1ECDng \u0111\u1ECDc ti\u1EBFng Vi\u1EC7t. H\xE3y c\xE0i trong C\xE0i \u0111\u1EB7t > Text-to-speech." : "Thi\u1EBFt b\u1ECB ch\u01B0a c\xF3 gi\u1ECDng \u0111\u1ECDc cho ng\xF4n ng\u1EEF n\xE0y.");
+          }
+        } catch (err) {
+        }
+        let currentIndex = 0;
+        let reportedError = false;
+        const fail = (code) => {
+          if (reportedError) return;
+          reportedError = true;
+          stopSpeech();
+          this.showSnackbar(`Kh\xF4ng th\u1EC3 ph\xE1t \xE2m thanh: ${code || "unknown"}`);
+        };
+        const playSegment = (item, attempt) => {
+          if (thisSession !== currentSpeechSession) return;
           try {
             if (window.speechSynthesis.paused) {
               window.speechSynthesis.resume();
@@ -2422,62 +2449,89 @@ ${a}
           } catch (e) {
           }
           const utterance = new SpeechSynthesisUtterance(item.text);
-          utterance.lang = langCode;
           utterance.rate = 0.9;
-          try {
-            const voices = window.speechSynthesis.getVoices();
-            if (voices && voices.length > 0) {
-              const targetLang = (langCode || "").toLowerCase().replace(/_/g, "-");
-              const targetPrefix = targetLang.split("-")[0];
-              const matchedVoice = voices.find((v) => (v.lang || "").toLowerCase().replace(/_/g, "-") === targetLang && v.localService === true) || voices.find((v) => (v.lang || "").toLowerCase().replace(/_/g, "-").startsWith(targetPrefix) && v.localService === true);
-              if (matchedVoice) {
-                utterance.voice = matchedVoice;
-                utterance.lang = matchedVoice.lang;
-              }
+          if (attempt === 0) {
+            utterance.lang = langCode;
+          } else if (attempt === 1) {
+            const voice = findVoice(true) || findVoice(false);
+            utterance.lang = langCode;
+            if (voice) {
+              utterance.voice = voice;
+              utterance.lang = voice.lang;
             }
-          } catch (err) {
           }
-          if (typeof window !== "undefined") {
-            window._mqActiveUtterance = utterance;
-          }
-          utterance.onend = () => {
+          window._mqActiveUtterance = utterance;
+          let started = false;
+          let settled = false;
+          const clearWatchdog = () => {
+            if (speechWatchdog) {
+              clearTimeout(speechWatchdog);
+              speechWatchdog = null;
+            }
+          };
+          const retryOrFail = (code) => {
+            if (settled) return;
+            settled = true;
+            clearWatchdog();
             if (thisSession !== currentSpeechSession) return;
-            if (typeof window !== "undefined" && window._mqActiveUtterance === utterance) {
+            if (attempt < 2) {
+              try {
+                window.speechSynthesis.cancel();
+              } catch (e) {
+              }
+              speechTimer = setTimeout(() => playSegment(item, attempt + 1), 80);
+            } else {
+              fail(code);
+            }
+          };
+          utterance.onstart = () => {
+            started = true;
+            clearWatchdog();
+          };
+          utterance.onend = () => {
+            if (settled) return;
+            settled = true;
+            clearWatchdog();
+            if (thisSession !== currentSpeechSession) return;
+            if (window._mqActiveUtterance === utterance) {
               window._mqActiveUtterance = null;
             }
+            currentIndex++;
             if (currentIndex >= segments.length) {
               stopSpeech();
               return;
             }
             const pause = item.pauseAfter || 0;
             if (pause > 0) {
-              speechTimer = setTimeout(() => {
-                playNextSegment();
-              }, pause);
+              speechTimer = setTimeout(playCurrent, pause);
             } else {
-              playNextSegment();
+              playCurrent();
             }
           };
           utterance.onerror = (e) => {
             if (thisSession !== currentSpeechSession) return;
-            if (typeof window !== "undefined" && window._mqActiveUtterance === utterance) {
-              window._mqActiveUtterance = null;
-            }
-            if (e && (e.error === "canceled" || e.error === "interrupted")) {
+            const code = e && e.error;
+            if (code === "canceled" || code === "interrupted") {
+              if (!started && !settled) retryOrFail(code);
               return;
             }
-            if (currentIndex < segments.length) {
-              const pause = item.pauseAfter || 0;
-              speechTimer = setTimeout(() => {
-                playNextSegment();
-              }, Math.min(pause, 200));
-            } else {
-              stopSpeech();
-            }
+            retryOrFail(code);
           };
+          clearWatchdog();
+          speechWatchdog = setTimeout(() => {
+            if (!started) retryOrFail("no-audio-start");
+          }, 3e3);
           window.speechSynthesis.speak(utterance);
         };
-        playNextSegment();
+        const playCurrent = () => {
+          if (thisSession !== currentSpeechSession) return;
+          if (currentIndex >= segments.length) {
+            stopSpeech();
+            return;
+          }
+          playSegment(segments[currentIndex], 0);
+        };
+        playCurrent();
       };
       if (btnVn) {
         btnVn.addEventListener("click", () => speak("vi-VN"));

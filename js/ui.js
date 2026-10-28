@@ -1301,6 +1301,7 @@ class UIManager {
 
     let currentSpeechLang = null;
     let speechTimer = null;
+    let speechWatchdog = null;
     let currentSpeechSession = 0;
     const btnVn = dialog.querySelector('#review-modal-btn-speech-vn');
     const btnEn = dialog.querySelector('#review-modal-btn-speech-en');
@@ -1320,9 +1321,18 @@ class UIManager {
         clearTimeout(speechTimer);
         speechTimer = null;
       }
+      if (speechWatchdog) {
+        clearTimeout(speechWatchdog);
+        speechWatchdog = null;
+      }
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         try {
-          window.speechSynthesis.cancel();
+          // Only cancel when something is actually queued; an unnecessary cancel()
+          // right before speak() silently drops the utterance on some Android builds.
+          const synth = window.speechSynthesis;
+          if (synth.speaking || synth.pending) {
+            synth.cancel();
+          }
         } catch (e) {}
       }
       if (typeof window !== 'undefined') {
@@ -1384,17 +1394,43 @@ class UIManager {
       currentSpeechLang = langCode;
       updateSpeechBtns();
 
-      let currentIndex = 0;
-
-      const playNextSegment = () => {
-        if (thisSession !== currentSpeechSession) return;
-        if (currentIndex >= segments.length) {
-          stopSpeech();
-          return;
+      // Warn early if the device has no voice for this language
+      // (common on Android without the Vietnamese TTS pack installed).
+      const langPrefix = langCode.split('-')[0].toLowerCase();
+      const findVoice = (localOnly) => {
+        try {
+          const voices = window.speechSynthesis.getVoices() || [];
+          const norm = (v) => (v.lang || '').toLowerCase().replace(/_/g, '-');
+          const pool = voices.filter((v) => norm(v).startsWith(langPrefix) && (!localOnly || v.localService === true));
+          return pool.find((v) => norm(v) === langCode.toLowerCase()) || pool[0] || null;
+        } catch (err) {
+          return null;
         }
+      };
+      try {
+        const all = window.speechSynthesis.getVoices() || [];
+        if (all.length > 0 && !findVoice(false)) {
+          this.showSnackbar(langPrefix === 'vi'
+            ? 'Thiết bị chưa có giọng đọc tiếng Việt. Hãy cài trong Cài đặt > Text-to-speech.'
+            : 'Thiết bị chưa có giọng đọc cho ngôn ngữ này.');
+        }
+      } catch (err) {}
 
-        const item = segments[currentIndex];
-        currentIndex++;
+      let currentIndex = 0;
+      let reportedError = false;
+
+      const fail = (code) => {
+        if (reportedError) return;
+        reportedError = true;
+        stopSpeech();
+        this.showSnackbar(`Không thể phát âm thanh: ${code || 'unknown'}`);
+      };
+
+      // attempt 0: lang only (same as english-practise.html)
+      // attempt 1: explicit matching voice
+      // attempt 2: no lang, no voice (engine default)
+      const playSegment = (item, attempt) => {
+        if (thisSession !== currentSpeechSession) return;
 
         try {
           if (window.speechSynthesis.paused) {
@@ -1403,75 +1439,99 @@ class UIManager {
         } catch (e) {}
 
         const utterance = new SpeechSynthesisUtterance(item.text);
-        utterance.lang = langCode;
         utterance.rate = 0.9; // Slower for clarity, matching english-practise.html
-
-        // Only assign voice if a local desktop voice matches (e.g. macOS Linh).
-        // On Android/mobile, leaving voice unset allows Android/iOS to use the native language engine safely.
-        try {
-          const voices = window.speechSynthesis.getVoices();
-          if (voices && voices.length > 0) {
-            const targetLang = (langCode || '').toLowerCase().replace(/_/g, '-');
-            const targetPrefix = targetLang.split('-')[0];
-            const matchedVoice = voices.find((v) => (v.lang || '').toLowerCase().replace(/_/g, '-') === targetLang && v.localService === true) ||
-                                 voices.find((v) => (v.lang || '').toLowerCase().replace(/_/g, '-').startsWith(targetPrefix) && v.localService === true);
-            if (matchedVoice) {
-              utterance.voice = matchedVoice;
-              utterance.lang = matchedVoice.lang;
-            }
+        if (attempt === 0) {
+          utterance.lang = langCode;
+        } else if (attempt === 1) {
+          const voice = findVoice(true) || findVoice(false);
+          utterance.lang = langCode;
+          if (voice) {
+            utterance.voice = voice;
+            utterance.lang = voice.lang;
           }
-        } catch (err) {
-          // Fall back to default language tag
         }
 
         // Keep reference on window to prevent V8 garbage collection
-        if (typeof window !== 'undefined') {
-          window._mqActiveUtterance = utterance;
-        }
+        window._mqActiveUtterance = utterance;
+
+        let started = false;
+        let settled = false;
+        const clearWatchdog = () => {
+          if (speechWatchdog) {
+            clearTimeout(speechWatchdog);
+            speechWatchdog = null;
+          }
+        };
+
+        const retryOrFail = (code) => {
+          if (settled) return;
+          settled = true;
+          clearWatchdog();
+          if (thisSession !== currentSpeechSession) return;
+          if (attempt < 2) {
+            try { window.speechSynthesis.cancel(); } catch (e) {}
+            speechTimer = setTimeout(() => playSegment(item, attempt + 1), 80);
+          } else {
+            fail(code);
+          }
+        };
+
+        utterance.onstart = () => {
+          started = true;
+          clearWatchdog();
+        };
 
         utterance.onend = () => {
+          if (settled) return;
+          settled = true;
+          clearWatchdog();
           if (thisSession !== currentSpeechSession) return;
-          if (typeof window !== 'undefined' && window._mqActiveUtterance === utterance) {
+          if (window._mqActiveUtterance === utterance) {
             window._mqActiveUtterance = null;
           }
+          currentIndex++;
           if (currentIndex >= segments.length) {
             stopSpeech();
             return;
           }
           const pause = item.pauseAfter || 0;
           if (pause > 0) {
-            speechTimer = setTimeout(() => {
-              playNextSegment();
-            }, pause);
+            speechTimer = setTimeout(playCurrent, pause);
           } else {
-            playNextSegment();
+            playCurrent();
           }
         };
 
         utterance.onerror = (e) => {
           if (thisSession !== currentSpeechSession) return;
-          if (typeof window !== 'undefined' && window._mqActiveUtterance === utterance) {
-            window._mqActiveUtterance = null;
-          }
-          // If stopped/canceled, exit
-          if (e && (e.error === 'canceled' || e.error === 'interrupted')) {
+          const code = e && e.error;
+          // User-initiated stop
+          if (code === 'canceled' || code === 'interrupted') {
+            if (!started && !settled) retryOrFail(code);
             return;
           }
-          // On other error, proceed to next chunk after brief pause
-          if (currentIndex < segments.length) {
-            const pause = item.pauseAfter || 0;
-            speechTimer = setTimeout(() => {
-              playNextSegment();
-            }, Math.min(pause, 200));
-          } else {
-            stopSpeech();
-          }
+          retryOrFail(code);
         };
+
+        // Watchdog: utterance never started -> engine is silently stuck
+        clearWatchdog();
+        speechWatchdog = setTimeout(() => {
+          if (!started) retryOrFail('no-audio-start');
+        }, 3000);
 
         window.speechSynthesis.speak(utterance);
       };
 
-      playNextSegment();
+      const playCurrent = () => {
+        if (thisSession !== currentSpeechSession) return;
+        if (currentIndex >= segments.length) {
+          stopSpeech();
+          return;
+        }
+        playSegment(segments[currentIndex], 0);
+      };
+
+      playCurrent();
     };
 
     if (btnVn) {
