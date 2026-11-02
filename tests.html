@@ -1,281 +1,445 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>MyQuizlet — Automated Unit & Acceptance Tests</title>
-  <style>
-    body {
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      padding: 24px;
-      background: #FAFAFA;
-      color: #212121;
-      max-width: 860px;
-      margin: 0 auto;
-    }
-    h1 {
-      font-size: 1.6rem;
-      margin-bottom: 8px;
-    }
-    .summary {
-      padding: 12px 16px;
-      border-radius: 8px;
-      font-weight: bold;
-      margin-bottom: 20px;
-    }
-    .summary.pass {
-      background: #E8F5E9;
-      color: #2E7D32;
-    }
-    .summary.fail {
-      background: #FFEBEE;
-      color: #C62828;
-    }
-    .test-case {
-      padding: 10px 14px;
-      border-radius: 6px;
-      background: #FFF;
-      border: 1px solid #E0E0E0;
-      margin-bottom: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .test-name {
-      font-size: 0.95rem;
-    }
-    .badge {
-      font-size: 0.8rem;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 4px;
-    }
-    .badge.pass {
-      background: #E8F5E9;
-      color: #2E7D32;
-    }
-    .badge.fail {
-      background: #FFEBEE;
-      color: #C62828;
-    }
-    .err-msg {
-      color: #C62828;
-      font-size: 0.85rem;
-      margin-top: 4px;
-      font-family: monospace;
-    }
-  </style>
-</head>
-<body>
-  <h1>MyQuizlet Test Suite</h1>
-  <div id="summary" class="summary">Running tests...</div>
-  <div id="results"></div>
-
-  <script src="vendor/marked.min.js"></script>
-  <script src="vendor/purify.min.js"></script>
-  <script src="vendor/highlight.min.js"></script>
-
-  <script type="module">
-    import { parseMarkdownSet } from './js/parser.js';
-    import { serializeSet, slugify } from './js/serializer.js';
-    import { store } from './js/store.js';
-    import { renderCardFaceHTML } from './js/render.js';
-    import { ui, parseSpeechSegments } from './js/ui.js';
-    import { StudyController } from './js/study.js';
-    import { App } from './js/main.js';
-
-    const resultsContainer = document.getElementById('results');
-    const summaryEl = document.getElementById('summary');
-    let passed = 0;
-    let failed = 0;
-
-    async function runTest(name, fn) {
-      const item = document.createElement('div');
-      item.className = 'test-case';
-      try {
-        await fn();
-        passed++;
-        item.innerHTML = `<span class="test-name">✓ ${name}</span><span class="badge pass">PASS</span>`;
-      } catch (err) {
-        failed++;
-        console.error(`[FAIL] ${name}:`, err);
-        item.innerHTML = `<div><span class="test-name">✗ ${name}</span><div class="err-msg">${err.message}</div></div><span class="badge fail">FAIL</span>`;
+  <head>
+    <meta charset="utf-8" />
+    <title>MyQuizlet — Automated Unit & Acceptance Tests</title>
+    <style>
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        padding: 24px;
+        background: #fafafa;
+        color: #212121;
+        max-width: 860px;
+        margin: 0 auto;
       }
-      resultsContainer.appendChild(item);
-    }
+      h1 {
+        font-size: 1.6rem;
+        margin-bottom: 8px;
+      }
+      .summary {
+        padding: 12px 16px;
+        border-radius: 8px;
+        font-weight: bold;
+        margin-bottom: 20px;
+      }
+      .summary.pass {
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+      .summary.fail {
+        background: #ffebee;
+        color: #c62828;
+      }
+      .test-case {
+        padding: 10px 14px;
+        border-radius: 6px;
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .test-name {
+        font-size: 0.95rem;
+      }
+      .badge {
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 3px 8px;
+        border-radius: 4px;
+      }
+      .badge.pass {
+        background: #e8f5e9;
+        color: #2e7d32;
+      }
+      .badge.fail {
+        background: #ffebee;
+        color: #c62828;
+      }
+      .err-msg {
+        color: #c62828;
+        font-size: 0.85rem;
+        margin-top: 4px;
+        font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>MyQuizlet Test Suite</h1>
+    <div id="summary" class="summary">Running tests...</div>
+    <div id="results"></div>
 
-    async function main() {
-      // 1. Fetch sample.md
-      const resp = await fetch('samples/sample.md');
-      const sampleText = await resp.text();
+    <script src="vendor/marked.min.js"></script>
+    <script src="vendor/purify.min.js"></script>
+    <script src="vendor/highlight.min.js"></script>
 
-      // Test 1: Acceptance test 1 - sample.md parse count, title, and warning
-      await runTest('Acceptance Test 1: Import sample.md produces 7 cards, title, and 1 empty answer warning', () => {
-        const { set, warnings } = parseMarkdownSet(sampleText, 'sample.md');
-        console.assert(set.title === 'Swift & Web Development Mastery', `Expected title 'Swift & Web Development Mastery', got '${set.title}'`);
-        console.assert(set.cards.length === 7, `Expected 7 cards, got ${set.cards.length}`);
-        console.assert(warnings.length === 1, `Expected exactly 1 warning, got ${warnings.length}`);
-        console.assert(warnings[0].includes('empty answer') || warnings[0].includes('đáp án trống'), `Expected empty answer warning, got ${warnings[0]}`);
-      });
+    <script type="module">
+      import { parseMarkdownSet } from "./js/parser.js";
+      import { serializeSet, slugify } from "./js/serializer.js";
+      import { store } from "./js/store.js";
+      import { renderCardFaceHTML } from "./js/render.js";
+      import {
+        ui,
+        parseSpeechSegments,
+        stopSpeech,
+        playInlineSpeech,
+      } from "./js/ui.js";
+      import { StudyController } from "./js/study.js";
+      import { App } from "./js/main.js";
 
-      // Test 2: Acceptance test 2 - Fenced code with '---' and '## ' does not split card
-      await runTest('Acceptance Test 2: Inner "---" and "## " inside fenced code blocks do not split cards', () => {
-        const { set } = parseMarkdownSet(sampleText, 'sample.md');
-        const codeCard = set.cards.find(c => c.q.includes('nested separators'));
-        console.assert(Boolean(codeCard), 'Could not find card with nested separators');
-        console.assert(codeCard.a.includes('```markdown'), 'Answer should contain fenced code block');
-        console.assert(codeCard.a.includes('let separator = "---"'), 'Answer should contain code body');
-        console.assert(codeCard.a.includes('## not a question'), 'Answer should contain ## not a question inside fence');
-      });
+      const resultsContainer = document.getElementById("results");
+      const summaryEl = document.getElementById("summary");
+      let passed = 0;
+      let failed = 0;
 
-      // Test 3: Acceptance test 3 - Round trip parse(serialize(parse(x))) deep equals parse(x)
-      await runTest('Acceptance Test 3: Round-trip export then re-import yields identical set content', () => {
-        const first = parseMarkdownSet(sampleText, 'sample.md');
-        const serialized = serializeSet(first.set);
-        const second = parseMarkdownSet(serialized, 'sample.md');
-
-        console.assert(first.set.title === second.set.title, 'Titles must match after round trip');
-        console.assert(first.set.cards.length === second.set.cards.length, 'Card counts must match');
-        for (let i = 0; i < first.set.cards.length; i++) {
-          console.assert(first.set.cards[i].q === second.set.cards[i].q, `Question ${i} mismatch`);
-          console.assert(first.set.cards[i].a === second.set.cards[i].a, `Answer ${i} mismatch`);
-        }
-      });
-
-      // Test 4: Missing title fallback to filename
-      await runTest('Parser Fallback: Missing title header uses filename and logs warning', () => {
-        const raw = `## Question 1\nAnswer 1\n---`;
-        const { set, warnings } = parseMarkdownSet(raw, 'Biology-101.md');
-        console.assert(set.title === 'Biology-101', `Expected 'Biology-101', got '${set.title}'`);
-        console.assert(warnings.length > 0, 'Should warn about missing title');
-      });
-
-      // Test 5: Empty block without question skipped
-      await runTest('Parser Validation: Block without question is skipped with warning', () => {
-        const raw = `---\n# Test Deck\n---\nJust some random text without question\n---\n## Valid Q\nValid A\n---`;
-        const { set, warnings } = parseMarkdownSet(raw);
-        console.assert(set.cards.length === 1, `Expected 1 card, got ${set.cards.length}`);
-        console.assert(warnings.some(w => w.includes('Skipped') || w.includes('bỏ qua')), 'Should warn about skipped block');
-      });
-
-      // Test 6: Slugify safety
-      await runTest('Serializer: Slugify handles Unicode and illegal characters safely', () => {
-        const slug = slugify('Ôn tập Swift / iOS : Level 1?');
-        console.assert(!/[\\/:*?"<>|]/.test(slug), 'Slug must not contain illegal chars');
-        console.assert(slug.includes('Ôn-tập-Swift'), `Slug expected Unicode support, got ${slug}`);
-      });
-
-      // Test 7: Store save, rename, and delete with undo
-      await runTest('Store: Save, rename validation, and 6-second soft delete undo', () => {
-        const testSet = {
-          id: 'test-set-123',
-          title: 'Initial Title',
-          allowAnswer: true,
-          cards: [{ id: 'c1', q: 'Q1', a: 'A1' }]
-        };
-        store.saveSet(testSet);
-        const retrieved = store.getSet('test-set-123');
-        console.assert(retrieved && retrieved.title === 'Initial Title', 'Save set failed');
-
-        // Rename
-        store.renameSet('test-set-123', 'Updated Title');
-        console.assert(store.getSet('test-set-123').title === 'Updated Title', 'Rename failed');
-
-        // Rename validation (empty rejected)
-        let rejected = false;
+      async function runTest(name, fn) {
+        const item = document.createElement("div");
+        item.className = "test-case";
         try {
-          store.renameSet('test-set-123', '   ');
-        } catch {
-          rejected = true;
+          await fn();
+          passed++;
+          item.innerHTML = `<span class="test-name">✓ ${name}</span><span class="badge pass">PASS</span>`;
+        } catch (err) {
+          failed++;
+          console.error(`[FAIL] ${name}:`, err);
+          item.innerHTML = `<div><span class="test-name">✗ ${name}</span><div class="err-msg">${err.message}</div></div><span class="badge fail">FAIL</span>`;
         }
-        console.assert(rejected, 'Empty title should be rejected');
+        resultsContainer.appendChild(item);
+      }
 
-        // Delete with undo
-        const delRes = store.deleteSet('test-set-123');
-        console.assert(!store.getSet('test-set-123'), 'Set should be deleted from storage');
-        const restored = store.undoDelete();
-        console.assert(restored && restored.id === 'test-set-123', 'Undo delete should restore set');
-        console.assert(Boolean(store.getSet('test-set-123')), 'Restored set must exist in storage');
+      async function main() {
+        // 1. Fetch sample.md
+        const resp = await fetch("samples/sample.md");
+        const sampleText = await resp.text();
 
-        // Cleanup
-        store.deleteSet('test-set-123');
-        delRes.cancelUndo();
-      });
+        // Test 1: Acceptance test 1 - sample.md parse count, title, and warning
+        await runTest(
+          "Acceptance Test 1: Import sample.md produces 7 cards, title, and 1 empty answer warning",
+          () => {
+            const { set, warnings } = parseMarkdownSet(sampleText, "sample.md");
+            console.assert(
+              set.title === "Swift & Web Development Mastery",
+              `Expected title 'Swift & Web Development Mastery', got '${set.title}'`,
+            );
+            console.assert(
+              set.cards.length === 7,
+              `Expected 7 cards, got ${set.cards.length}`,
+            );
+            console.assert(
+              warnings.length === 1,
+              `Expected exactly 1 warning, got ${warnings.length}`,
+            );
+            console.assert(
+              warnings[0].includes("empty answer") ||
+                warnings[0].includes("đáp án trống"),
+              `Expected empty answer warning, got ${warnings[0]}`,
+            );
+          },
+        );
 
-      // Test 8: Shuffle bag logic (all cards seen before repeat)
-      await runTest('Study: Shuffle bag exhaustiveness and no consecutive repeats across cycles', () => {
-        const n = 5;
-        const indices = Array.from({ length: n }, (_, i) => i);
-        const seen = new Set();
-        // simulate bag
-        const bag = [...indices];
-        for (let i = 0; i < n; i++) {
-          const card = bag.pop();
-          seen.add(card);
-        }
-        console.assert(seen.size === n, 'All cards must be drawn in one cycle');
-      });
+        // Test 2: Acceptance test 2 - Fenced code with '---' and '## ' does not split card
+        await runTest(
+          'Acceptance Test 2: Inner "---" and "## " inside fenced code blocks do not split cards',
+          () => {
+            const { set } = parseMarkdownSet(sampleText, "sample.md");
+            const codeCard = set.cards.find((c) =>
+              c.q.includes("nested separators"),
+            );
+            console.assert(
+              Boolean(codeCard),
+              "Could not find card with nested separators",
+            );
+            console.assert(
+              codeCard.a.includes("```markdown"),
+              "Answer should contain fenced code block",
+            );
+            console.assert(
+              codeCard.a.includes('let separator = "---"'),
+              "Answer should contain code body",
+            );
+            console.assert(
+              codeCard.a.includes("## not a question"),
+              "Answer should contain ## not a question inside fence",
+            );
+          },
+        );
 
-      // Test 9: Edit Full Set Markdown Workflow
-      await runTest('Edit Markdown: Direct set markdown update synchronizes title, cards and store', () => {
-        const setId = 'test-edit-md-set';
-        const initialSet = {
-          id: setId,
-          title: 'Initial Subject',
-          allowAnswer: true,
-          cards: [
-            { id: 'c1', q: 'Original Q1', a: 'Original A1' },
-            { id: 'c2', q: 'Original Q2', a: 'Original A2' }
-          ]
-        };
-        store.saveSet(initialSet);
+        // Test 3: Acceptance test 3 - Round trip parse(serialize(parse(x))) deep equals parse(x)
+        await runTest(
+          "Acceptance Test 3: Round-trip export then re-import yields identical set content",
+          () => {
+            const first = parseMarkdownSet(sampleText, "sample.md");
+            const serialized = serializeSet(first.set);
+            const second = parseMarkdownSet(serialized, "sample.md");
 
-        // 1. Serialize current set to Markdown
-        const exportedMd = serializeSet(initialSet);
-        console.assert(exportedMd.includes('# Initial Subject'), 'Serialized Markdown must contain initial title');
+            console.assert(
+              first.set.title === second.set.title,
+              "Titles must match after round trip",
+            );
+            console.assert(
+              first.set.cards.length === second.set.cards.length,
+              "Card counts must match",
+            );
+            for (let i = 0; i < first.set.cards.length; i++) {
+              console.assert(
+                first.set.cards[i].q === second.set.cards[i].q,
+                `Question ${i} mismatch`,
+              );
+              console.assert(
+                first.set.cards[i].a === second.set.cards[i].a,
+                `Answer ${i} mismatch`,
+              );
+            }
+          },
+        );
 
-        // 2. User edits markdown: changes title, modifies Q1, adds Q3 with code fence
-        const editedMd = exportedMd
-          .replace('# Initial Subject', '# Advanced Algorithms')
-          .replace('Original Q1', 'Updated Graph Q1')
-          + `\n## New DFS Question\n\n\`\`\`swift\nfunc dfs() {}\n\`\`\`\n---`;
+        // Test 4: Missing title fallback to filename
+        await runTest(
+          "Parser Fallback: Missing title header uses filename and logs warning",
+          () => {
+            const raw = `## Question 1\nAnswer 1\n---`;
+            const { set, warnings } = parseMarkdownSet(raw, "Biology-101.md");
+            console.assert(
+              set.title === "Biology-101",
+              `Expected 'Biology-101', got '${set.title}'`,
+            );
+            console.assert(
+              warnings.length > 0,
+              "Should warn about missing title",
+            );
+          },
+        );
 
-        // 3. Parse updated markdown
-        const { set: parsed, warnings } = parseMarkdownSet(editedMd, initialSet.title);
-        console.assert(parsed.title === 'Advanced Algorithms', `Expected title 'Advanced Algorithms', got '${parsed.title}'`);
-        console.assert(parsed.cards.length === 3, `Expected 3 cards after editing, got ${parsed.cards.length}`);
+        // Test 5: Empty block without question skipped
+        await runTest(
+          "Parser Validation: Block without question is skipped with warning",
+          () => {
+            const raw = `---\n# Test Deck\n---\nJust some random text without question\n---\n## Valid Q\nValid A\n---`;
+            const { set, warnings } = parseMarkdownSet(raw);
+            console.assert(
+              set.cards.length === 1,
+              `Expected 1 card, got ${set.cards.length}`,
+            );
+            console.assert(
+              warnings.some(
+                (w) => w.includes("Skipped") || w.includes("bỏ qua"),
+              ),
+              "Should warn about skipped block",
+            );
+          },
+        );
 
-        // 4. Save back into store
-        const targetSet = store.getSet(setId);
-        targetSet.title = parsed.title;
-        targetSet.cards = parsed.cards;
-        targetSet.updatedAt = Date.now();
-        store.saveSet(targetSet);
+        // Test 6: Slugify safety
+        await runTest(
+          "Serializer: Slugify handles Unicode and illegal characters safely",
+          () => {
+            const slug = slugify("Ôn tập Swift / iOS : Level 1?");
+            console.assert(
+              !/[\\/:*?"<>|]/.test(slug),
+              "Slug must not contain illegal chars",
+            );
+            console.assert(
+              slug.includes("Ôn-tập-Swift"),
+              `Slug expected Unicode support, got ${slug}`,
+            );
+          },
+        );
 
-        // 5. Verify store state
-        const stored = store.getSet(setId);
-        console.assert(stored.title === 'Advanced Algorithms', 'Stored title must match edited title');
-        console.assert(stored.cards.length === 3, 'Stored card count must match edited count');
-        console.assert(stored.cards[0].q === 'Updated Graph Q1', 'First question must be updated');
-        console.assert(stored.cards[2].q === 'New DFS Question', 'Third question must be present');
-        console.assert(stored.cards[2].a.includes('```swift'), 'Third card answer must preserve code block');
+        // Test 7: Store save, rename, and delete with undo
+        await runTest(
+          "Store: Save, rename validation, and 6-second soft delete undo",
+          () => {
+            const testSet = {
+              id: "test-set-123",
+              title: "Initial Title",
+              allowAnswer: true,
+              cards: [{ id: "c1", q: "Q1", a: "A1" }],
+            };
+            store.saveSet(testSet);
+            const retrieved = store.getSet("test-set-123");
+            console.assert(
+              retrieved && retrieved.title === "Initial Title",
+              "Save set failed",
+            );
 
-        // Cleanup
-        store.deleteSet(setId);
-      });
+            // Rename
+            store.renameSet("test-set-123", "Updated Title");
+            console.assert(
+              store.getSet("test-set-123").title === "Updated Title",
+              "Rename failed",
+            );
 
-      // Test 10: Edit Markdown live validation & warnings
-      await runTest('Edit Markdown Validation: Detects empty answers, missing headers, and malformed blocks', () => {
-        const malformedMd = `---\n# Incomplete Set\n---\n## Question with empty answer\n\n---\nBlock without question\n---`;
-        const { set: parsed, warnings } = parseMarkdownSet(malformedMd);
-        console.assert(parsed.cards.length === 1, 'Only 1 valid card should be recognized');
-        console.assert(warnings.length >= 2, `Expected at least 2 warnings, got ${warnings.length}`);
-        console.assert(warnings.some(w => w.includes('empty answer') || w.includes('đáp án trống')), 'Warning for empty answer expected');
-        console.assert(warnings.some(w => w.includes('Skipped') || w.includes('bỏ qua')), 'Warning for skipped block expected');
-      });
+            // Rename validation (empty rejected)
+            let rejected = false;
+            try {
+              store.renameSet("test-set-123", "   ");
+            } catch {
+              rejected = true;
+            }
+            console.assert(rejected, "Empty title should be rejected");
 
-      // Test 11: Header2-only format without '---' card separators
-      await runTest('Format Update: Header2-only format without "---" parses questions and answers cleanly', () => {
-        const noDashesMd = `# Vocabulary Deck
+            // Delete with undo
+            const delRes = store.deleteSet("test-set-123");
+            console.assert(
+              !store.getSet("test-set-123"),
+              "Set should be deleted from storage",
+            );
+            const restored = store.undoDelete();
+            console.assert(
+              restored && restored.id === "test-set-123",
+              "Undo delete should restore set",
+            );
+            console.assert(
+              Boolean(store.getSet("test-set-123")),
+              "Restored set must exist in storage",
+            );
+
+            // Cleanup
+            store.deleteSet("test-set-123");
+            delRes.cancelUndo();
+          },
+        );
+
+        // Test 8: Shuffle bag logic (all cards seen before repeat)
+        await runTest(
+          "Study: Shuffle bag exhaustiveness and no consecutive repeats across cycles",
+          () => {
+            const n = 5;
+            const indices = Array.from({ length: n }, (_, i) => i);
+            const seen = new Set();
+            // simulate bag
+            const bag = [...indices];
+            for (let i = 0; i < n; i++) {
+              const card = bag.pop();
+              seen.add(card);
+            }
+            console.assert(
+              seen.size === n,
+              "All cards must be drawn in one cycle",
+            );
+          },
+        );
+
+        // Test 9: Edit Full Set Markdown Workflow
+        await runTest(
+          "Edit Markdown: Direct set markdown update synchronizes title, cards and store",
+          () => {
+            const setId = "test-edit-md-set";
+            const initialSet = {
+              id: setId,
+              title: "Initial Subject",
+              allowAnswer: true,
+              cards: [
+                { id: "c1", q: "Original Q1", a: "Original A1" },
+                { id: "c2", q: "Original Q2", a: "Original A2" },
+              ],
+            };
+            store.saveSet(initialSet);
+
+            // 1. Serialize current set to Markdown
+            const exportedMd = serializeSet(initialSet);
+            console.assert(
+              exportedMd.includes("# Initial Subject"),
+              "Serialized Markdown must contain initial title",
+            );
+
+            // 2. User edits markdown: changes title, modifies Q1, adds Q3 with code fence
+            const editedMd =
+              exportedMd
+                .replace("# Initial Subject", "# Advanced Algorithms")
+                .replace("Original Q1", "Updated Graph Q1") +
+              `\n## New DFS Question\n\n\`\`\`swift\nfunc dfs() {}\n\`\`\`\n---`;
+
+            // 3. Parse updated markdown
+            const { set: parsed, warnings } = parseMarkdownSet(
+              editedMd,
+              initialSet.title,
+            );
+            console.assert(
+              parsed.title === "Advanced Algorithms",
+              `Expected title 'Advanced Algorithms', got '${parsed.title}'`,
+            );
+            console.assert(
+              parsed.cards.length === 3,
+              `Expected 3 cards after editing, got ${parsed.cards.length}`,
+            );
+
+            // 4. Save back into store
+            const targetSet = store.getSet(setId);
+            targetSet.title = parsed.title;
+            targetSet.cards = parsed.cards;
+            targetSet.updatedAt = Date.now();
+            store.saveSet(targetSet);
+
+            // 5. Verify store state
+            const stored = store.getSet(setId);
+            console.assert(
+              stored.title === "Advanced Algorithms",
+              "Stored title must match edited title",
+            );
+            console.assert(
+              stored.cards.length === 3,
+              "Stored card count must match edited count",
+            );
+            console.assert(
+              stored.cards[0].q === "Updated Graph Q1",
+              "First question must be updated",
+            );
+            console.assert(
+              stored.cards[2].q === "New DFS Question",
+              "Third question must be present",
+            );
+            console.assert(
+              stored.cards[2].a.includes("```swift"),
+              "Third card answer must preserve code block",
+            );
+
+            // Cleanup
+            store.deleteSet(setId);
+          },
+        );
+
+        // Test 10: Edit Markdown live validation & warnings
+        await runTest(
+          "Edit Markdown Validation: Detects empty answers, missing headers, and malformed blocks",
+          () => {
+            const malformedMd = `---\n# Incomplete Set\n---\n## Question with empty answer\n\n---\nBlock without question\n---`;
+            const { set: parsed, warnings } = parseMarkdownSet(malformedMd);
+            console.assert(
+              parsed.cards.length === 1,
+              "Only 1 valid card should be recognized",
+            );
+            console.assert(
+              warnings.length >= 2,
+              `Expected at least 2 warnings, got ${warnings.length}`,
+            );
+            console.assert(
+              warnings.some(
+                (w) => w.includes("empty answer") || w.includes("đáp án trống"),
+              ),
+              "Warning for empty answer expected",
+            );
+            console.assert(
+              warnings.some(
+                (w) => w.includes("Skipped") || w.includes("bỏ qua"),
+              ),
+              "Warning for skipped block expected",
+            );
+          },
+        );
+
+        // Test 11: Header2-only format without '---' card separators
+        await runTest(
+          'Format Update: Header2-only format without "---" parses questions and answers cleanly',
+          () => {
+            const noDashesMd = `# Vocabulary Deck
 
 ## Ephemeral
 Lasting for a very short time.
@@ -293,26 +457,62 @@ Just code
 ## Ubiquitous
 Present, appearing, or found everywhere.`;
 
-        const { set, warnings } = parseMarkdownSet(noDashesMd);
-        console.assert(set.title === 'Vocabulary Deck', `Expected 'Vocabulary Deck', got '${set.title}'`);
-        console.assert(set.cards.length === 4, `Expected 4 cards, got ${set.cards.length}`);
-        console.assert(set.cards[0].q === 'Ephemeral', `Expected 'Ephemeral', got '${set.cards[0].q}'`);
-        console.assert(set.cards[0].a === 'Lasting for a very short time.', `Unexpected answer 0: '${set.cards[0].a}'`);
-        console.assert(set.cards[2].q === 'Code Example', `Expected 'Code Example', got '${set.cards[2].q}'`);
-        console.assert(set.cards[2].a.includes('## Not a question'), 'Code block should preserve inner ##');
-        console.assert(set.cards[3].q === 'Ubiquitous', `Expected 'Ubiquitous', got '${set.cards[3].q}'`);
-        console.assert(warnings.length === 0, `Expected 0 warnings, got ${warnings.length}`);
+            const { set, warnings } = parseMarkdownSet(noDashesMd);
+            console.assert(
+              set.title === "Vocabulary Deck",
+              `Expected 'Vocabulary Deck', got '${set.title}'`,
+            );
+            console.assert(
+              set.cards.length === 4,
+              `Expected 4 cards, got ${set.cards.length}`,
+            );
+            console.assert(
+              set.cards[0].q === "Ephemeral",
+              `Expected 'Ephemeral', got '${set.cards[0].q}'`,
+            );
+            console.assert(
+              set.cards[0].a === "Lasting for a very short time.",
+              `Unexpected answer 0: '${set.cards[0].a}'`,
+            );
+            console.assert(
+              set.cards[2].q === "Code Example",
+              `Expected 'Code Example', got '${set.cards[2].q}'`,
+            );
+            console.assert(
+              set.cards[2].a.includes("## Not a question"),
+              "Code block should preserve inner ##",
+            );
+            console.assert(
+              set.cards[3].q === "Ubiquitous",
+              `Expected 'Ubiquitous', got '${set.cards[3].q}'`,
+            );
+            console.assert(
+              warnings.length === 0,
+              `Expected 0 warnings, got ${warnings.length}`,
+            );
 
-        // Also test serializeSet on this deck
-        const exported = serializeSet(set);
-        console.assert(!exported.includes('---'), 'Exported markdown must not contain "---" separators');
-        console.assert(exported.includes('# Vocabulary Deck'), 'Exported markdown must contain title');
-        console.assert(exported.includes('## Ephemeral'), 'Exported markdown must contain questions');
-      });
+            // Also test serializeSet on this deck
+            const exported = serializeSet(set);
+            console.assert(
+              !exported.includes("---"),
+              'Exported markdown must not contain "---" separators',
+            );
+            console.assert(
+              exported.includes("# Vocabulary Deck"),
+              "Exported markdown must contain title",
+            );
+            console.assert(
+              exported.includes("## Ephemeral"),
+              "Exported markdown must contain questions",
+            );
+          },
+        );
 
-      // Test 12: Header2-only questions without pre-existing answers
-      await runTest('Question-only Deck: Consecutive "## " headers without answers parse, render, and round-trip faithfully', () => {
-        const questionOnlyMd = `# Technical Interview Checklist
+        // Test 12: Header2-only questions without pre-existing answers
+        await runTest(
+          'Question-only Deck: Consecutive "## " headers without answers parse, render, and round-trip faithfully',
+          () => {
+            const questionOnlyMd = `# Technical Interview Checklist
 
 ## What is the event loop in JavaScript?
 ## How does prototypal inheritance differ from classical inheritance?
@@ -320,495 +520,1021 @@ Present, appearing, or found everywhere.`;
 ## What are Microtasks vs Macrotasks?
 ## What is the Virtual DOM and how does reconciliation work?`;
 
-        const { set, warnings } = parseMarkdownSet(questionOnlyMd, 'Tech-Interview.md');
-        console.assert(set.title === 'Technical Interview Checklist', `Expected title 'Technical Interview Checklist', got '${set.title}'`);
-        console.assert(set.cards.length === 5, `Expected 5 cards, got ${set.cards.length}`);
-        
-        // All cards should have q populated and a === ''
-        for (let i = 0; i < set.cards.length; i++) {
-          console.assert(Boolean(set.cards[i].q), `Card ${i} should have a question`);
-          console.assert(set.cards[i].a === '', `Card ${i} should have an empty answer string`);
-        }
-        console.assert(warnings.length === 5, `Expected 5 informational empty-answer warnings, got ${warnings.length}`);
+            const { set, warnings } = parseMarkdownSet(
+              questionOnlyMd,
+              "Tech-Interview.md",
+            );
+            console.assert(
+              set.title === "Technical Interview Checklist",
+              `Expected title 'Technical Interview Checklist', got '${set.title}'`,
+            );
+            console.assert(
+              set.cards.length === 5,
+              `Expected 5 cards, got ${set.cards.length}`,
+            );
 
-        // Verify face rendering
-        const frontHtml = renderCardFaceHTML(set.cards[0], 'q');
-        console.assert(frontHtml.includes('event loop'), 'Front face must contain question content');
-
-        const backHtml = renderCardFaceHTML(set.cards[0], 'a');
-        console.assert(backHtml.includes('empty-answer-placeholder'), 'Back face must render placeholder container');
-        console.assert(backHtml.includes('empty-answer-title'), 'Back face must render placeholder title');
-
-        // Verify serialization round-trip
-        const exported = serializeSet(set);
-        console.assert(exported.includes('# Technical Interview Checklist'), 'Exported markdown must contain deck title');
-        console.assert(exported.includes('## What is the event loop in JavaScript?'), 'Exported markdown must contain card 1');
-        console.assert(exported.includes('## What are Microtasks vs Macrotasks?'), 'Exported markdown must contain card 4');
-
-        const reimported = parseMarkdownSet(exported, 'Tech-Interview.md');
-        console.assert(reimported.set.cards.length === 5, `Round-trip card count should be 5, got ${reimported.set.cards.length}`);
-        for (let i = 0; i < 5; i++) {
-          console.assert(reimported.set.cards[i].q === set.cards[i].q, `Question ${i} mismatch after round-trip`);
-          console.assert(reimported.set.cards[i].a === '', `Answer ${i} should remain empty after round-trip`);
-        }
-
-        // Verify storage
-        store.saveSet(set);
-        const stored = store.getSet(set.id);
-        console.assert(stored && stored.cards.length === 5, 'Stored set must contain all 5 question-only cards');
-        store.deleteSet(set.id);
-      });
-
-      // Test 13: Edit Markdown Dialog 'Replace from clipboard' button test
-      await runTest('Edit Markdown: "Replace from clipboard" button exists and updates content from clipboard', async () => {
-        const testSet = {
-          id: 'test-clipboard-set',
-          title: 'Initial Title',
-          cards: [{ id: 'c1', q: 'Initial Question', a: 'Initial Answer' }]
-        };
-
-        // Mock navigator.clipboard
-        const originalClipboard = navigator.clipboard;
-        const clipboardMockText = `# New Clipboard Deck\n\n## Clipboard Q1\nClipboard A1\n\n## Clipboard Q2\nClipboard A2`;
-        Object.defineProperty(navigator, 'clipboard', {
-          value: {
-            readText: async () => clipboardMockText
-          },
-          configurable: true,
-          writable: true
-        });
-
-        ui.showEditMarkdownDialog({
-          set: testSet,
-          onSave: () => {}
-        });
-
-        const dialog = document.querySelector('.edit-markdown-dialog');
-        console.assert(Boolean(dialog), 'Dialog should be appended to body');
-
-        const clipboardBtn = dialog.querySelector('#edit-md-btn-clipboard');
-        console.assert(Boolean(clipboardBtn), 'Replace from clipboard button must exist');
-        console.assert(clipboardBtn.textContent.includes('Replace from clipboard'), 'Button text must contain "Replace from clipboard"');
-
-        const textarea = dialog.querySelector('#edit-md-textarea');
-        console.assert(textarea.value.includes('Initial Question'), 'Initial content must be present in textarea');
-
-        // Click clipboard button
-        clipboardBtn.click();
-
-        // Wait a tick for async readText
-        await new Promise(resolve => setTimeout(resolve, 60));
-
-        console.assert(textarea.value === clipboardMockText, 'Textarea value should be replaced with clipboard content');
-
-        const countChip = dialog.querySelector('#edit-md-count-chip');
-        console.assert(countChip.textContent.includes('2'), `Count chip should show 2 cards, got: ${countChip.textContent}`);
-
-        // Cleanup dialog
-        dialog.querySelector('#edit-md-close-btn').click();
-
-        // Restore clipboard
-        Object.defineProperty(navigator, 'clipboard', {
-          value: originalClipboard,
-          configurable: true,
-          writable: true
-        });
-      });
-
-      // Test 14: Study Progress Store Persistence
-      await runTest('Study Progress: saveStudyProgress, getStudyProgress validation, and clearStudyProgress', () => {
-        const testSet = {
-          id: 'test-progress-store-set',
-          title: 'Store Progress Deck',
-          cards: [
-            { id: '1', q: 'Q1', a: 'A1' },
-            { id: '2', q: 'Q2', a: 'A2' },
-            { id: '3', q: 'Q3', a: 'A3' },
-            { id: '4', q: 'Q4', a: 'A4' },
-            { id: '5', q: 'Q5', a: 'A5' }
-          ]
-        };
-        store.saveSet(testSet);
-
-        const progress = {
-          cardOrder: [4, 2, 0, 1, 3],
-          currentIndex: 2,
-          totalCards: 5
-        };
-        store.saveStudyProgress(testSet.id, progress);
-
-        const loaded = store.getStudyProgress(testSet.id);
-        console.assert(Boolean(loaded), 'Saved progress must be retrieved from store');
-        console.assert(loaded.currentIndex === 2, `Expected currentIndex 2, got ${loaded.currentIndex}`);
-        console.assert(loaded.totalCards === 5, `Expected totalCards 5, got ${loaded.totalCards}`);
-        console.assert(JSON.stringify(loaded.cardOrder) === JSON.stringify([4, 2, 0, 1, 3]), 'Card order must match exactly');
-
-        // Test invalidation when set card count is altered
-        const modifiedSet = { ...testSet, cards: [...testSet.cards, { id: '6', q: 'Q6', a: 'A6' }] };
-        store.saveSet(modifiedSet);
-        const outOfSync = store.getStudyProgress(testSet.id);
-        console.assert(outOfSync === null, 'Out of sync progress must be automatically invalidated and return null');
-
-        // Re-save with 5 cards and test clearStudyProgress
-        store.saveSet(testSet);
-        store.saveStudyProgress(testSet.id, progress);
-        store.clearStudyProgress(testSet.id);
-        console.assert(store.getStudyProgress(testSet.id) === null, 'Cleared progress must return null');
-
-        store.deleteSet(testSet.id);
-      });
-
-      // Test 15: Study Resume Dialog and Controller State Restoration
-      await runTest('Study Resume Dialog: Renders "Start mới" and "Tiếp tục tiến trình cũ" with accurate callbacks', async () => {
-        const testSet = {
-          id: 'test-resume-dialog-set',
-          title: 'Resume Dialog Test Deck',
-          cards: Array.from({ length: 10 }, (_, i) => ({ id: `card-${i}`, q: `Question ${i + 1}`, a: `Answer ${i + 1}` }))
-        };
-        store.saveSet(testSet);
-
-        const savedProgress = {
-          cardOrder: [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
-          currentIndex: 4, // 5th card seen (5/10)
-          totalCards: 10
-        };
-        store.saveStudyProgress(testSet.id, savedProgress);
-
-        let resumeCalled = false;
-        let restartCalled = false;
-
-        ui.showStudyResumeDialog({
-          set: testSet,
-          progress: savedProgress,
-          onResume: () => { resumeCalled = true; },
-          onRestart: () => { restartCalled = true; },
-          onCancel: () => {}
-        });
-
-        const dialog = document.querySelector('.study-resume-dialog');
-        console.assert(Boolean(dialog), 'Study resume dialog should be rendered in DOM');
-
-        const continueBtn = dialog.querySelector('#resume-btn-continue');
-        const restartBtn = dialog.querySelector('#resume-btn-restart');
-        console.assert(Boolean(continueBtn), 'Continue previous progress button must exist');
-        console.assert(Boolean(restartBtn), 'Start fresh button must exist');
-
-        console.assert(continueBtn.textContent.includes('5/10') || continueBtn.textContent.includes('5 / 10'), `Continue button must include "5/10", got: ${continueBtn.textContent}`);
-        console.assert(restartBtn.textContent.includes('Start mới') || restartBtn.textContent.includes('Start new'), `Restart button must include "Start mới", got: ${restartBtn.textContent}`);
-
-        // Click continue button
-        continueBtn.click();
-        console.assert(resumeCalled === true, 'onResume callback must be fired when clicking continue');
-
-        // Verify StudyController restores exact state when resume: true
-        const dummyContainer = document.createElement('div');
-        const controller = new StudyController({
-          container: dummyContainer,
-          onBack: () => {},
-          onShowSnackbar: () => {}
-        });
-
-        controller.start(testSet.id, { resume: true });
-        console.assert(controller.currentIndex === 4, `Controller currentIndex should be 4, got ${controller.currentIndex}`);
-        console.assert(controller.cardOrder[4] === 5, `Controller cardOrder at index 4 should be 5, got ${controller.cardOrder[4]}`);
-
-        controller.destroy();
-        store.deleteSet(testSet.id);
-      });
-
-      // Test 16: PWA Standard 1 - Web App Manifest Specification
-      await runTest('PWA Standards 1: Manifest declares correct id ("/MyQuizlet/"), standalone display, and maskable icons', async () => {
-        const resp = await fetch('manifest.webmanifest');
-        const manifest = await resp.json();
-        console.assert(manifest.id === '/MyQuizlet/', `Expected manifest.id '/MyQuizlet/', got '${manifest.id}'`);
-        console.assert(manifest.display === 'standalone', `Expected display 'standalone', got '${manifest.display}'`);
-        console.assert(manifest.scope === './', `Expected scope './', got '${manifest.scope}'`);
-        console.assert(manifest.orientation === 'portrait', `Expected orientation 'portrait', got '${manifest.orientation}'`);
-        const hasMaskable = manifest.icons.some(i => i.purpose && i.purpose.includes('maskable'));
-        console.assert(hasMaskable, 'Manifest must contain at least one maskable icon');
-      });
-
-      // Test 17: PWA Standard 6 - Install Button & iOS Safari Guidance Modal Pattern
-      await runTest('PWA Standards 6: Install button and iOS guidance modal exist in index.html and follow accessibility standards', async () => {
-        const resp = await fetch('index.html');
-        const htmlText = await resp.text();
-        const doc = new DOMParser().parseFromString(htmlText, 'text/html');
-
-        const btnInstall = doc.getElementById('btnInstall');
-        console.assert(Boolean(btnInstall), 'Install button #btnInstall must exist in index.html');
-        console.assert(btnInstall.classList.contains('hidden'), 'Install button must have "hidden" class by default in index.html');
-
-        const iosModal = doc.getElementById('iosInstallModal');
-        console.assert(Boolean(iosModal), 'iOS install modal #iosInstallModal must exist in index.html');
-        console.assert(iosModal.getAttribute('role') === 'dialog', 'iOS modal must have role="dialog"');
-        console.assert(iosModal.getAttribute('aria-modal') === 'true', 'iOS modal must have aria-modal="true"');
-
-        const btnClose = doc.getElementById('btnCloseIosModal');
-        const btnGotIt = doc.getElementById('btnGotItIos');
-        console.assert(Boolean(btnClose), 'Close button #btnCloseIosModal must exist in index.html');
-        console.assert(Boolean(btnGotIt), 'Got it button #btnGotItIos must exist in index.html');
-      });
-
-      // Test 18: PWA Standard 9 - Screen Wake Lock API in Study Controller
-      await runTest('PWA Standards 9: StudyController requests Screen Wake Lock on start and releases on destroy', async () => {
-        let wakeLockRequested = false;
-        let wakeLockReleased = false;
-
-        const originalWakeLock = navigator.wakeLock;
-        Object.defineProperty(navigator, 'wakeLock', {
-          value: {
-            request: async (type) => {
-              if (type === 'screen') wakeLockRequested = true;
-              return {
-                release: async () => {
-                  wakeLockReleased = true;
-                },
-                addEventListener: () => {}
-              };
+            // All cards should have q populated and a === ''
+            for (let i = 0; i < set.cards.length; i++) {
+              console.assert(
+                Boolean(set.cards[i].q),
+                `Card ${i} should have a question`,
+              );
+              console.assert(
+                set.cards[i].a === "",
+                `Card ${i} should have an empty answer string`,
+              );
             }
+            console.assert(
+              warnings.length === 5,
+              `Expected 5 informational empty-answer warnings, got ${warnings.length}`,
+            );
+
+            // Verify face rendering
+            const frontHtml = renderCardFaceHTML(set.cards[0], "q");
+            console.assert(
+              frontHtml.includes("event loop"),
+              "Front face must contain question content",
+            );
+
+            const backHtml = renderCardFaceHTML(set.cards[0], "a");
+            console.assert(
+              backHtml.includes("empty-answer-placeholder"),
+              "Back face must render placeholder container",
+            );
+            console.assert(
+              backHtml.includes("empty-answer-title"),
+              "Back face must render placeholder title",
+            );
+
+            // Verify serialization round-trip
+            const exported = serializeSet(set);
+            console.assert(
+              exported.includes("# Technical Interview Checklist"),
+              "Exported markdown must contain deck title",
+            );
+            console.assert(
+              exported.includes("## What is the event loop in JavaScript?"),
+              "Exported markdown must contain card 1",
+            );
+            console.assert(
+              exported.includes("## What are Microtasks vs Macrotasks?"),
+              "Exported markdown must contain card 4",
+            );
+
+            const reimported = parseMarkdownSet(exported, "Tech-Interview.md");
+            console.assert(
+              reimported.set.cards.length === 5,
+              `Round-trip card count should be 5, got ${reimported.set.cards.length}`,
+            );
+            for (let i = 0; i < 5; i++) {
+              console.assert(
+                reimported.set.cards[i].q === set.cards[i].q,
+                `Question ${i} mismatch after round-trip`,
+              );
+              console.assert(
+                reimported.set.cards[i].a === "",
+                `Answer ${i} should remain empty after round-trip`,
+              );
+            }
+
+            // Verify storage
+            store.saveSet(set);
+            const stored = store.getSet(set.id);
+            console.assert(
+              stored && stored.cards.length === 5,
+              "Stored set must contain all 5 question-only cards",
+            );
+            store.deleteSet(set.id);
           },
-          configurable: true,
-          writable: true
-        });
+        );
 
-        const testSet = {
-          id: 'test-wake-lock-set',
-          title: 'Wake Lock Deck',
-          cards: [{ id: '1', q: 'Q1', a: 'A1' }]
-        };
-        store.saveSet(testSet);
+        // Test 13: Edit Markdown Dialog 'Replace from clipboard' button test
+        await runTest(
+          'Edit Markdown: "Replace from clipboard" button exists and updates content from clipboard',
+          async () => {
+            const testSet = {
+              id: "test-clipboard-set",
+              title: "Initial Title",
+              cards: [{ id: "c1", q: "Initial Question", a: "Initial Answer" }],
+            };
 
-        const dummyContainer = document.createElement('div');
-        const controller = new StudyController({
-          container: dummyContainer,
-          onBack: () => {},
-          onShowSnackbar: () => {}
-        });
+            // Mock navigator.clipboard
+            const originalClipboard = navigator.clipboard;
+            const clipboardMockText = `# New Clipboard Deck\n\n## Clipboard Q1\nClipboard A1\n\n## Clipboard Q2\nClipboard A2`;
+            Object.defineProperty(navigator, "clipboard", {
+              value: {
+                readText: async () => clipboardMockText,
+              },
+              configurable: true,
+              writable: true,
+            });
 
-        controller.start(testSet.id);
-        console.assert(wakeLockRequested === true, 'StudyController must request Screen Wake Lock on start');
+            ui.showEditMarkdownDialog({
+              set: testSet,
+              onSave: () => {},
+            });
 
-        controller.destroy();
-        console.assert(wakeLockReleased === true, 'StudyController must release Screen Wake Lock on destroy');
+            const dialog = document.querySelector(".edit-markdown-dialog");
+            console.assert(
+              Boolean(dialog),
+              "Dialog should be appended to body",
+            );
 
-        store.deleteSet(testSet.id);
+            const clipboardBtn = dialog.querySelector("#edit-md-btn-clipboard");
+            console.assert(
+              Boolean(clipboardBtn),
+              "Replace from clipboard button must exist",
+            );
+            console.assert(
+              clipboardBtn.textContent.includes("Replace from clipboard"),
+              'Button text must contain "Replace from clipboard"',
+            );
 
-        Object.defineProperty(navigator, 'wakeLock', {
-          value: originalWakeLock,
-          configurable: true,
-          writable: true
-        });
-      });
+            const textarea = dialog.querySelector("#edit-md-textarea");
+            console.assert(
+              textarea.value.includes("Initial Question"),
+              "Initial content must be present in textarea",
+            );
 
-      // Test 19: Review Screen Question Modal Behavior
-      await runTest('Review Screen: Displays question list, tapping a question opens modal with answer and close button', async () => {
-        const testReviewSet = {
-          id: 'test-review-set-modal',
-          title: 'Review Modal Deck',
-          cards: [
-            { id: 'rev-c1', q: 'Câu hỏi 1?', a: 'Đáp án chi tiết 1' },
-            { id: 'rev-c2', q: 'Câu hỏi 2?', a: 'Đáp án chi tiết 2' },
-            { id: 'rev-c3', q: 'Câu hỏi 3?', a: 'Đáp án chi tiết 3' }
-          ]
-        };
-        store.saveSet(testReviewSet);
+            // Click clipboard button
+            clipboardBtn.click();
 
-        // Render review using App
-        const app = new App();
-        app.mainContainer = document.createElement('main');
-        app.appBar = document.createElement('header');
-        app.appBar.innerHTML = `
+            // Wait a tick for async readText
+            await new Promise((resolve) => setTimeout(resolve, 60));
+
+            console.assert(
+              textarea.value === clipboardMockText,
+              "Textarea value should be replaced with clipboard content",
+            );
+
+            const countChip = dialog.querySelector("#edit-md-count-chip");
+            console.assert(
+              countChip.textContent.includes("2"),
+              `Count chip should show 2 cards, got: ${countChip.textContent}`,
+            );
+
+            // Cleanup dialog
+            dialog.querySelector("#edit-md-close-btn").click();
+
+            // Restore clipboard
+            Object.defineProperty(navigator, "clipboard", {
+              value: originalClipboard,
+              configurable: true,
+              writable: true,
+            });
+          },
+        );
+
+        // Test 14: Study Progress Store Persistence
+        await runTest(
+          "Study Progress: saveStudyProgress, getStudyProgress validation, and clearStudyProgress",
+          () => {
+            const testSet = {
+              id: "test-progress-store-set",
+              title: "Store Progress Deck",
+              cards: [
+                { id: "1", q: "Q1", a: "A1" },
+                { id: "2", q: "Q2", a: "A2" },
+                { id: "3", q: "Q3", a: "A3" },
+                { id: "4", q: "Q4", a: "A4" },
+                { id: "5", q: "Q5", a: "A5" },
+              ],
+            };
+            store.saveSet(testSet);
+
+            const progress = {
+              cardOrder: [4, 2, 0, 1, 3],
+              currentIndex: 2,
+              totalCards: 5,
+            };
+            store.saveStudyProgress(testSet.id, progress);
+
+            const loaded = store.getStudyProgress(testSet.id);
+            console.assert(
+              Boolean(loaded),
+              "Saved progress must be retrieved from store",
+            );
+            console.assert(
+              loaded.currentIndex === 2,
+              `Expected currentIndex 2, got ${loaded.currentIndex}`,
+            );
+            console.assert(
+              loaded.totalCards === 5,
+              `Expected totalCards 5, got ${loaded.totalCards}`,
+            );
+            console.assert(
+              JSON.stringify(loaded.cardOrder) ===
+                JSON.stringify([4, 2, 0, 1, 3]),
+              "Card order must match exactly",
+            );
+
+            // Test invalidation when set card count is altered
+            const modifiedSet = {
+              ...testSet,
+              cards: [...testSet.cards, { id: "6", q: "Q6", a: "A6" }],
+            };
+            store.saveSet(modifiedSet);
+            const outOfSync = store.getStudyProgress(testSet.id);
+            console.assert(
+              outOfSync === null,
+              "Out of sync progress must be automatically invalidated and return null",
+            );
+
+            // Re-save with 5 cards and test clearStudyProgress
+            store.saveSet(testSet);
+            store.saveStudyProgress(testSet.id, progress);
+            store.clearStudyProgress(testSet.id);
+            console.assert(
+              store.getStudyProgress(testSet.id) === null,
+              "Cleared progress must return null",
+            );
+
+            store.deleteSet(testSet.id);
+          },
+        );
+
+        // Test 15: Study Resume Dialog and Controller State Restoration
+        await runTest(
+          'Study Resume Dialog: Renders "Start mới" and "Tiếp tục tiến trình cũ" with accurate callbacks',
+          async () => {
+            const testSet = {
+              id: "test-resume-dialog-set",
+              title: "Resume Dialog Test Deck",
+              cards: Array.from({ length: 10 }, (_, i) => ({
+                id: `card-${i}`,
+                q: `Question ${i + 1}`,
+                a: `Answer ${i + 1}`,
+              })),
+            };
+            store.saveSet(testSet);
+
+            const savedProgress = {
+              cardOrder: [9, 8, 7, 6, 5, 4, 3, 2, 1, 0],
+              currentIndex: 4, // 5th card seen (5/10)
+              totalCards: 10,
+            };
+            store.saveStudyProgress(testSet.id, savedProgress);
+
+            let resumeCalled = false;
+            let restartCalled = false;
+
+            ui.showStudyResumeDialog({
+              set: testSet,
+              progress: savedProgress,
+              onResume: () => {
+                resumeCalled = true;
+              },
+              onRestart: () => {
+                restartCalled = true;
+              },
+              onCancel: () => {},
+            });
+
+            const dialog = document.querySelector(".study-resume-dialog");
+            console.assert(
+              Boolean(dialog),
+              "Study resume dialog should be rendered in DOM",
+            );
+
+            const continueBtn = dialog.querySelector("#resume-btn-continue");
+            const restartBtn = dialog.querySelector("#resume-btn-restart");
+            console.assert(
+              Boolean(continueBtn),
+              "Continue previous progress button must exist",
+            );
+            console.assert(
+              Boolean(restartBtn),
+              "Start fresh button must exist",
+            );
+
+            console.assert(
+              continueBtn.textContent.includes("5/10") ||
+                continueBtn.textContent.includes("5 / 10"),
+              `Continue button must include "5/10", got: ${continueBtn.textContent}`,
+            );
+            console.assert(
+              restartBtn.textContent.includes("Start mới") ||
+                restartBtn.textContent.includes("Start new"),
+              `Restart button must include "Start mới", got: ${restartBtn.textContent}`,
+            );
+
+            // Click continue button
+            continueBtn.click();
+            console.assert(
+              resumeCalled === true,
+              "onResume callback must be fired when clicking continue",
+            );
+
+            // Verify StudyController restores exact state when resume: true
+            const dummyContainer = document.createElement("div");
+            const controller = new StudyController({
+              container: dummyContainer,
+              onBack: () => {},
+              onShowSnackbar: () => {},
+            });
+
+            controller.start(testSet.id, { resume: true });
+            console.assert(
+              controller.currentIndex === 4,
+              `Controller currentIndex should be 4, got ${controller.currentIndex}`,
+            );
+            console.assert(
+              controller.cardOrder[4] === 5,
+              `Controller cardOrder at index 4 should be 5, got ${controller.cardOrder[4]}`,
+            );
+
+            controller.destroy();
+            store.deleteSet(testSet.id);
+          },
+        );
+
+        // Test 16: PWA Standard 1 - Web App Manifest Specification
+        await runTest(
+          'PWA Standards 1: Manifest declares correct id ("/MyQuizlet/"), standalone display, and maskable icons',
+          async () => {
+            const resp = await fetch("manifest.webmanifest");
+            const manifest = await resp.json();
+            console.assert(
+              manifest.id === "/MyQuizlet/",
+              `Expected manifest.id '/MyQuizlet/', got '${manifest.id}'`,
+            );
+            console.assert(
+              manifest.display === "standalone",
+              `Expected display 'standalone', got '${manifest.display}'`,
+            );
+            console.assert(
+              manifest.scope === "./",
+              `Expected scope './', got '${manifest.scope}'`,
+            );
+            console.assert(
+              manifest.orientation === "portrait",
+              `Expected orientation 'portrait', got '${manifest.orientation}'`,
+            );
+            const hasMaskable = manifest.icons.some(
+              (i) => i.purpose && i.purpose.includes("maskable"),
+            );
+            console.assert(
+              hasMaskable,
+              "Manifest must contain at least one maskable icon",
+            );
+          },
+        );
+
+        // Test 17: PWA Standard 6 - Install Button & iOS Safari Guidance Modal Pattern
+        await runTest(
+          "PWA Standards 6: Install button and iOS guidance modal exist in index.html and follow accessibility standards",
+          async () => {
+            const resp = await fetch("index.html");
+            const htmlText = await resp.text();
+            const doc = new DOMParser().parseFromString(htmlText, "text/html");
+
+            const btnInstall = doc.getElementById("btnInstall");
+            console.assert(
+              Boolean(btnInstall),
+              "Install button #btnInstall must exist in index.html",
+            );
+            console.assert(
+              btnInstall.classList.contains("hidden"),
+              'Install button must have "hidden" class by default in index.html',
+            );
+
+            const iosModal = doc.getElementById("iosInstallModal");
+            console.assert(
+              Boolean(iosModal),
+              "iOS install modal #iosInstallModal must exist in index.html",
+            );
+            console.assert(
+              iosModal.getAttribute("role") === "dialog",
+              'iOS modal must have role="dialog"',
+            );
+            console.assert(
+              iosModal.getAttribute("aria-modal") === "true",
+              'iOS modal must have aria-modal="true"',
+            );
+
+            const btnClose = doc.getElementById("btnCloseIosModal");
+            const btnGotIt = doc.getElementById("btnGotItIos");
+            console.assert(
+              Boolean(btnClose),
+              "Close button #btnCloseIosModal must exist in index.html",
+            );
+            console.assert(
+              Boolean(btnGotIt),
+              "Got it button #btnGotItIos must exist in index.html",
+            );
+          },
+        );
+
+        // Test 18: PWA Standard 9 - Screen Wake Lock API in Study Controller
+        await runTest(
+          "PWA Standards 9: StudyController requests Screen Wake Lock on start and releases on destroy",
+          async () => {
+            let wakeLockRequested = false;
+            let wakeLockReleased = false;
+
+            const originalWakeLock = navigator.wakeLock;
+            Object.defineProperty(navigator, "wakeLock", {
+              value: {
+                request: async (type) => {
+                  if (type === "screen") wakeLockRequested = true;
+                  return {
+                    release: async () => {
+                      wakeLockReleased = true;
+                    },
+                    addEventListener: () => {},
+                  };
+                },
+              },
+              configurable: true,
+              writable: true,
+            });
+
+            const testSet = {
+              id: "test-wake-lock-set",
+              title: "Wake Lock Deck",
+              cards: [{ id: "1", q: "Q1", a: "A1" }],
+            };
+            store.saveSet(testSet);
+
+            const dummyContainer = document.createElement("div");
+            const controller = new StudyController({
+              container: dummyContainer,
+              onBack: () => {},
+              onShowSnackbar: () => {},
+            });
+
+            controller.start(testSet.id);
+            console.assert(
+              wakeLockRequested === true,
+              "StudyController must request Screen Wake Lock on start",
+            );
+
+            controller.destroy();
+            console.assert(
+              wakeLockReleased === true,
+              "StudyController must release Screen Wake Lock on destroy",
+            );
+
+            store.deleteSet(testSet.id);
+
+            Object.defineProperty(navigator, "wakeLock", {
+              value: originalWakeLock,
+              configurable: true,
+              writable: true,
+            });
+          },
+        );
+
+        // Test 19: Review Screen Question Modal Behavior
+        await runTest(
+          "Review Screen: Displays question list, tapping a question opens modal with answer and close button",
+          async () => {
+            const testReviewSet = {
+              id: "test-review-set-modal",
+              title: "Review Modal Deck",
+              cards: [
+                { id: "rev-c1", q: "Câu hỏi 1?", a: "Đáp án chi tiết 1" },
+                { id: "rev-c2", q: "Câu hỏi 2?", a: "Đáp án chi tiết 2" },
+                { id: "rev-c3", q: "Câu hỏi 3?", a: "Đáp án chi tiết 3" },
+              ],
+            };
+            store.saveSet(testReviewSet);
+
+            // Render review using App
+            const app = new App();
+            app.mainContainer = document.createElement("main");
+            app.appBar = document.createElement("header");
+            app.appBar.innerHTML = `
           <button id="app-back-btn"></button>
           <span id="app-title"></span>
         `;
-        document.body.appendChild(app.mainContainer);
+            document.body.appendChild(app.mainContainer);
 
-        app.renderReview(testReviewSet.id);
+            app.renderReview(testReviewSet.id);
 
-        const items = app.mainContainer.querySelectorAll('.review-question-item');
-        console.assert(items.length === 3, `Expected 3 review items, found ${items.length}`);
+            const items = app.mainContainer.querySelectorAll(
+              ".review-question-item",
+            );
+            console.assert(
+              items.length === 3,
+              `Expected 3 review items, found ${items.length}`,
+            );
 
-        // Verify sequence number and eye icon are removed from question item
-        console.assert(items[0].querySelector('.review-q-num') === null, 'Question item should not have sequence number');
-        console.assert(items[0].querySelector('.review-q-action') === null, 'Question item should not have eye icon action');
-        console.assert(items[0].querySelector('svg') === null, 'Question item should not have any svg eye icon');
+            // Verify sequence number and eye icon are removed from question item
+            console.assert(
+              items[0].querySelector(".review-q-num") === null,
+              "Question item should not have sequence number",
+            );
+            console.assert(
+              items[0].querySelector(".review-q-action") === null,
+              "Question item should not have eye icon action",
+            );
+            console.assert(
+              items[0].querySelector("svg") === null,
+              "Question item should not have any svg eye icon",
+            );
 
-        // Verify review study button exists, has icon, and only has icon (no text)
-        const studyBtn = app.mainContainer.querySelector('#review-study-btn');
-        console.assert(Boolean(studyBtn), 'Review screen must have study button');
-        console.assert(Boolean(studyBtn.querySelector('svg')), 'Review study button must have svg icon');
-        console.assert(studyBtn.querySelector('span') === null, 'Review study button must only have icon (no text)');
-        console.assert(studyBtn.textContent.trim() === '', 'Review study button must have empty text content');
+            // Verify review study button exists, has icon, and only has icon (no text)
+            const studyBtn =
+              app.mainContainer.querySelector("#review-study-btn");
+            console.assert(
+              Boolean(studyBtn),
+              "Review screen must have study button",
+            );
+            console.assert(
+              Boolean(studyBtn.querySelector("svg")),
+              "Review study button must have svg icon",
+            );
+            console.assert(
+              studyBtn.querySelector("span") === null,
+              "Review study button must only have icon (no text)",
+            );
+            console.assert(
+              studyBtn.textContent.trim() === "",
+              "Review study button must have empty text content",
+            );
 
-        // Initially no review answer modal dialog in DOM
-        console.assert(document.querySelector('.review-answer-dialog') === null, 'No modal dialog initially');
+            // Initially no review answer modal dialog in DOM
+            console.assert(
+              document.querySelector(".review-answer-dialog") === null,
+              "No modal dialog initially",
+            );
 
-        // Tap item 1 -> opens modal dialog
-        items[0].click();
-        const dialog1 = document.querySelector('.review-answer-dialog');
-        console.assert(Boolean(dialog1), 'Review answer dialog should be appended to body');
-        console.assert(dialog1.open === true, 'Dialog should be open');
+            // Tap item 1 -> opens modal dialog
+            items[0].click();
+            const dialog1 = document.querySelector(".review-answer-dialog");
+            console.assert(
+              Boolean(dialog1),
+              "Review answer dialog should be appended to body",
+            );
+            console.assert(dialog1.open === true, "Dialog should be open");
 
-        const title1 = dialog1.querySelector('.review-modal-title');
-        console.assert(Boolean(title1), 'Modal header title should exist');
+            const title1 = dialog1.querySelector(".review-modal-title");
+            console.assert(Boolean(title1), "Modal header title should exist");
 
-        // Verify question text is NOT shown in modal
-        console.assert(!dialog1.textContent.includes('Câu hỏi 1?'), 'Modal should not display the question text');
+            // Verify question text is NOT shown in modal
+            console.assert(
+              !dialog1.textContent.includes("Câu hỏi 1?"),
+              "Modal should not display the question text",
+            );
 
-        // Verify no extra inner container for answer
-        console.assert(dialog1.querySelector('.review-modal-answer-body') === null, 'Should not have an extra inner container for answer');
+            // Verify no extra inner container for answer
+            console.assert(
+              dialog1.querySelector(".review-modal-answer-body") === null,
+              "Should not have an extra inner container for answer",
+            );
 
-        const aBody1 = dialog1.querySelector('.review-modal-scroll-body');
-        console.assert(aBody1 && aBody1.textContent.includes('Đáp án chi tiết 1'), 'Modal scroll body should contain answer 1');
+            const aBody1 = dialog1.querySelector(".review-modal-scroll-body");
+            console.assert(
+              aBody1 && aBody1.textContent.includes("Đáp án chi tiết 1"),
+              "Modal scroll body should contain answer 1",
+            );
 
-        // Verify Speech VN, Close, and Speech EN buttons exist in action row
-        const btnVn = dialog1.querySelector('#review-modal-btn-speech-vn');
-        const closeBtn = dialog1.querySelector('#review-modal-btn-close');
-        const btnEn = dialog1.querySelector('#review-modal-btn-speech-en');
+            // Verify Speech VN, Close, and Speech EN buttons exist in action row
+            const btnVn = dialog1.querySelector("#review-modal-btn-speech-vn");
+            const closeBtn = dialog1.querySelector("#review-modal-btn-close");
+            const btnEn = dialog1.querySelector("#review-modal-btn-speech-en");
 
-        console.assert(Boolean(btnVn), 'Modal must have Speech VN button on left');
-        console.assert(Boolean(closeBtn), 'Modal must have Close button in center');
-        console.assert(Boolean(btnEn), 'Modal must have Speech EN button on right');
+            console.assert(
+              Boolean(btnVn),
+              "Modal must have Speech VN button on left",
+            );
+            console.assert(
+              Boolean(closeBtn),
+              "Modal must have Close button in center",
+            );
+            console.assert(
+              Boolean(btnEn),
+              "Modal must have Speech EN button on right",
+            );
 
-        // Verify speaker icon and flag for VN (without text VN)
-        console.assert(Boolean(btnVn.querySelector('.speech-icon-speaker')), 'Speech VN button must have speaker icon');
-        console.assert(btnVn.querySelector('.speech-flag') && btnVn.querySelector('.speech-flag').textContent.includes('🇻🇳'), 'Speech VN button must have Vietnamese flag 🇻🇳');
-        console.assert(!btnVn.textContent.includes('VN'), 'Speech VN button must not contain text VN');
+            // Verify speaker icon and flag for VN (without text VN)
+            console.assert(
+              Boolean(btnVn.querySelector(".speech-icon-speaker")),
+              "Speech VN button must have speaker icon",
+            );
+            console.assert(
+              btnVn.querySelector(".speech-flag") &&
+                btnVn.querySelector(".speech-flag").textContent.includes("🇻🇳"),
+              "Speech VN button must have Vietnamese flag 🇻🇳",
+            );
+            console.assert(
+              !btnVn.textContent.includes("VN"),
+              "Speech VN button must not contain text VN",
+            );
 
-        // Verify speaker icon and flag for EN (without text EN)
-        console.assert(Boolean(btnEn.querySelector('.speech-icon-speaker')), 'Speech EN button must have speaker icon');
-        console.assert(btnEn.querySelector('.speech-flag') && btnEn.querySelector('.speech-flag').textContent.includes('🇺🇸'), 'Speech EN button must have US flag 🇺🇸');
-        console.assert(!btnEn.textContent.includes('EN'), 'Speech EN button must not contain text EN');
+            // Verify speaker icon and flag for EN (without text EN)
+            console.assert(
+              Boolean(btnEn.querySelector(".speech-icon-speaker")),
+              "Speech EN button must have speaker icon",
+            );
+            console.assert(
+              btnEn.querySelector(".speech-flag") &&
+                btnEn.querySelector(".speech-flag").textContent.includes("🇺🇸"),
+              "Speech EN button must have US flag 🇺🇸",
+            );
+            console.assert(
+              !btnEn.textContent.includes("EN"),
+              "Speech EN button must not contain text EN",
+            );
 
-        // Test Speech Synthesis invocation
-        let spokenUtterance = null;
-        let cancelCalled = false;
-        const originalSpeechSynth = window.speechSynthesis;
-        const mockSynth = {
-          speaking: false,
-          cancel: () => { cancelCalled = true; },
-          speak: (utt) => { spokenUtterance = utt; },
-          getVoices: () => []
-        };
-        Object.defineProperty(window, 'speechSynthesis', {
-          value: mockSynth,
-          configurable: true,
-          writable: true
-        });
+            // Test Speech Synthesis invocation
+            let spokenUtterance = null;
+            let cancelCalled = false;
+            const originalSpeechSynth = window.speechSynthesis;
+            const mockSynth = {
+              speaking: false,
+              cancel: () => {
+                cancelCalled = true;
+              },
+              speak: (utt) => {
+                spokenUtterance = utt;
+              },
+              getVoices: () => [],
+            };
+            Object.defineProperty(window, "speechSynthesis", {
+              value: mockSynth,
+              configurable: true,
+              writable: true,
+            });
 
-        // Click Speech VN
-        btnVn.click();
-        console.assert(spokenUtterance !== null, 'Speech VN should trigger speechSynthesis.speak');
-        console.assert(spokenUtterance.lang === 'vi-VN', `Expected lang vi-VN, got ${spokenUtterance && spokenUtterance.lang}`);
-        console.assert(spokenUtterance.text.includes('Đáp án chi tiết 1'), 'Spoken text must contain answer text');
+            // Click Speech VN
+            btnVn.click();
+            console.assert(
+              spokenUtterance !== null,
+              "Speech VN should trigger speechSynthesis.speak",
+            );
+            console.assert(
+              spokenUtterance.lang === "vi-VN",
+              `Expected lang vi-VN, got ${spokenUtterance && spokenUtterance.lang}`,
+            );
+            console.assert(
+              spokenUtterance.text.includes("Đáp án chi tiết 1"),
+              "Spoken text must contain answer text",
+            );
 
-        console.assert(spokenUtterance.rate === 0.88, `Expected rate 0.88, got ${spokenUtterance && spokenUtterance.rate}`);
-        console.assert(spokenUtterance.pitch === 0.75, `Expected deep pitch 0.75, got ${spokenUtterance && spokenUtterance.pitch}`);
+            console.assert(
+              spokenUtterance.rate === 0.88,
+              `Expected rate 0.88, got ${spokenUtterance && spokenUtterance.rate}`,
+            );
+            console.assert(
+              spokenUtterance.pitch === 0.75,
+              `Expected deep pitch 0.75, got ${spokenUtterance && spokenUtterance.pitch}`,
+            );
 
-        // Click Speech EN
-        spokenUtterance = null;
-        btnEn.click();
-        console.assert(spokenUtterance !== null, 'Speech EN should trigger speechSynthesis.speak');
-        console.assert(spokenUtterance.lang === 'en-US', `Expected lang en-US, got ${spokenUtterance && spokenUtterance.lang}`);
-        console.assert(spokenUtterance.rate === 0.88, `Expected rate 0.88, got ${spokenUtterance && spokenUtterance.rate}`);
-        console.assert(spokenUtterance.pitch === 0.75, `Expected deep pitch 0.75, got ${spokenUtterance && spokenUtterance.pitch}`);
+            // Click Speech EN
+            spokenUtterance = null;
+            btnEn.click();
+            console.assert(
+              spokenUtterance !== null,
+              "Speech EN should trigger speechSynthesis.speak",
+            );
+            console.assert(
+              spokenUtterance.lang === "en-US",
+              `Expected lang en-US, got ${spokenUtterance && spokenUtterance.lang}`,
+            );
+            console.assert(
+              spokenUtterance.rate === 0.95,
+              `Expected rate 0.95, got ${spokenUtterance && spokenUtterance.rate}`,
+            );
+            console.assert(
+              spokenUtterance.pitch === 1.0,
+              `Expected natural pitch 1.0, got ${spokenUtterance && spokenUtterance.pitch}`,
+            );
 
-        // Restore SpeechSynthesis
-        Object.defineProperty(window, 'speechSynthesis', {
-          value: originalSpeechSynth,
-          configurable: true,
-          writable: true
-        });
+            // Restore SpeechSynthesis
+            Object.defineProperty(window, "speechSynthesis", {
+              value: originalSpeechSynth,
+              configurable: true,
+              writable: true,
+            });
 
-        // Tap bottom close button -> modal closes and is removed
-        closeBtn.click();
-        console.assert(document.querySelector('.review-answer-dialog') === null, 'Dialog should be closed and removed after clicking close button');
+            // Tap bottom close button -> modal closes and is removed
+            closeBtn.click();
+            console.assert(
+              document.querySelector(".review-answer-dialog") === null,
+              "Dialog should be closed and removed after clicking close button",
+            );
 
-        // Tap item 2 -> opens modal with answer 2
-        items[1].click();
-        const dialog2 = document.querySelector('.review-answer-dialog');
-        console.assert(Boolean(dialog2), 'Dialog 2 should be appended to body');
-        console.assert(!dialog2.textContent.includes('Câu hỏi 2?'), 'Dialog 2 should not display question 2 text');
-        console.assert(dialog2.querySelector('.review-modal-answer-body') === null, 'Dialog 2 should not have extra inner container');
-        const aBody2 = dialog2.querySelector('.review-modal-scroll-body');
-        console.assert(aBody2 && aBody2.textContent.includes('Đáp án chi tiết 2'), 'Modal scroll body should contain answer 2');
+            // Tap item 2 -> opens modal with answer 2
+            items[1].click();
+            const dialog2 = document.querySelector(".review-answer-dialog");
+            console.assert(
+              Boolean(dialog2),
+              "Dialog 2 should be appended to body",
+            );
+            console.assert(
+              !dialog2.textContent.includes("Câu hỏi 2?"),
+              "Dialog 2 should not display question 2 text",
+            );
+            console.assert(
+              dialog2.querySelector(".review-modal-answer-body") === null,
+              "Dialog 2 should not have extra inner container",
+            );
+            const aBody2 = dialog2.querySelector(".review-modal-scroll-body");
+            console.assert(
+              aBody2 && aBody2.textContent.includes("Đáp án chi tiết 2"),
+              "Modal scroll body should contain answer 2",
+            );
 
-        // Close dialog 2 via close button
-        dialog2.querySelector('#review-modal-btn-close').click();
-        console.assert(document.querySelector('.review-answer-dialog') === null, 'Dialog 2 should be removed');
+            // Close dialog 2 via close button
+            dialog2.querySelector("#review-modal-btn-close").click();
+            console.assert(
+              document.querySelector(".review-answer-dialog") === null,
+              "Dialog 2 should be removed",
+            );
 
-        // Cleanup
-        document.body.removeChild(app.mainContainer);
-        store.deleteSet(testReviewSet.id);
-      });
+            // Cleanup
+            document.body.removeChild(app.mainContainer);
+            store.deleteSet(testReviewSet.id);
+          },
+        );
 
-      // 20. Speech Segmentation and Pauses (Comma 0.1s, Period 0.3s, Quotes 0.1s)
-      await runTest('Review Answer Modal: Speech Segmentation and Natural Pauses', async () => {
-        // Test 1: Comma separation (0.1s / 100ms) and period (0.3s / 300ms)
-        const commaText = 'Cô ấy mỉm cười, vẫy tay chào.';
-        const commaSegs = parseSpeechSegments(commaText);
-        console.assert(commaSegs.length === 2, `Expected 2 segments for comma text, got ${commaSegs.length}`);
-        console.assert(commaSegs[0].text === 'Cô ấy mỉm cười', `Expected 'Cô ấy mỉm cười', got '${commaSegs[0].text}'`);
-        console.assert(commaSegs[0].pauseAfter === 100, `Expected 100ms pause after comma, got ${commaSegs[0].pauseAfter}`);
-        console.assert(commaSegs[1].text === 'vẫy tay chào', `Expected 'vẫy tay chào', got '${commaSegs[1].text}'`);
-        console.assert(commaSegs[1].pauseAfter === 300, `Expected 300ms pause after period, got ${commaSegs[1].pauseAfter}`);
+        // 20. Speech Segmentation and Pauses (Comma 0.1s, Period 0.3s, Quotes 0.1s)
+        await runTest(
+          "Review Answer Modal: Speech Segmentation and Natural Pauses",
+          async () => {
+            // Test 1: Comma separation (0.1s / 100ms) and period (0.3s / 300ms)
+            const commaText = "Cô ấy mỉm cười, vẫy tay chào.";
+            const commaSegs = parseSpeechSegments(commaText);
+            console.assert(
+              commaSegs.length === 2,
+              `Expected 2 segments for comma text, got ${commaSegs.length}`,
+            );
+            console.assert(
+              commaSegs[0].text === "Cô ấy mỉm cười",
+              `Expected 'Cô ấy mỉm cười', got '${commaSegs[0].text}'`,
+            );
+            console.assert(
+              commaSegs[0].pauseAfter === 100,
+              `Expected 100ms pause after comma, got ${commaSegs[0].pauseAfter}`,
+            );
+            console.assert(
+              commaSegs[1].text === "vẫy tay chào",
+              `Expected 'vẫy tay chào', got '${commaSegs[1].text}'`,
+            );
+            console.assert(
+              commaSegs[1].pauseAfter === 300,
+              `Expected 300ms pause after period, got ${commaSegs[1].pauseAfter}`,
+            );
 
-        // Test 2: Double quotes "" separation (0.1s / 100ms pause)
-        const quoteText = 'Trước khi đi, anh ấy nói: "Tôi sẽ quay lại sớm", rồi mỉm cười.';
-        const quoteSegs = parseSpeechSegments(quoteText);
-        console.assert(quoteSegs.length >= 4, `Expected at least 4 segments for quote text, got ${quoteSegs.length}`);
-        console.assert(quoteSegs[0].text === 'Trước khi đi', `Expected segment 0 'Trước khi đi', got '${quoteSegs[0].text}'`);
-        console.assert(quoteSegs[0].pauseAfter === 100, `Expected 100ms for comma, got ${quoteSegs[0].pauseAfter}`);
-        
-        const quoteSeg = quoteSegs.find(s => s.text === 'Tôi sẽ quay lại sớm');
-        console.assert(Boolean(quoteSeg), 'Quoted content must be an isolated segment');
-        console.assert(quoteSeg.pauseAfter === 100, `Quoted segment should pause 100ms, got ${quoteSeg && quoteSeg.pauseAfter}`);
+            // Test 2: Double quotes "" separation (0.1s / 100ms pause)
+            const quoteText =
+              'Trước khi đi, anh ấy nói: "Tôi sẽ quay lại sớm", rồi mỉm cười.';
+            const quoteSegs = parseSpeechSegments(quoteText);
+            console.assert(
+              quoteSegs.length >= 4,
+              `Expected at least 4 segments for quote text, got ${quoteSegs.length}`,
+            );
+            console.assert(
+              quoteSegs[0].text === "Trước khi đi",
+              `Expected segment 0 'Trước khi đi', got '${quoteSegs[0].text}'`,
+            );
+            console.assert(
+              quoteSegs[0].pauseAfter === 100,
+              `Expected 100ms for comma, got ${quoteSegs[0].pauseAfter}`,
+            );
 
-        // Test 3: Standalone quoted word
-        const wordQuote = 'Từ "algorithm" có nghĩa là thuật toán.';
-        const wordSegs = parseSpeechSegments(wordQuote);
-        console.assert(wordSegs.some(s => s.text === 'algorithm' && s.pauseAfter === 100), 'Quoted word "algorithm" must be separated with 100ms pause');
+            const quoteSeg = quoteSegs.find(
+              (s) => s.text === "Tôi sẽ quay lại sớm",
+            );
+            console.assert(
+              Boolean(quoteSeg),
+              "Quoted content must be an isolated segment",
+            );
+            console.assert(
+              quoteSeg.pauseAfter === 100,
+              `Quoted segment should pause 100ms, got ${quoteSeg && quoteSeg.pauseAfter}`,
+            );
 
-        // Test 4: Decimal and thousands number protection
-        const numText = 'Pi là 3.14, dân số là 1,000 người.';
-        const numSegs = parseSpeechSegments(numText);
-        console.assert(numSegs.length === 2, `Expected 2 segments, got ${numSegs.length}`);
-        console.assert(numSegs[0].text.includes('3.14'), 'Decimal point in 3.14 must not be split');
-        console.assert(numSegs[1].text.includes('1,000'), 'Thousands comma in 1,000 must not be split');
-      });
+            // Test 3: Standalone quoted word
+            const wordQuote = 'Từ "algorithm" có nghĩa là thuật toán.';
+            const wordSegs = parseSpeechSegments(wordQuote);
+            console.assert(
+              wordSegs.some(
+                (s) => s.text === "algorithm" && s.pauseAfter === 100,
+              ),
+              'Quoted word "algorithm" must be separated with 100ms pause',
+            );
 
-      // 21. PWA Standards Compliance (Manifest ID, Force Update button, overscroll-behavior-y, Safe Area Insets)
-      await runTest('PWA Standards Full Compliance: Manifest ID, Safe Area Top App Bar, overscroll-behavior-y, and Force Update button', async () => {
-        // Check manifest.webmanifest
-        const manifestResp = await fetch('manifest.webmanifest');
-        const manifest = await manifestResp.json();
-        console.assert(manifest.id === '/MyQuizlet/', `Manifest id must be '/MyQuizlet/', got '${manifest.id}'`);
-        console.assert(manifest.scope === './', `Manifest scope must be './', got '${manifest.scope}'`);
-        console.assert(manifest.display === 'standalone', 'Manifest display must be standalone');
+            // Test 4: Decimal and thousands number protection
+            const numText = "Pi là 3.14, dân số là 1,000 người.";
+            const numSegs = parseSpeechSegments(numText);
+            console.assert(
+              numSegs.length === 2,
+              `Expected 2 segments, got ${numSegs.length}`,
+            );
+            console.assert(
+              numSegs[0].text.includes("3.14"),
+              "Decimal point in 3.14 must not be split",
+            );
+            console.assert(
+              numSegs[1].text.includes("1,000"),
+              "Thousands comma in 1,000 must not be split",
+            );
+          },
+        );
 
-        // Check index.html elements
-        const htmlResp = await fetch('index.html');
-        const htmlText = await htmlResp.text();
-        const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+        // 21. PWA Standards Compliance (Manifest ID, Force Update button, overscroll-behavior-y, Safe Area Insets)
+        await runTest(
+          "PWA Standards Full Compliance: Manifest ID, Safe Area Top App Bar, overscroll-behavior-y, and Force Update button",
+          async () => {
+            // Check manifest.webmanifest
+            const manifestResp = await fetch("manifest.webmanifest");
+            const manifest = await manifestResp.json();
+            console.assert(
+              manifest.id === "/MyQuizlet/",
+              `Manifest id must be '/MyQuizlet/', got '${manifest.id}'`,
+            );
+            console.assert(
+              manifest.scope === "./",
+              `Manifest scope must be './', got '${manifest.scope}'`,
+            );
+            console.assert(
+              manifest.display === "standalone",
+              "Manifest display must be standalone",
+            );
 
-        const btnUpdate = doc.getElementById('btnUpdateApp');
-        console.assert(Boolean(btnUpdate), 'Update button #btnUpdateApp must exist in index.html (PWA Standard 6.D)');
-        const btnInstall = doc.getElementById('btnInstall');
-        console.assert(Boolean(btnInstall), 'Install button #btnInstall must exist in index.html (PWA Standard 6)');
+            // Check index.html elements
+            const htmlResp = await fetch("index.html");
+            const htmlText = await htmlResp.text();
+            const doc = new DOMParser().parseFromString(htmlText, "text/html");
 
-        // Check app.css for overscroll-behavior-y and Safe Area Top App Bar
-        const cssResp = await fetch('css/app.css');
-        const cssText = await cssResp.text();
-        console.assert(cssText.includes('overscroll-behavior-y: none'), 'css/app.css must disable pull-to-refresh with overscroll-behavior-y: none (PWA Standard 6.D)');
-        console.assert(cssText.includes('height: calc(56px + var(--sat))'), 'css/app.css must size top app bar with safe area inset height (PWA Standard 2)');
-      });
+            const btnUpdate = doc.getElementById("btnUpdateApp");
+            console.assert(
+              Boolean(btnUpdate),
+              "Update button #btnUpdateApp must exist in index.html (PWA Standard 6.D)",
+            );
+            const btnInstall = doc.getElementById("btnInstall");
+            console.assert(
+              Boolean(btnInstall),
+              "Install button #btnInstall must exist in index.html (PWA Standard 6)",
+            );
 
-      // Update Summary
-      summaryEl.textContent = `Completed ${passed + failed} tests: ${passed} Passed, ${failed} Failed.`;
-      summaryEl.className = failed === 0 ? 'summary pass' : 'summary fail';
-    }
+            // Check app.css for overscroll-behavior-y and Safe Area Top App Bar
+            const cssResp = await fetch("css/app.css");
+            const cssText = await cssResp.text();
+            console.assert(
+              cssText.includes("overscroll-behavior-y: none"),
+              "css/app.css must disable pull-to-refresh with overscroll-behavior-y: none (PWA Standard 6.D)",
+            );
+            console.assert(
+              cssText.includes("height: calc(56px + var(--sat))"),
+              "css/app.css must size top app bar with safe area inset height (PWA Standard 2)",
+            );
+          },
+        );
 
-    main();
-  </script>
-</body>
+        // 22. Inline English Speech for Bold Answer Sentences
+        await runTest(
+          "Inline English Speech for Bold Answer Sentences",
+          async () => {
+            const card = {
+              id: "test-inline-speech-card",
+              q: "Question with **bold** but no speech",
+              a: "Here is an answer with **An English bold sentence.** and also **Another key phrase:** for testing.",
+            };
+
+            // 1. Render question face - must NOT have inline-speech-btn
+            const qHtml = renderCardFaceHTML(card, "q");
+            const qDiv = document.createElement("div");
+            qDiv.innerHTML = qHtml;
+            console.assert(
+              qDiv.querySelector(".inline-speech-btn") === null,
+              "Question face must not contain inline speech buttons",
+            );
+
+            // 2. Render answer face - must have inline-speech-btn next to bold text
+            const aHtml = renderCardFaceHTML(card, "a");
+            const aDiv = document.createElement("div");
+            aDiv.innerHTML = aHtml;
+            document.body.appendChild(aDiv);
+
+            const speechBtns = aDiv.querySelectorAll(".inline-speech-btn");
+            console.assert(
+              speechBtns.length === 2,
+              `Expected 2 inline speech buttons in answer, got ${speechBtns.length}`,
+            );
+
+            const firstBtn = speechBtns[0];
+            const secondBtn = speechBtns[1];
+
+            console.assert(
+              firstBtn.dataset.speechText === "An English bold sentence.",
+              `Expected 'An English bold sentence.', got '${firstBtn.dataset.speechText}'`,
+            );
+            console.assert(
+              secondBtn.dataset.speechText === "Another key phrase",
+              `Trailing colon should be stripped, expected 'Another key phrase', got '${secondBtn.dataset.speechText}'`,
+            );
+            console.assert(
+              Boolean(firstBtn.querySelector("svg")),
+              "Speech button must contain speaker SVG icon",
+            );
+            console.assert(
+              firstBtn.getAttribute("aria-label").includes("Phát âm"),
+              "Speech button must have aria-label for accessibility",
+            );
+
+            // 3. Test Speech Synthesis invocation & toggle behavior
+            let spokenUtterance = null;
+            let cancelCalled = false;
+            const originalSpeechSynth = window.speechSynthesis;
+            const mockSynth = {
+              speaking: false,
+              pending: false,
+              cancel: () => {
+                cancelCalled = true;
+                mockSynth.speaking = false;
+              },
+              speak: (utt) => {
+                spokenUtterance = utt;
+                mockSynth.speaking = true;
+                if (typeof utt.onstart === "function") {
+                  setTimeout(() => utt.onstart(), 5);
+                }
+              },
+              getVoices: () => [],
+            };
+
+            Object.defineProperty(window, "speechSynthesis", {
+              value: mockSynth,
+              configurable: true,
+              writable: true,
+            });
+
+            // Tap first button
+            playInlineSpeech(firstBtn, firstBtn.dataset.speechText);
+            console.assert(
+              spokenUtterance !== null,
+              "playInlineSpeech should trigger speechSynthesis.speak",
+            );
+            console.assert(
+              spokenUtterance.lang === "en-US",
+              `Expected lang en-US for English text, got ${spokenUtterance && spokenUtterance.lang}`,
+            );
+            console.assert(
+              spokenUtterance.rate === 0.95,
+              `Expected rate 0.95, got ${spokenUtterance && spokenUtterance.rate}`,
+            );
+            console.assert(
+              spokenUtterance.pitch === 1.0,
+              `Expected natural pitch 1.0, got ${spokenUtterance && spokenUtterance.pitch}`,
+            );
+
+            // Wait for onstart to set is-speaking class
+            await new Promise((r) => setTimeout(r, 25));
+            console.assert(
+              firstBtn.classList.contains("is-speaking"),
+              "First button should have .is-speaking class while speaking",
+            );
+
+            // Tap first button again -> should toggle off and stop speech
+            playInlineSpeech(firstBtn, firstBtn.dataset.speechText);
+            console.assert(
+              cancelCalled,
+              "Tapping active speech button must call speechSynthesis.cancel",
+            );
+            console.assert(
+              !firstBtn.classList.contains("is-speaking"),
+              "First button should have .is-speaking removed after stopping",
+            );
+
+            // Tap second button
+            spokenUtterance = null;
+            playInlineSpeech(secondBtn, secondBtn.dataset.speechText);
+            console.assert(
+              spokenUtterance !== null,
+              "Second button should trigger speechSynthesis.speak",
+            );
+            console.assert(
+              spokenUtterance.text.includes("Another key phrase"),
+              "Spoken utterance text must contain 'Another key phrase'",
+            );
+
+            // Global stopSpeech cleans up
+            stopSpeech();
+            console.assert(
+              !secondBtn.classList.contains("is-speaking"),
+              "stopSpeech must clear .is-speaking on all buttons",
+            );
+
+            // Restore original speechSynthesis and DOM cleanup
+            Object.defineProperty(window, "speechSynthesis", {
+              value: originalSpeechSynth,
+              configurable: true,
+              writable: true,
+            });
+            aDiv.remove();
+          },
+        );
+
+        // Update Summary
+        summaryEl.textContent = `Completed ${passed + failed} tests: ${passed} Passed, ${failed} Failed.`;
+        summaryEl.className = failed === 0 ? "summary pass" : "summary fail";
+      }
+
+      main();
+    </script>
+  </body>
 </html>

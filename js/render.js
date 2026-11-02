@@ -30,11 +30,12 @@ const SANITIZE_CONFIG = {
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'a', 'b', 'strong', 'i', 'em', 'u',
     'code', 'pre', 'span', 'blockquote', 'ul', 'ol', 'li', 'table', 'thead',
     'tbody', 'tr', 'th', 'td', 'hr', 'br', 'img', 'details', 'summary', 'mark',
-    'del', 'kbd', 'sub', 'sup', 'div', 'svg', 'path'
+    'del', 'kbd', 'sub', 'sup', 'div', 'svg', 'path', 'button'
   ],
   ALLOWED_ATTR: [
     'href', 'title', 'target', 'rel', 'class', 'src', 'alt', 'width', 'height',
-    'align', 'loading', 'id', 'd', 'viewBox', 'fill', 'aria-hidden'
+    'align', 'loading', 'id', 'd', 'viewBox', 'fill', 'aria-hidden', 'type',
+    'data-speech-text', 'aria-label'
   ],
   FORBID_TAGS: ['script', 'style', 'iframe', 'frame', 'object', 'embed', 'form', 'input'],
   FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover', 'javascript:']
@@ -143,6 +144,31 @@ export function renderCardFaceHTML(card, face) {
           // If auto fails, leave as plain text
         }
       }
+    }
+  }
+
+  // 4. Attach inline speech button to bold text in answers
+  if (face === 'a') {
+    const boldElements = container.querySelectorAll('strong, b');
+    for (const boldEl of boldElements) {
+      if (boldEl.closest('pre, code')) continue;
+      // Skip nested strong/b tags
+      if (boldEl.parentElement && boldEl.parentElement.closest('strong, b')) continue;
+
+      const rawText = boldEl.textContent.trim();
+      const speechText = rawText.replace(/[:：]+$/, '').trim();
+      if (!speechText || !/[a-zA-Z\p{L}]/u.test(speechText)) continue;
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'inline-speech-btn';
+      btn.dataset.speechText = speechText;
+      btn.setAttribute('aria-label', `Phát âm tiếng Anh: ${speechText}`);
+      btn.setAttribute('title', `Phát âm tiếng Anh: ${speechText}`);
+      btn.innerHTML = `<svg class="icon-speech" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`;
+
+      boldEl.classList.add('bold-speech-target');
+      boldEl.insertAdjacentElement('afterend', btn);
     }
   }
 

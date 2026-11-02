@@ -10,6 +10,7 @@ import { store } from './store.js';
 import { renderCardFaceHTML } from './render.js';
 import { attachSwipe } from './gestures.js';
 import { t } from './i18n.js';
+import { stopSpeech } from './speech.js';
 
 export class StudyController {
   constructor({ container, onBack, onShowSnackbar }) {
@@ -118,6 +119,7 @@ export class StudyController {
   }
 
   destroy() {
+    stopSpeech();
     this._releaseWakeLock();
     document.removeEventListener('visibilitychange', this.boundVisibilityHandler);
     if (this.swipeCleanup) {
@@ -157,6 +159,7 @@ export class StudyController {
    */
   _drawNext(animate = true) {
     if (this.isAnimating) return;
+    stopSpeech();
 
     const total = this.cardOrder.length;
     if (total <= 1) {
@@ -186,6 +189,7 @@ export class StudyController {
   goBack() {
     if (this.isAnimating) return;
     if (this.currentIndex <= 0) return;
+    stopSpeech();
 
     // Move backward in randomized list
     this.currentIndex--;
@@ -197,6 +201,7 @@ export class StudyController {
    */
   resetShuffle() {
     if (this.isAnimating) return;
+    stopSpeech();
     const last = this.cardOrder.length > 0 ? this.cardOrder[this.currentIndex] : -1;
     this._initRandomOrder(last);
     this.currentIndex = 0;
@@ -212,6 +217,7 @@ export class StudyController {
    */
   flipCard(direction = 1) {
     if (this.isAnimating) return;
+    stopSpeech();
 
     // Check allowAnswer setting
     if (this.currentSet.allowAnswer === false) {

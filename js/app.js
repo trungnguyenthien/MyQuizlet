@@ -1130,7 +1130,8 @@ ${a}
       "sup",
       "div",
       "svg",
-      "path"
+      "path",
+      "button"
     ],
     ALLOWED_ATTR: [
       "href",
@@ -1148,7 +1149,10 @@ ${a}
       "d",
       "viewBox",
       "fill",
-      "aria-hidden"
+      "aria-hidden",
+      "type",
+      "data-speech-text",
+      "aria-label"
     ],
     FORBID_TAGS: ["script", "style", "iframe", "frame", "object", "embed", "form", "input"],
     FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "javascript:"]
@@ -1227,6 +1231,25 @@ ${a}
         }
       }
     }
+    if (face === "a") {
+      const boldElements = container.querySelectorAll("strong, b");
+      for (const boldEl of boldElements) {
+        if (boldEl.closest("pre, code")) continue;
+        if (boldEl.parentElement && boldEl.parentElement.closest("strong, b")) continue;
+        const rawText = boldEl.textContent.trim();
+        const speechText = rawText.replace(/[:：]+$/, "").trim();
+        if (!speechText || !/[a-zA-Z\p{L}]/u.test(speechText)) continue;
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "inline-speech-btn";
+        btn.dataset.speechText = speechText;
+        btn.setAttribute("aria-label", `Ph\xE1t \xE2m ti\u1EBFng Anh: ${speechText}`);
+        btn.setAttribute("title", `Ph\xE1t \xE2m ti\u1EBFng Anh: ${speechText}`);
+        btn.innerHTML = `<svg class="icon-speech" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>`;
+        boldEl.classList.add("bold-speech-target");
+        boldEl.insertAdjacentElement("afterend", btn);
+      }
+    }
     const finalHtml = container.innerHTML;
     renderCache.set(cacheKey, finalHtml);
     return finalHtml;
@@ -1244,6 +1267,352 @@ ${a}
       html = window.DOMPurify.sanitize(html, SANITIZE_CONFIG);
     }
     return html;
+  }
+
+  // js/speech.js
+  var activeUtterance = null;
+  var activeSessionId = 0;
+  var speechTimer = null;
+  var speechWatchdog = null;
+  var activeSpeakingElement = null;
+  if (typeof window !== "undefined" && "speechSynthesis" in window) {
+    try {
+      window.speechSynthesis.getVoices();
+      if ("onvoiceschanged" in window.speechSynthesis) {
+        window.speechSynthesis.onvoiceschanged = () => {
+          try {
+            window.speechSynthesis.getVoices();
+          } catch (e) {
+          }
+        };
+      }
+    } catch (e) {
+    }
+  }
+  function parseSpeechSegments(text) {
+    if (!text) return [];
+    let s = text.replace(/!\[([^\]]*)\]\([^)]*\)/g, "");
+    s = s.replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
+    s = s.replace(/^[\s*+-]+\s+/gm, "");
+    s = s.replace(/^\s*\d+\.\s+/gm, "");
+    s = s.replace(/[\u201C\u201D\u00AB\u00BB\u201E\u201F]/g, '"');
+    s = s.replace(/(\d+)\.([0-9]+)/g, "$1___DOT___$2");
+    s = s.replace(/(\d+),([0-9]+)/g, "$1___COMMA___$2");
+    s = s.replace(/(\d+):([0-9]+)/g, "$1___COLON___$2");
+    const pattern = /(")|([.!?;\n\u2026:]+)|([,，、]+)|(\s+-\s+)/g;
+    let lastIndex = 0;
+    let inQuote = false;
+    const segments = [];
+    let currentBuffer = "";
+    function flushBuffer(pauseAfter = 0) {
+      let clean = currentBuffer.replace(/___DOT___/g, ".").replace(/___COMMA___/g, ",").replace(/___COLON___/g, ":").replace(/["“”]/g, "").replace(/[`#*_~>]/g, " ").replace(/\s+/g, " ").trim();
+      if (clean) {
+        segments.push({ text: clean, pauseAfter });
+        currentBuffer = "";
+        return true;
+      }
+      currentBuffer = "";
+      return false;
+    }
+    let match;
+    while ((match = pattern.exec(s)) !== null) {
+      const textChunk = s.substring(lastIndex, match.index);
+      currentBuffer += textChunk;
+      lastIndex = pattern.lastIndex;
+      const [sep, quote, period, comma, dash] = match;
+      if (quote) {
+        if (!inQuote) {
+          flushBuffer(100);
+          inQuote = true;
+        } else {
+          inQuote = false;
+          flushBuffer(100);
+        }
+      } else if (period) {
+        const flushed = flushBuffer(300);
+        if (!flushed && segments.length > 0) {
+          segments[segments.length - 1].pauseAfter = Math.max(segments[segments.length - 1].pauseAfter, 300);
+        }
+      } else if (comma || dash) {
+        flushBuffer(100);
+      }
+    }
+    const remaining = s.substring(lastIndex);
+    currentBuffer += remaining;
+    flushBuffer(300);
+    return segments;
+  }
+  function findBestVoice(langCode, localOnly = false) {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) return null;
+    try {
+      const voices = window.speechSynthesis.getVoices() || [];
+      if (!voices || voices.length === 0) return null;
+      const langPrefix = (langCode || "en").split("-")[0].toLowerCase();
+      const isEnglish = langPrefix === "en";
+      const candidates = voices.filter((v) => !localOnly || v.localService === true);
+      let bestVoice = null;
+      let bestScore = -1e3;
+      for (const v of candidates) {
+        const name = ((v.name || "") + " " + (v.voiceURI || "")).toLowerCase();
+        const normLang = (v.lang || "").toLowerCase().replace(/_/g, "-");
+        if (!normLang.startsWith(langPrefix)) continue;
+        if (/\b(bad news|bahh|bells|boing|bubbles|cellos|wobble|jester|junior|organ|superstar|trinoids|whisper|zarvox|albert|eddy|flo|grandpa)\b/i.test(name)) {
+          continue;
+        }
+        let score = 0;
+        if (normLang === langCode.toLowerCase()) score += 100;
+        else score += 50;
+        if (/\b(natural|neural|online|enhanced|premium)\b/i.test(name)) score += 300;
+        if (isEnglish) {
+          if (/\b(google us english|samantha|daniel|ava|guy|jenny|oliver|tom|alex|reed|arthur)\b/i.test(name)) {
+            score += 400;
+          }
+        } else {
+          if (/\b(female|woman|girl|linh|samantha|kathy|zira)\b/i.test(name)) {
+            continue;
+          }
+          if (/\b(daniel|guy|ryan|christopher|george|david|oliver|james|alex|reed|arthur|nam|minh|an|quang|vic)\b/i.test(name)) {
+            score += 500;
+          }
+          if (/\b(male|man|deep|bass)\b/i.test(name)) score += 250;
+        }
+        if (v.localService === true) score += 20;
+        if (score > bestScore) {
+          bestScore = score;
+          bestVoice = v;
+        }
+      }
+      if (bestVoice && bestScore > 0) return bestVoice;
+      const fallbackPool = candidates.filter((v) => {
+        const normLang = (v.lang || "").toLowerCase().replace(/_/g, "-");
+        return normLang.startsWith(langPrefix);
+      });
+      if (isEnglish) {
+        return fallbackPool[0] || null;
+      }
+      const nonFemale = fallbackPool.find((v) => !/\b(female|woman|girl|linh|samantha|kathy|zira)\b/i.test(v.name));
+      return nonFemale || fallbackPool[0] || null;
+    } catch (e) {
+      return null;
+    }
+  }
+  function stopSpeech() {
+    activeSessionId++;
+    if (speechTimer) {
+      clearTimeout(speechTimer);
+      speechTimer = null;
+    }
+    if (speechWatchdog) {
+      clearTimeout(speechWatchdog);
+      speechWatchdog = null;
+    }
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      try {
+        const synth = window.speechSynthesis;
+        if (synth.speaking || synth.pending) {
+          synth.cancel();
+        }
+      } catch (e) {
+      }
+    }
+    if (typeof window !== "undefined") {
+      window._mqActiveUtterance = null;
+    }
+    activeUtterance = null;
+    if (activeSpeakingElement) {
+      activeSpeakingElement.classList.remove("is-speaking");
+      activeSpeakingElement = null;
+    }
+    if (typeof document !== "undefined") {
+      document.querySelectorAll(".is-speaking").forEach((el) => el.classList.remove("is-speaking"));
+    }
+  }
+  function speakText(text, {
+    lang = "en-US",
+    rate = null,
+    pitch = null,
+    onStart = null,
+    onEnd = null,
+    onError = null,
+    onStatus = null,
+    speakingElement = null
+  } = {}) {
+    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+      if (onError) onError(new Error("SPEECH_NOT_SUPPORTED"));
+      return;
+    }
+    stopSpeech();
+    if (!text || !text.trim()) {
+      if (onStatus) onStatus("Kh\xF4ng c\xF3 n\u1ED9i dung \u0111\u1EC3 ph\xE1t \xE2m.", true);
+      if (onError) onError(new Error("EMPTY_TEXT"));
+      return;
+    }
+    const segments = parseSpeechSegments(text);
+    if (segments.length === 0) {
+      if (onStatus) onStatus("Kh\xF4ng c\xF3 n\u1ED9i dung \u0111\u1EC3 ph\xE1t \xE2m.", true);
+      if (onError) onError(new Error("NO_SEGMENTS"));
+      return;
+    }
+    const thisSession = ++activeSessionId;
+    activeSpeakingElement = speakingElement;
+    if (activeSpeakingElement) {
+      activeSpeakingElement.classList.add("is-speaking");
+    }
+    const isEn = (lang || "").toLowerCase().startsWith("en");
+    const actualRate = rate !== null && rate !== void 0 ? rate : isEn ? 0.95 : 0.88;
+    const actualPitch = pitch !== null && pitch !== void 0 ? pitch : isEn ? 1 : 0.75;
+    let currentIndex = 0;
+    let reportedError = false;
+    const fail = (code) => {
+      if (reportedError) return;
+      reportedError = true;
+      stopSpeech();
+      if (onStatus) onStatus(`Kh\xF4ng th\u1EC3 ph\xE1t \xE2m thanh: ${code || "unknown"}`, true);
+      if (onError) onError(new Error(code || "SPEECH_FAILED"));
+    };
+    const playSegment = (item, attempt) => {
+      if (thisSession !== activeSessionId) return;
+      try {
+        if (window.speechSynthesis.paused) {
+          window.speechSynthesis.resume();
+        }
+      } catch (e) {
+      }
+      const utterance = new SpeechSynthesisUtterance(item.text);
+      utterance.rate = actualRate;
+      utterance.pitch = actualPitch;
+      if (attempt === 0) {
+        const voice = findBestVoice(lang, true) || findBestVoice(lang, false);
+        if (voice) {
+          utterance.voice = voice;
+          utterance.lang = voice.lang;
+        } else {
+          utterance.lang = lang;
+        }
+      } else if (attempt === 1) {
+        utterance.lang = lang;
+      }
+      activeUtterance = utterance;
+      window._mqActiveUtterance = utterance;
+      let started = false;
+      let settled = false;
+      const clearWatchdog = () => {
+        if (speechWatchdog) {
+          clearTimeout(speechWatchdog);
+          speechWatchdog = null;
+        }
+      };
+      const retryOrFail = (code) => {
+        if (settled) return;
+        settled = true;
+        clearWatchdog();
+        if (thisSession !== activeSessionId) return;
+        if (attempt < 2) {
+          if (onStatus) onStatus(`Th\u1EED l\u1EA1i (c\xE1ch ${attempt + 2}/3) do: ${code || "unknown"}`);
+          try {
+            window.speechSynthesis.cancel();
+          } catch (e) {
+          }
+          speechTimer = setTimeout(() => playSegment(item, attempt + 1), 80);
+        } else {
+          fail(code);
+        }
+      };
+      utterance.onstart = () => {
+        started = true;
+        clearWatchdog();
+        if (onStart) onStart();
+        if (onStatus) onStatus("\u0110ang ph\xE1t\u2026");
+      };
+      utterance.onend = () => {
+        if (settled) return;
+        if (thisSession !== activeSessionId) return;
+        if (!started) {
+          retryOrFail("ended-without-audio");
+          return;
+        }
+        settled = true;
+        clearWatchdog();
+        currentIndex++;
+        if (currentIndex >= segments.length) {
+          stopSpeech();
+          if (onEnd) onEnd();
+          if (onStatus) onStatus("\u0110\xE3 \u0111\u1ECDc xong.");
+          return;
+        }
+        const pause = item.pauseAfter || 0;
+        if (pause > 0) {
+          speechTimer = setTimeout(playCurrent, pause);
+        } else {
+          playCurrent();
+        }
+      };
+      utterance.onerror = (e) => {
+        if (thisSession !== activeSessionId) return;
+        const code = e && e.error;
+        if (code === "canceled" || code === "interrupted") {
+          if (!started && !settled) retryOrFail(code);
+          return;
+        }
+        retryOrFail(code);
+      };
+      clearWatchdog();
+      speechWatchdog = setTimeout(() => {
+        if (!started) retryOrFail("no-audio-start");
+      }, 3e3);
+      window.speechSynthesis.speak(utterance);
+    };
+    const playCurrent = () => {
+      if (thisSession !== activeSessionId) return;
+      if (currentIndex >= segments.length) {
+        stopSpeech();
+        if (onEnd) onEnd();
+        return;
+      }
+      playSegment(segments[currentIndex], 0);
+    };
+    playCurrent();
+  }
+  function playInlineSpeech(btn, text) {
+    if (!btn || !text) return;
+    if (activeSpeakingElement === btn) {
+      stopSpeech();
+      return;
+    }
+    const hasVietnamese = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(text);
+    const lang = hasVietnamese ? "vi-VN" : "en-US";
+    const rate = hasVietnamese ? 0.88 : 0.95;
+    const pitch = hasVietnamese ? 0.75 : 1;
+    speakText(text, {
+      lang,
+      rate,
+      pitch,
+      speakingElement: btn,
+      onStart: () => {
+        btn.classList.add("is-speaking");
+      },
+      onEnd: () => {
+        btn.classList.remove("is-speaking");
+      },
+      onError: () => {
+        btn.classList.remove("is-speaking");
+      }
+    });
+  }
+  function initSpeechListener() {
+    if (typeof document === "undefined") return;
+    if (document._mqSpeechListenerAttached) return;
+    document._mqSpeechListenerAttached = true;
+    document.addEventListener("click", (e) => {
+      const btn = e.target.closest(".inline-speech-btn");
+      if (!btn) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const text = btn.dataset.speechText || btn.textContent || "";
+      if (text) {
+        playInlineSpeech(btn, text);
+      }
+    });
   }
 
   // js/ui.js
@@ -2370,8 +2739,8 @@ ${a}
       document.body.appendChild(dialog);
       dialog.showModal();
       let currentSpeechLang = null;
-      let speechTimer = null;
-      let speechWatchdog = null;
+      let speechTimer2 = null;
+      let speechWatchdog2 = null;
       let currentSpeechSession = 0;
       const btnVn = dialog.querySelector("#review-modal-btn-speech-vn");
       const btnEn = dialog.querySelector("#review-modal-btn-speech-en");
@@ -2390,15 +2759,15 @@ ${a}
         statusEl.classList.toggle("is-error", Boolean(isError));
         statusEl.classList.toggle("is-visible", Boolean(msg));
       };
-      const stopSpeech = () => {
+      const stopSpeech2 = () => {
         currentSpeechSession++;
-        if (speechTimer) {
-          clearTimeout(speechTimer);
-          speechTimer = null;
+        if (speechTimer2) {
+          clearTimeout(speechTimer2);
+          speechTimer2 = null;
         }
-        if (speechWatchdog) {
-          clearTimeout(speechWatchdog);
-          speechWatchdog = null;
+        if (speechWatchdog2) {
+          clearTimeout(speechWatchdog2);
+          speechWatchdog2 = null;
         }
         if (typeof window !== "undefined" && "speechSynthesis" in window) {
           try {
@@ -2437,10 +2806,11 @@ ${a}
           return;
         }
         if (currentSpeechLang === langCode) {
-          stopSpeech();
+          stopSpeech2();
           setStatus("");
           return;
         }
+        stopSpeech2();
         stopSpeech();
         const text = getAnswerText();
         if (!text) {
@@ -2462,9 +2832,6 @@ ${a}
           if (!normLang.startsWith(langPrefix)) {
             return -9999;
           }
-          if (/\b(female|woman|girl|samantha|kathy|zira|victoria|karen|susan|fiona|moira|tessa|sandy|shelley|grandma|jenny|aria|sonia|helena|catherine|clara)\b/i.test(name)) {
-            return -5e3;
-          }
           if (/\b(bad news|bahh|bells|boing|bubbles|cellos|wobble|jester|junior|organ|superstar|trinoids|whisper|zarvox|albert|eddy|flo|grandpa)\b/i.test(name)) {
             return -3e3;
           }
@@ -2477,11 +2844,20 @@ ${a}
           if (/\b(natural|neural|online|enhanced|premium)\b/i.test(name)) {
             score += 300;
           }
-          if (/\b(daniel|guy|ryan|christopher|george|david|oliver|james|alex|reed|arthur|nam|minh|an|quang|vic)\b/i.test(name)) {
-            score += 500;
-          }
-          if (/\b(male|man|deep|bass)\b/i.test(name)) {
-            score += 250;
+          if (langPrefix === "en") {
+            if (/\b(google us english|samantha|daniel|ava|guy|jenny|oliver|tom|alex|reed|arthur)\b/i.test(name)) {
+              score += 400;
+            }
+          } else {
+            if (/\b(female|woman|girl|linh|samantha|kathy|zira)\b/i.test(name)) {
+              return -5e3;
+            }
+            if (/\b(daniel|guy|ryan|christopher|george|david|oliver|james|alex|reed|arthur|nam|minh|an|quang|vic)\b/i.test(name)) {
+              score += 500;
+            }
+            if (/\b(male|man|deep|bass)\b/i.test(name)) {
+              score += 250;
+            }
           }
           if (v.localService === true) {
             score += 20;
@@ -2509,6 +2885,9 @@ ${a}
               const normLang = (v.lang || "").toLowerCase().replace(/_/g, "-");
               return normLang.startsWith(langPrefix);
             });
+            if (langPrefix === "en") {
+              return fallbackPool[0] || null;
+            }
             const nonFemale = fallbackPool.find((v) => !/\b(female|woman|girl|linh|samantha|kathy|zira)\b/i.test(v.name));
             return nonFemale || fallbackPool[0] || null;
           } catch (err) {
@@ -2531,7 +2910,7 @@ ${a}
         const fail = (code) => {
           if (reportedError) return;
           reportedError = true;
-          stopSpeech();
+          stopSpeech2();
           setStatus(`Kh\xF4ng th\u1EC3 ph\xE1t \xE2m thanh: ${code || "unknown"} (${voiceCount} gi\u1ECDng)`, true);
           this.showSnackbar(`Kh\xF4ng th\u1EC3 ph\xE1t \xE2m thanh: ${code || "unknown"}`);
         };
@@ -2544,8 +2923,9 @@ ${a}
           } catch (e) {
           }
           const utterance = new SpeechSynthesisUtterance(item.text);
-          utterance.rate = 0.88;
-          utterance.pitch = 0.75;
+          const isEn = langPrefix === "en";
+          utterance.rate = isEn ? 0.95 : 0.88;
+          utterance.pitch = isEn ? 1 : 0.75;
           if (attempt === 0) {
             const voice = findVoice(true) || findVoice(false);
             if (voice) {
@@ -2561,9 +2941,9 @@ ${a}
           let started = false;
           let settled = false;
           const clearWatchdog = () => {
-            if (speechWatchdog) {
-              clearTimeout(speechWatchdog);
-              speechWatchdog = null;
+            if (speechWatchdog2) {
+              clearTimeout(speechWatchdog2);
+              speechWatchdog2 = null;
             }
           };
           const retryOrFail = (code) => {
@@ -2577,7 +2957,7 @@ ${a}
                 window.speechSynthesis.cancel();
               } catch (e) {
               }
-              speechTimer = setTimeout(() => playSegment(item, attempt + 1), 80);
+              speechTimer2 = setTimeout(() => playSegment(item, attempt + 1), 80);
             } else {
               fail(code);
             }
@@ -2601,13 +2981,13 @@ ${a}
             }
             currentIndex++;
             if (currentIndex >= segments.length) {
-              stopSpeech();
+              stopSpeech2();
               setStatus("\u0110\xE3 \u0111\u1ECDc xong.");
               return;
             }
             const pause = item.pauseAfter || 0;
             if (pause > 0) {
-              speechTimer = setTimeout(playCurrent, pause);
+              speechTimer2 = setTimeout(playCurrent, pause);
             } else {
               playCurrent();
             }
@@ -2622,7 +3002,7 @@ ${a}
             retryOrFail(code);
           };
           clearWatchdog();
-          speechWatchdog = setTimeout(() => {
+          speechWatchdog2 = setTimeout(() => {
             if (!started) retryOrFail("no-audio-start");
           }, 3e3);
           window.speechSynthesis.speak(utterance);
@@ -2630,7 +3010,7 @@ ${a}
         const playCurrent = () => {
           if (thisSession !== currentSpeechSession) return;
           if (currentIndex >= segments.length) {
-            stopSpeech();
+            stopSpeech2();
             return;
           }
           playSegment(segments[currentIndex], 0);
@@ -2644,6 +3024,7 @@ ${a}
         btnEn.addEventListener("click", () => speak("en-US"));
       }
       const cleanup = () => {
+        stopSpeech2();
         stopSpeech();
         dialog.close();
         if (dialog.parentNode === document.body) {
@@ -2663,74 +3044,7 @@ ${a}
     }
   };
   var ui = new UIManager();
-  function parseSpeechSegments(text) {
-    if (!text) return [];
-    let s = text.replace(/!\[([^\]]*)\]\([^)]*\)/g, "");
-    s = s.replace(/\[([^\]]+)\]\([^)]*\)/g, "$1");
-    s = s.replace(/^[\s*+-]+\s+/gm, "");
-    s = s.replace(/^\s*\d+\.\s+/gm, "");
-    s = s.replace(/[\u201C\u201D\u00AB\u00BB\u201E\u201F]/g, '"');
-    s = s.replace(/(\d+)\.([0-9]+)/g, "$1___DOT___$2");
-    s = s.replace(/(\d+),([0-9]+)/g, "$1___COMMA___$2");
-    s = s.replace(/(\d+):([0-9]+)/g, "$1___COLON___$2");
-    const pattern = /(")|([.!?;\n\u2026:]+)|([,，、]+)|(\s+-\s+)/g;
-    let lastIndex = 0;
-    let inQuote = false;
-    const segments = [];
-    let currentBuffer = "";
-    function flushBuffer(pauseAfter = 0) {
-      let clean = currentBuffer.replace(/___DOT___/g, ".").replace(/___COMMA___/g, ",").replace(/___COLON___/g, ":").replace(/["“”]/g, "").replace(/[`#*_~>]/g, " ").replace(/\s+/g, " ").trim();
-      if (clean) {
-        segments.push({ text: clean, pauseAfter });
-        currentBuffer = "";
-        return true;
-      }
-      currentBuffer = "";
-      return false;
-    }
-    let match;
-    while ((match = pattern.exec(s)) !== null) {
-      const textChunk = s.substring(lastIndex, match.index);
-      currentBuffer += textChunk;
-      lastIndex = pattern.lastIndex;
-      const [sep, quote, period, comma, dash] = match;
-      if (quote) {
-        if (!inQuote) {
-          flushBuffer(100);
-          inQuote = true;
-        } else {
-          inQuote = false;
-          flushBuffer(100);
-        }
-      } else if (period) {
-        const flushed = flushBuffer(300);
-        if (!flushed && segments.length > 0) {
-          segments[segments.length - 1].pauseAfter = Math.max(segments[segments.length - 1].pauseAfter, 300);
-        }
-      } else if (comma || dash) {
-        flushBuffer(100);
-      }
-    }
-    const remaining = s.substring(lastIndex);
-    currentBuffer += remaining;
-    flushBuffer(300);
-    return segments;
-  }
   ui.parseSpeechSegments = parseSpeechSegments;
-  if (typeof window !== "undefined" && "speechSynthesis" in window) {
-    try {
-      window.speechSynthesis.getVoices();
-      if ("onvoiceschanged" in window.speechSynthesis) {
-        window.speechSynthesis.onvoiceschanged = () => {
-          try {
-            window.speechSynthesis.getVoices();
-          } catch (e) {
-          }
-        };
-      }
-    } catch (e) {
-    }
-  }
 
   // js/gestures.js
   function attachSwipe(element, { onNext, onBack, onTap, onUp, onDown } = {}) {
@@ -3026,6 +3340,7 @@ ${a}
       });
     }
     destroy() {
+      stopSpeech();
       this._releaseWakeLock();
       document.removeEventListener("visibilitychange", this.boundVisibilityHandler);
       if (this.swipeCleanup) {
@@ -3058,6 +3373,7 @@ ${a}
      */
     _drawNext(animate = true) {
       if (this.isAnimating) return;
+      stopSpeech();
       const total = this.cardOrder.length;
       if (total <= 1) {
         if (this.onShowSnackbar) this.onShowSnackbar(t("single_card_hint"));
@@ -3082,6 +3398,7 @@ ${a}
     goBack() {
       if (this.isAnimating) return;
       if (this.currentIndex <= 0) return;
+      stopSpeech();
       this.currentIndex--;
       this._updateCardDisplay("back");
     }
@@ -3090,6 +3407,7 @@ ${a}
      */
     resetShuffle() {
       if (this.isAnimating) return;
+      stopSpeech();
       const last = this.cardOrder.length > 0 ? this.cardOrder[this.currentIndex] : -1;
       this._initRandomOrder(last);
       this.currentIndex = 0;
@@ -3104,6 +3422,7 @@ ${a}
      */
     flipCard(direction = 1) {
       if (this.isAnimating) return;
+      stopSpeech();
       if (this.currentSet.allowAnswer === false) {
         this._playShakeAnimation();
         if (this.onShowSnackbar) {
@@ -3376,6 +3695,7 @@ ${a}
       this._setupGlobalListeners();
       this._registerServiceWorker();
       this._initPWAInstallation();
+      initSpeechListener();
       this._handleRouteChange();
     }
     _setupGlobalListeners() {
@@ -3607,6 +3927,7 @@ ${a}
       return { path: "library", param: "" };
     }
     _handleRouteChange() {
+      stopSpeech();
       const route = this._parseHash();
       this.currentRoute = route;
       if (this.studyController && route.path !== "study") {

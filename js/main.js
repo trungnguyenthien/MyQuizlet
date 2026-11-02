@@ -10,6 +10,7 @@ import { ui } from './ui.js';
 import { renderInlineQuestionHTML, renderCardFaceHTML, clearRenderCache } from './render.js';
 import { downloadSetAsMarkdown } from './serializer.js';
 import { StudyController } from './study.js';
+import { initSpeechListener, stopSpeech } from './speech.js';
 
 class App {
   constructor() {
@@ -44,7 +45,10 @@ class App {
     // 5. Initialize PWA Installation Flow (PWA Standard 6)
     this._initPWAInstallation();
 
-    // 6. Initial route dispatch
+    // 6. Initialize Global Speech Listener for inline pronunciation buttons
+    initSpeechListener();
+
+    // 7. Initial route dispatch
     this._handleRouteChange();
   }
 
@@ -340,6 +344,7 @@ class App {
   }
 
   _handleRouteChange() {
+    stopSpeech();
     const route = this._parseHash();
     this.currentRoute = route;
 

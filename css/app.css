@@ -2615,3 +2615,92 @@ button {
   }
 }
 
+/* ==========================================================================
+   19. Inline English Speech Buttons (Bold Text in Answers)
+   ========================================================================== */
+.inline-speech-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  margin-left: 5px;
+  margin-right: 4px;
+  border: none;
+  border-radius: var(--radius-full);
+  background-color: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-primary);
+  vertical-align: -2px;
+  cursor: pointer;
+  position: relative;
+  outline: none;
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+/* Touch target expansion (WCAG 2.5.5 / PWA target 44x44px) */
+.inline-speech-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.inline-speech-btn:hover {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  transform: scale(1.08);
+}
+
+.inline-speech-btn:active {
+  transform: scale(0.92);
+}
+
+.inline-speech-btn .icon-speech {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+  pointer-events: none;
+}
+
+.inline-speech-btn.is-speaking {
+  background-color: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+  animation: inline-speech-pulse 1.3s infinite ease-in-out;
+}
+
+.inline-speech-btn.is-speaking .icon-speech {
+  fill: currentColor;
+}
+
+@keyframes inline-speech-pulse {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(63, 81, 181, 0.4);
+  }
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 0 5px rgba(63, 81, 181, 0);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(63, 81, 181, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inline-speech-btn.is-speaking {
+    animation: none;
+    transform: none;
+  }
+}
+
+
