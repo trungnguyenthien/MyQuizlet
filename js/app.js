@@ -3264,6 +3264,7 @@ ${a}
       this.face = "q";
       this.swipeCleanup = null;
       this.isAnimating = false;
+      this.autoSpeechTimeout = null;
       this.boundKeyHandler = this.handleKeyDown.bind(this);
       this.wakeLock = null;
       this.boundVisibilityHandler = this._handleVisibilityChange.bind(this);
@@ -3339,7 +3340,14 @@ ${a}
         updatedAt: Date.now()
       });
     }
+    _clearAutoSpeech() {
+      if (this.autoSpeechTimeout) {
+        clearTimeout(this.autoSpeechTimeout);
+        this.autoSpeechTimeout = null;
+      }
+    }
     destroy() {
+      this._clearAutoSpeech();
       stopSpeech();
       this._releaseWakeLock();
       document.removeEventListener("visibilitychange", this.boundVisibilityHandler);
@@ -3373,6 +3381,7 @@ ${a}
      */
     _drawNext(animate = true) {
       if (this.isAnimating) return;
+      this._clearAutoSpeech();
       stopSpeech();
       const total = this.cardOrder.length;
       if (total <= 1) {
@@ -3398,6 +3407,7 @@ ${a}
     goBack() {
       if (this.isAnimating) return;
       if (this.currentIndex <= 0) return;
+      this._clearAutoSpeech();
       stopSpeech();
       this.currentIndex--;
       this._updateCardDisplay("back");
@@ -3407,6 +3417,7 @@ ${a}
      */
     resetShuffle() {
       if (this.isAnimating) return;
+      this._clearAutoSpeech();
       stopSpeech();
       const last = this.cardOrder.length > 0 ? this.cardOrder[this.currentIndex] : -1;
       this._initRandomOrder(last);
@@ -3422,6 +3433,7 @@ ${a}
      */
     flipCard(direction = 1) {
       if (this.isAnimating) return;
+      this._clearAutoSpeech();
       stopSpeech();
       if (this.currentSet.allowAnswer === false) {
         this._playShakeAnimation();
@@ -3449,6 +3461,67 @@ ${a}
           cardWrapper.classList.toggle("is-flipped", this.face === "a");
         }
       }
+      if (this.face === "a") {
+        this.autoSpeechTimeout = setTimeout(() => {
+          this._playAnswerSpeech();
+        }, 1e3);
+      }
+    }
+    _playAnswerSpeech() {
+      if (this.face !== "a") return;
+      const backContent = this.container.querySelector("#card-back-content");
+      if (!backContent) return;
+      const speechBtns = backContent.querySelectorAll(".inline-speech-btn");
+      if (speechBtns && speechBtns.length > 0) {
+        this._playSpeechButtonsSequence(Array.from(speechBtns));
+        return;
+      }
+      const clone = backContent.cloneNode(true);
+      clone.querySelectorAll("button, svg, script, style, .empty-answer-placeholder").forEach((el) => el.remove());
+      const text = (clone.textContent || "").trim();
+      if (!text) return;
+      const hasVietnamese = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(text);
+      const lang = hasVietnamese ? "vi-VN" : "en-US";
+      speakText(text, {
+        lang,
+        rate: hasVietnamese ? 0.88 : 0.95,
+        pitch: hasVietnamese ? 0.75 : 1
+      });
+    }
+    _playSpeechButtonsSequence(btns) {
+      if (!btns || btns.length === 0) return;
+      let idx = 0;
+      const playNext = () => {
+        if (this.face !== "a") return;
+        if (idx >= btns.length) return;
+        const btn = btns[idx++];
+        const text = btn.dataset.speechText || btn.textContent || "";
+        if (!text) {
+          playNext();
+          return;
+        }
+        const hasVietnamese = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(text);
+        const lang = hasVietnamese ? "vi-VN" : "en-US";
+        speakText(text, {
+          lang,
+          rate: hasVietnamese ? 0.88 : 0.95,
+          pitch: hasVietnamese ? 0.75 : 1,
+          speakingElement: btn,
+          onStart: () => {
+            btn.classList.add("is-speaking");
+          },
+          onEnd: () => {
+            btn.classList.remove("is-speaking");
+            if (this.face === "a" && idx < btns.length) {
+              this.autoSpeechTimeout = setTimeout(playNext, 300);
+            }
+          },
+          onError: () => {
+            btn.classList.remove("is-speaking");
+          }
+        });
+      };
+      playNext();
     }
     _playShakeAnimation() {
       const cardEl = this.container.querySelector(".study-card");
@@ -3592,6 +3665,7 @@ ${a}
       });
     }
     _updateCardDisplay(animationType = "none") {
+      this._clearAutoSpeech();
       if (!this.currentSet || !this.currentSet.cards || this.currentSet.cards.length === 0) return;
       if (this.currentIndex < 0 || this.currentIndex >= this.cardOrder.length) return;
       const actualCardIndex = this.cardOrder[this.currentIndex];

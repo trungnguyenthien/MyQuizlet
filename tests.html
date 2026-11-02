@@ -1524,6 +1524,140 @@ Present, appearing, or found everywhere.`;
           },
         );
 
+        // 23. StudyController: Auto-play Speech After 1s on Answer Flip
+        await runTest(
+          "StudyController: Auto-play Speech After 1s on Answer Flip",
+          async () => {
+            const container = document.createElement("div");
+            container.id = "test-study-container";
+            document.body.appendChild(container);
+
+            const testSet = {
+              id: "test-auto-speech-set",
+              title: "Auto Speech Deck",
+              allowAnswer: true,
+              cards: [
+                {
+                  id: "card-auto-1",
+                  q: "Translate hello",
+                  a: "Answer is **Hello world!** in bold.",
+                },
+              ],
+            };
+            store.saveSet(testSet);
+
+            const controller = new StudyController({
+              container,
+              onBack: () => {},
+              onShowSnackbar: () => {},
+            });
+            controller.start(testSet.id);
+
+            // Initially question face
+            console.assert(
+              controller.face === "q",
+              "Study session should start on question face ('q')",
+            );
+
+            // Mock SpeechSynthesis
+            let spokenUtterance = null;
+            let cancelCalled = false;
+            const originalSpeechSynth = window.speechSynthesis;
+            const mockSynth = {
+              speaking: false,
+              pending: false,
+              cancel: () => {
+                cancelCalled = true;
+                mockSynth.speaking = false;
+              },
+              speak: (utt) => {
+                spokenUtterance = utt;
+                mockSynth.speaking = true;
+                if (typeof utt.onstart === "function") {
+                  setTimeout(() => utt.onstart(), 5);
+                }
+              },
+              getVoices: () => [],
+            };
+
+            Object.defineProperty(window, "speechSynthesis", {
+              value: mockSynth,
+              configurable: true,
+              writable: true,
+            });
+
+            // Flip to answer face
+            controller.flipCard();
+            console.assert(
+              controller.face === "a",
+              "Controller face must be answer ('a')",
+            );
+            console.assert(
+              controller.autoSpeechTimeout !== null,
+              "autoSpeechTimeout should be scheduled after flipping to answer",
+            );
+
+            // Immediately (100ms) speech should NOT have fired yet (1s delay)
+            await new Promise((r) => setTimeout(r, 100));
+            console.assert(
+              spokenUtterance === null,
+              "Speech must not trigger before 1s delay has elapsed",
+            );
+
+            // Wait until after 1000ms delay has elapsed
+            await new Promise((r) => setTimeout(r, 1050));
+            console.assert(
+              spokenUtterance !== null,
+              "Speech should trigger automatically after 1s on answer face",
+            );
+            console.assert(
+              spokenUtterance.text.includes("Hello world!"),
+              "Spoken text must be the bold English sentence",
+            );
+            console.assert(
+              spokenUtterance.lang === "en-US",
+              "Spoken language must be en-US",
+            );
+            console.assert(
+              spokenUtterance.rate === 0.95,
+              "Spoken rate must be moderate 0.95",
+            );
+
+            // Test flip back: cancels speech immediately
+            cancelCalled = false;
+            controller.flipCard();
+            console.assert(
+              controller.face === "q",
+              "Flipping back must set face to 'q'",
+            );
+            console.assert(
+              cancelCalled,
+              "Flipping back must immediately call speechSynthesis.cancel",
+            );
+
+            // Test fast flip back before 1s: should abort timer
+            spokenUtterance = null;
+            controller.flipCard(); // to 'a'
+            await new Promise((r) => setTimeout(r, 200)); // wait only 200ms
+            controller.flipCard(); // back to 'q' before 1s
+            await new Promise((r) => setTimeout(r, 900)); // wait for remainder of 1s
+            console.assert(
+              spokenUtterance === null,
+              "Auto-speech must be cancelled if user flips back to question before 1s",
+            );
+
+            // Cleanup
+            controller.destroy();
+            container.remove();
+            store.deleteSet(testSet.id);
+            Object.defineProperty(window, "speechSynthesis", {
+              value: originalSpeechSynth,
+              configurable: true,
+              writable: true,
+            });
+          },
+        );
+
         // Update Summary
         summaryEl.textContent = `Completed ${passed + failed} tests: ${passed} Passed, ${failed} Failed.`;
         summaryEl.className = failed === 0 ? "summary pass" : "summary fail";

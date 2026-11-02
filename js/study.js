@@ -6,11 +6,11 @@
  * and dedicated card flipping buttons.
  */
 
-import { store } from './store.js';
-import { renderCardFaceHTML } from './render.js';
-import { attachSwipe } from './gestures.js';
-import { t } from './i18n.js';
-import { stopSpeech } from './speech.js';
+import { store } from "./store.js";
+import { renderCardFaceHTML } from "./render.js";
+import { attachSwipe } from "./gestures.js";
+import { t } from "./i18n.js";
+import { stopSpeech, speakText } from "./speech.js";
 
 export class StudyController {
   constructor({ container, onBack, onShowSnackbar }) {
@@ -21,9 +21,10 @@ export class StudyController {
     this.currentSet = null;
     this.cardOrder = []; // Pre-randomized array of card indices: e.g. [3, 0, 4, 1, 2]
     this.currentIndex = 0; // Current position in the randomized list (0 .. cardOrder.length - 1)
-    this.face = 'q'; // 'q' or 'a'
+    this.face = "q"; // 'q' or 'a'
     this.swipeCleanup = null;
     this.isAnimating = false;
+    this.autoSpeechTimeout = null;
     this.boundKeyHandler = this.handleKeyDown.bind(this);
     this.wakeLock = null;
     this.boundVisibilityHandler = this._handleVisibilityChange.bind(this);
@@ -31,19 +32,21 @@ export class StudyController {
 
   /**
    * Start study session for a set
-   * @param {string} setId 
+   * @param {string} setId
    * @param {{ resume?: boolean }} [options]
    */
   start(setId, { resume = false } = {}) {
     const set = store.getSet(setId);
     if (!set) {
-      if (this.onShowSnackbar) this.onShowSnackbar('Bộ thẻ không tồn tại / Set not found');
+      if (this.onShowSnackbar)
+        this.onShowSnackbar("Bộ thẻ không tồn tại / Set not found");
       if (this.onBack) this.onBack();
       return;
     }
 
     if (!set.cards || set.cards.length === 0) {
-      if (this.onShowSnackbar) this.onShowSnackbar(t('empty_deck_cannot_study'));
+      if (this.onShowSnackbar)
+        this.onShowSnackbar(t("empty_deck_cannot_study"));
       if (this.onBack) this.onBack();
       return;
     }
@@ -61,30 +64,34 @@ export class StudyController {
       this.currentIndex = 0;
       this._saveCurrentProgress();
     }
-    this.face = 'q';
+    this.face = "q";
 
     // 2. Render layout
     this._renderStudyLayout();
 
     // 3. Display current card
-    this._updateCardDisplay('none');
+    this._updateCardDisplay("none");
 
     // 4. Attach keyboard listener
-    window.addEventListener('keydown', this.boundKeyHandler);
+    window.addEventListener("keydown", this.boundKeyHandler);
 
     // 5. Check first run hint
     this._checkFirstRunHint();
 
     // 6. Request Screen Wake Lock (PWA Standard 9)
     this._requestWakeLock();
-    document.addEventListener('visibilitychange', this.boundVisibilityHandler);
+    document.addEventListener("visibilitychange", this.boundVisibilityHandler);
   }
 
   async _requestWakeLock() {
-    if (typeof navigator !== 'undefined' && 'wakeLock' in navigator && !this.wakeLock) {
+    if (
+      typeof navigator !== "undefined" &&
+      "wakeLock" in navigator &&
+      !this.wakeLock
+    ) {
       try {
-        this.wakeLock = await navigator.wakeLock.request('screen');
-        this.wakeLock.addEventListener('release', () => {
+        this.wakeLock = await navigator.wakeLock.request("screen");
+        this.wakeLock.addEventListener("release", () => {
           this.wakeLock = null;
         });
       } catch (err) {
@@ -103,31 +110,48 @@ export class StudyController {
   }
 
   _handleVisibilityChange() {
-    if (document.visibilityState === 'visible' && this.currentSet) {
+    if (document.visibilityState === "visible" && this.currentSet) {
       this._requestWakeLock();
     }
   }
 
   _saveCurrentProgress() {
-    if (!this.currentSet || !this.currentSet.id || !this.cardOrder || this.cardOrder.length === 0) return;
+    if (
+      !this.currentSet ||
+      !this.currentSet.id ||
+      !this.cardOrder ||
+      this.cardOrder.length === 0
+    )
+      return;
     store.saveStudyProgress(this.currentSet.id, {
       cardOrder: this.cardOrder,
       currentIndex: this.currentIndex,
       totalCards: this.cardOrder.length,
-      updatedAt: Date.now()
+      updatedAt: Date.now(),
     });
   }
 
+  _clearAutoSpeech() {
+    if (this.autoSpeechTimeout) {
+      clearTimeout(this.autoSpeechTimeout);
+      this.autoSpeechTimeout = null;
+    }
+  }
+
   destroy() {
+    this._clearAutoSpeech();
     stopSpeech();
     this._releaseWakeLock();
-    document.removeEventListener('visibilitychange', this.boundVisibilityHandler);
+    document.removeEventListener(
+      "visibilitychange",
+      this.boundVisibilityHandler,
+    );
     if (this.swipeCleanup) {
       this.swipeCleanup();
       this.swipeCleanup = null;
     }
-    window.removeEventListener('keydown', this.boundKeyHandler);
-    this.container.innerHTML = '';
+    window.removeEventListener("keydown", this.boundKeyHandler);
+    this.container.innerHTML = "";
   }
 
   /**
@@ -159,27 +183,28 @@ export class StudyController {
    */
   _drawNext(animate = true) {
     if (this.isAnimating) return;
+    this._clearAutoSpeech();
     stopSpeech();
 
     const total = this.cardOrder.length;
     if (total <= 1) {
-      if (this.onShowSnackbar) this.onShowSnackbar(t('single_card_hint'));
+      if (this.onShowSnackbar) this.onShowSnackbar(t("single_card_hint"));
       return;
     }
 
     if (this.currentIndex < total - 1) {
       // Advance to next card in randomized list
       this.currentIndex++;
-      this._updateCardDisplay(animate ? 'next' : 'none');
+      this._updateCardDisplay(animate ? "next" : "none");
     } else {
       // Completed full cycle across all cards!
       const lastShown = this.cardOrder[this.currentIndex];
       this._initRandomOrder(lastShown);
       this.currentIndex = 0;
       if (this.onShowSnackbar) {
-        this.onShowSnackbar(t('cycle_complete_msg'));
+        this.onShowSnackbar(t("cycle_complete_msg"));
       }
-      this._updateCardDisplay(animate ? 'next' : 'none');
+      this._updateCardDisplay(animate ? "next" : "none");
     }
   }
 
@@ -189,11 +214,12 @@ export class StudyController {
   goBack() {
     if (this.isAnimating) return;
     if (this.currentIndex <= 0) return;
+    this._clearAutoSpeech();
     stopSpeech();
 
     // Move backward in randomized list
     this.currentIndex--;
-    this._updateCardDisplay('back');
+    this._updateCardDisplay("back");
   }
 
   /**
@@ -201,66 +227,159 @@ export class StudyController {
    */
   resetShuffle() {
     if (this.isAnimating) return;
+    this._clearAutoSpeech();
     stopSpeech();
-    const last = this.cardOrder.length > 0 ? this.cardOrder[this.currentIndex] : -1;
+    const last =
+      this.cardOrder.length > 0 ? this.cardOrder[this.currentIndex] : -1;
     this._initRandomOrder(last);
     this.currentIndex = 0;
     if (this.onShowSnackbar) {
-      this.onShowSnackbar(t('toast_reshuffled'));
+      this.onShowSnackbar(t("toast_reshuffled"));
     }
-    this._updateCardDisplay('next');
+    this._updateCardDisplay("next");
   }
 
   /**
    * Flip current card (with direction hint: 1 for right, -1 for left)
-   * @param {number} [direction=1] 
+   * @param {number} [direction=1]
    */
   flipCard(direction = 1) {
     if (this.isAnimating) return;
+    this._clearAutoSpeech();
     stopSpeech();
 
     // Check allowAnswer setting
     if (this.currentSet.allowAnswer === false) {
       this._playShakeAnimation();
       if (this.onShowSnackbar) {
-        this.onShowSnackbar(t('hidden_answer_shake_msg'));
+        this.onShowSnackbar(t("hidden_answer_shake_msg"));
       }
       return;
     }
 
-    this.face = this.face === 'q' ? 'a' : 'q';
-    const cardWrapper = this.container.querySelector('.study-card-wrapper');
-    const liveRegion = this.container.querySelector('#study-live-region');
-    const flipBtn = this.container.querySelector('#btn-study-flip');
+    this.face = this.face === "q" ? "a" : "q";
+    const cardWrapper = this.container.querySelector(".study-card-wrapper");
+    const liveRegion = this.container.querySelector("#study-live-region");
+    const flipBtn = this.container.querySelector("#btn-study-flip");
 
     if (liveRegion) {
-      liveRegion.textContent = this.face === 'q' ? 'Mặt câu hỏi / Question' : 'Mặt đáp án / Answer';
+      liveRegion.textContent =
+        this.face === "q" ? "Mặt câu hỏi / Question" : "Mặt đáp án / Answer";
     }
 
     if (flipBtn) {
-      flipBtn.setAttribute('aria-label', this.face === 'q' ? t('btn_flip_to_answer') : t('btn_flip_to_question'));
+      flipBtn.setAttribute(
+        "aria-label",
+        this.face === "q" ? t("btn_flip_to_answer") : t("btn_flip_to_question"),
+      );
     }
 
     if (cardWrapper) {
-      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const reducedMotion = window.matchMedia(
+        "(prefers-reduced-motion: reduce)",
+      ).matches;
       if (reducedMotion) {
-        cardWrapper.classList.toggle('is-flipped', this.face === 'a');
+        cardWrapper.classList.toggle("is-flipped", this.face === "a");
       } else {
         // Dynamic direction-based 3D flip
-        cardWrapper.style.setProperty('--flip-dir', direction < 0 ? '-1' : '1');
-        cardWrapper.classList.toggle('is-flipped', this.face === 'a');
+        cardWrapper.style.setProperty("--flip-dir", direction < 0 ? "-1" : "1");
+        cardWrapper.classList.toggle("is-flipped", this.face === "a");
       }
+    }
+
+    // Auto-read after 1s when flipped to answer face
+    if (this.face === "a") {
+      this.autoSpeechTimeout = setTimeout(() => {
+        this._playAnswerSpeech();
+      }, 1000);
     }
   }
 
+  _playAnswerSpeech() {
+    if (this.face !== "a") return;
+    const backContent = this.container.querySelector("#card-back-content");
+    if (!backContent) return;
+
+    // 1. If there are inline speech buttons (bold English sentences), play them in sequence
+    const speechBtns = backContent.querySelectorAll(".inline-speech-btn");
+    if (speechBtns && speechBtns.length > 0) {
+      this._playSpeechButtonsSequence(Array.from(speechBtns));
+      return;
+    }
+
+    // 2. If no bold elements, speak the clean text of the answer
+    const clone = backContent.cloneNode(true);
+    clone
+      .querySelectorAll("button, svg, script, style, .empty-answer-placeholder")
+      .forEach((el) => el.remove());
+    const text = (clone.textContent || "").trim();
+    if (!text) return;
+
+    const hasVietnamese =
+      /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(
+        text,
+      );
+    const lang = hasVietnamese ? "vi-VN" : "en-US";
+
+    speakText(text, {
+      lang,
+      rate: hasVietnamese ? 0.88 : 0.95,
+      pitch: hasVietnamese ? 0.75 : 1.0,
+    });
+  }
+
+  _playSpeechButtonsSequence(btns) {
+    if (!btns || btns.length === 0) return;
+    let idx = 0;
+
+    const playNext = () => {
+      if (this.face !== "a") return;
+      if (idx >= btns.length) return;
+
+      const btn = btns[idx++];
+      const text = btn.dataset.speechText || btn.textContent || "";
+      if (!text) {
+        playNext();
+        return;
+      }
+
+      const hasVietnamese =
+        /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(
+          text,
+        );
+      const lang = hasVietnamese ? "vi-VN" : "en-US";
+
+      speakText(text, {
+        lang,
+        rate: hasVietnamese ? 0.88 : 0.95,
+        pitch: hasVietnamese ? 0.75 : 1.0,
+        speakingElement: btn,
+        onStart: () => {
+          btn.classList.add("is-speaking");
+        },
+        onEnd: () => {
+          btn.classList.remove("is-speaking");
+          if (this.face === "a" && idx < btns.length) {
+            this.autoSpeechTimeout = setTimeout(playNext, 300);
+          }
+        },
+        onError: () => {
+          btn.classList.remove("is-speaking");
+        },
+      });
+    };
+
+    playNext();
+  }
+
   _playShakeAnimation() {
-    const cardEl = this.container.querySelector('.study-card');
+    const cardEl = this.container.querySelector(".study-card");
     if (cardEl) {
-      cardEl.classList.remove('card-shake');
+      cardEl.classList.remove("card-shake");
       void cardEl.offsetWidth; // Force reflow
-      cardEl.classList.add('card-shake');
+      cardEl.classList.add("card-shake");
       setTimeout(() => {
-        cardEl.classList.remove('card-shake');
+        cardEl.classList.remove("card-shake");
       }, 450);
     }
   }
@@ -271,27 +390,32 @@ export class StudyController {
   handleKeyDown(e) {
     // Ignore keyboard shortcuts if an input or dialog is active
     const active = document.activeElement;
-    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) {
+    if (
+      active &&
+      (active.tagName === "INPUT" ||
+        active.tagName === "TEXTAREA" ||
+        active.tagName === "SELECT")
+    ) {
       return;
     }
 
     switch (e.key) {
-      case ' ':
-      case 'Enter':
-      case 'ArrowUp':
-      case 'ArrowDown':
+      case " ":
+      case "Enter":
+      case "ArrowUp":
+      case "ArrowDown":
         e.preventDefault();
         this.flipCard(1);
         break;
-      case 'ArrowLeft':
-      case 'b':
-      case 'B':
+      case "ArrowLeft":
+      case "b":
+      case "B":
         e.preventDefault();
         this.goBack();
         break;
-      case 'ArrowRight':
-      case 'n':
-      case 'N':
+      case "ArrowRight":
+      case "n":
+      case "N":
         e.preventDefault();
         this._drawNext(true);
         break;
@@ -302,7 +426,7 @@ export class StudyController {
     this.container.innerHTML = `
       <div class="study-screen" id="study-screen">
         <header class="study-appbar">
-          <button type="button" class="icon-btn" id="study-back-btn" aria-label="${t('back')}">
+          <button type="button" class="icon-btn" id="study-back-btn" aria-label="${t("back")}">
             <svg class="icon" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
           </button>
           
@@ -311,7 +435,7 @@ export class StudyController {
           </div>
 
           <div class="study-actions">
-            <button type="button" class="icon-btn" id="study-reset-btn" title="${t('btn_shuffle_reset')}" aria-label="${t('btn_shuffle_reset')}">
+            <button type="button" class="icon-btn" id="study-reset-btn" title="${t("btn_shuffle_reset")}" aria-label="${t("btn_shuffle_reset")}">
               <svg class="icon" viewBox="0 0 24 24"><path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z"/></svg>
             </button>
           </div>
@@ -352,21 +476,21 @@ export class StudyController {
         </div>
 
         <div class="study-progress-container">
-          <div class="study-progress-bar" id="study-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="${t('study_progress_label')}">
+          <div class="study-progress-bar" id="study-progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="${t("study_progress_label")}">
             <div class="study-progress-fill" id="study-progress-fill" style="width: 0%;"></div>
           </div>
         </div>
 
         <footer class="study-bottom-bar">
-          <button type="button" class="circle-btn circle-btn-tonal" id="btn-study-back" aria-label="${t('btn_back')}">
+          <button type="button" class="circle-btn circle-btn-tonal" id="btn-study-back" aria-label="${t("btn_back")}">
             <svg class="icon" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
           </button>
 
-          <button type="button" class="circle-btn circle-btn-primary study-flip-btn" id="btn-study-flip" aria-label="${t('btn_flip_to_answer')}">
+          <button type="button" class="circle-btn circle-btn-primary study-flip-btn" id="btn-study-flip" aria-label="${t("btn_flip_to_answer")}">
             <svg class="icon" viewBox="0 0 24 24"><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
           </button>
 
-          <button type="button" class="circle-btn circle-btn-tonal" id="btn-study-next" aria-label="${t('btn_next')}">
+          <button type="button" class="circle-btn circle-btn-tonal" id="btn-study-next" aria-label="${t("btn_next")}">
             <svg class="icon" viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
           </button>
         </footer>
@@ -375,68 +499,91 @@ export class StudyController {
         <div class="study-hint-overlay hidden" id="study-hint-overlay">
           <div class="hint-card">
             <div class="hint-icon">💡</div>
-            <p class="hint-text">${t('study_hint_overlay')}</p>
-            <span class="hint-sub">${t('study_hint_tap')}</span>
+            <p class="hint-text">${t("study_hint_overlay")}</p>
+            <span class="hint-sub">${t("study_hint_tap")}</span>
           </div>
         </div>
       </div>
     `;
 
     // Title
-    const titleEl = this.container.querySelector('#study-deck-title');
+    const titleEl = this.container.querySelector("#study-deck-title");
     if (titleEl) titleEl.textContent = this.currentSet.title;
 
     // Attach button listeners
-    this.container.querySelector('#study-back-btn').addEventListener('click', () => {
-      if (this.onBack) this.onBack();
-    });
-    this.container.querySelector('#btn-study-back').addEventListener('click', () => this.goBack());
-    this.container.querySelector('#btn-study-next').addEventListener('click', () => this._drawNext(true));
-    this.container.querySelector('#btn-study-flip').addEventListener('click', () => this.flipCard(1));
-    this.container.querySelector('#study-reset-btn').addEventListener('click', () => this.resetShuffle());
+    this.container
+      .querySelector("#study-back-btn")
+      .addEventListener("click", () => {
+        if (this.onBack) this.onBack();
+      });
+    this.container
+      .querySelector("#btn-study-back")
+      .addEventListener("click", () => this.goBack());
+    this.container
+      .querySelector("#btn-study-next")
+      .addEventListener("click", () => this._drawNext(true));
+    this.container
+      .querySelector("#btn-study-flip")
+      .addEventListener("click", () => this.flipCard(1));
+    this.container
+      .querySelector("#study-reset-btn")
+      .addEventListener("click", () => this.resetShuffle());
 
     // Attach horizontal swipe gestures to track element
-    const track = this.container.querySelector('#study-card-track');
+    const track = this.container.querySelector("#study-card-track");
     if (this.swipeCleanup) this.swipeCleanup();
     this.swipeCleanup = attachSwipe(track, {
       onNext: () => this._drawNext(true),
       onBack: () => this.goBack(),
-      onTap: () => this.flipCard(1)
+      onTap: () => this.flipCard(1),
     });
   }
 
-  _updateCardDisplay(animationType = 'none') {
-    if (!this.currentSet || !this.currentSet.cards || this.currentSet.cards.length === 0) return;
-    if (this.currentIndex < 0 || this.currentIndex >= this.cardOrder.length) return;
+  _updateCardDisplay(animationType = "none") {
+    this._clearAutoSpeech();
+    if (
+      !this.currentSet ||
+      !this.currentSet.cards ||
+      this.currentSet.cards.length === 0
+    )
+      return;
+    if (this.currentIndex < 0 || this.currentIndex >= this.cardOrder.length)
+      return;
 
     const actualCardIndex = this.cardOrder[this.currentIndex];
     const card = this.currentSet.cards[actualCardIndex];
     if (!card) return;
 
-    const frontContent = this.container.querySelector('#card-front-content');
-    const backContent = this.container.querySelector('#card-back-content');
-    const counterChip = this.container.querySelector('#study-counter-chip');
-    const backBtn = this.container.querySelector('#btn-study-back');
-    const cardWrapper = this.container.querySelector('#study-card-wrapper');
-    const cardEl = this.container.querySelector('#study-card');
-    const flipBtn = this.container.querySelector('#btn-study-flip');
+    const frontContent = this.container.querySelector("#card-front-content");
+    const backContent = this.container.querySelector("#card-back-content");
+    const counterChip = this.container.querySelector("#study-counter-chip");
+    const backBtn = this.container.querySelector("#btn-study-back");
+    const cardWrapper = this.container.querySelector("#study-card-wrapper");
+    const cardEl = this.container.querySelector("#study-card");
+    const flipBtn = this.container.querySelector("#btn-study-flip");
 
     const totalCards = this.cardOrder.length;
     const currentCardNum = this.currentIndex + 1;
-    const progressPercent = totalCards > 0 ? Math.min(100, Math.max(0, Math.round((currentCardNum / totalCards) * 100))) : 0;
+    const progressPercent =
+      totalCards > 0
+        ? Math.min(
+            100,
+            Math.max(0, Math.round((currentCardNum / totalCards) * 100)),
+          )
+        : 0;
 
-    const progressBar = this.container.querySelector('#study-progress-bar');
-    const progressFill = this.container.querySelector('#study-progress-fill');
+    const progressBar = this.container.querySelector("#study-progress-bar");
+    const progressFill = this.container.querySelector("#study-progress-fill");
 
     if (counterChip) {
-      counterChip.textContent = t('study_seen_chip', {
+      counterChip.textContent = t("study_seen_chip", {
         seen: currentCardNum,
-        total: totalCards
+        total: totalCards,
       });
     }
 
     if (progressBar) {
-      progressBar.setAttribute('aria-valuenow', String(progressPercent));
+      progressBar.setAttribute("aria-valuenow", String(progressPercent));
     }
     if (progressFill) {
       progressFill.style.width = `${progressPercent}%`;
@@ -450,41 +597,41 @@ export class StudyController {
     }
 
     // Render HTML for front and back
-    if (frontContent) frontContent.innerHTML = renderCardFaceHTML(card, 'q');
-    if (backContent) backContent.innerHTML = renderCardFaceHTML(card, 'a');
+    if (frontContent) frontContent.innerHTML = renderCardFaceHTML(card, "q");
+    if (backContent) backContent.innerHTML = renderCardFaceHTML(card, "a");
 
     // Reset scroll positions to top
-    const frontScroll = this.container.querySelector('#card-front-scroll');
-    const backScroll = this.container.querySelector('#card-back-scroll');
+    const frontScroll = this.container.querySelector("#card-front-scroll");
+    const backScroll = this.container.querySelector("#card-back-scroll");
     if (frontScroll) frontScroll.scrollTop = 0;
     if (backScroll) backScroll.scrollTop = 0;
 
     // Reset flipped state and button label
-    this.face = 'q';
+    this.face = "q";
     if (cardWrapper) {
-      cardWrapper.classList.remove('is-flipped');
+      cardWrapper.classList.remove("is-flipped");
     }
     if (flipBtn) {
-      flipBtn.setAttribute('aria-label', t('btn_flip_to_answer'));
+      flipBtn.setAttribute("aria-label", t("btn_flip_to_answer"));
     }
 
     // Horizontal Slide animation
-    if (animationType === 'next' && cardEl) {
+    if (animationType === "next" && cardEl) {
       this.isAnimating = true;
-      cardEl.classList.remove('slide-in-right', 'slide-in-left');
+      cardEl.classList.remove("slide-in-right", "slide-in-left");
       void cardEl.offsetWidth;
-      cardEl.classList.add('slide-in-right');
+      cardEl.classList.add("slide-in-right");
       setTimeout(() => {
-        cardEl.classList.remove('slide-in-right');
+        cardEl.classList.remove("slide-in-right");
         this.isAnimating = false;
       }, 250);
-    } else if (animationType === 'back' && cardEl) {
+    } else if (animationType === "back" && cardEl) {
       this.isAnimating = true;
-      cardEl.classList.remove('slide-in-right', 'slide-in-left');
+      cardEl.classList.remove("slide-in-right", "slide-in-left");
       void cardEl.offsetWidth;
-      cardEl.classList.add('slide-in-left');
+      cardEl.classList.add("slide-in-left");
       setTimeout(() => {
-        cardEl.classList.remove('slide-in-left');
+        cardEl.classList.remove("slide-in-left");
         this.isAnimating = false;
       }, 250);
     }
@@ -493,13 +640,17 @@ export class StudyController {
   _checkFirstRunHint() {
     const prefs = store.getPrefs();
     if (!prefs.hintSeen) {
-      const hintOverlay = this.container.querySelector('#study-hint-overlay');
+      const hintOverlay = this.container.querySelector("#study-hint-overlay");
       if (hintOverlay) {
-        hintOverlay.classList.remove('hidden');
-        hintOverlay.addEventListener('click', () => {
-          hintOverlay.classList.add('hidden');
-          store.savePrefs({ hintSeen: true });
-        }, { once: true });
+        hintOverlay.classList.remove("hidden");
+        hintOverlay.addEventListener(
+          "click",
+          () => {
+            hintOverlay.classList.add("hidden");
+            store.savePrefs({ hintSeen: true });
+          },
+          { once: true },
+        );
       }
     }
   }
